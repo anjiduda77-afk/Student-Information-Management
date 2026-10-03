@@ -142,7 +142,7 @@ public class FacultyController {
     public ResponseEntity<?> uploadBatchMarks(@RequestParam Long courseId,
                                               @RequestParam String examType,
                                               @RequestParam Double totalMarks,
-                                              @RequestBody List<@Valid AppDTO.MarksRequest> list) {
+                                              @RequestBody List<AppDTO.MarksRequest> list) {
         return ResponseEntity.ok(marksService.uploadBatchMarks(courseId, examType, totalMarks, list));
     }
 
