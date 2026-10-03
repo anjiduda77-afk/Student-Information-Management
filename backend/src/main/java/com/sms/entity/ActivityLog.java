@@ -26,6 +26,18 @@ public class ActivityLog {
     @Column(length = 1000)
     private String description;
 
+    @Column(name = "entity_name")
+    private String entityName;
+
+    @Column(name = "entity_id")
+    private String entityId;
+
+    @Column(name = "old_value", columnDefinition = "TEXT")
+    private String oldValue;
+
+    @Column(name = "new_value", columnDefinition = "TEXT")
+    private String newValue;
+
     private String ipAddress;
 
     @Column(name = "timestamp")

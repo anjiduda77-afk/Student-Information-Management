@@ -1,14 +1,11 @@
 package com.sms.service.impl;
 
 import com.sms.dto.AppDTO;
-import com.sms.entity.Certificate;
-import com.sms.entity.Event;
-import com.sms.entity.EventRegistration;
-import com.sms.entity.EventResult;
-import com.sms.entity.User;
+import com.sms.entity.*;
 import com.sms.exception.ConflictException;
 import com.sms.exception.ResourceNotFoundException;
 import com.sms.repository.*;
+import com.sms.service.ActivityLogService;
 import com.sms.service.EventService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,6 +26,8 @@ public class EventServiceImpl implements EventService {
     private final EventResultRepository resultRepository;
     private final CertificateRepository certificateRepository;
     private final UserRepository userRepository;
+    private final EventCoordinatorRepository coordinatorRepository;
+    private final ActivityLogService activityLogService;
 
     private void autoUpdateStatus(Event e) {
         LocalDate today = LocalDate.now();
@@ -57,12 +56,18 @@ public class EventServiceImpl implements EventService {
             isReg = registrationRepository.existsByEventIdAndStudentId(e.getId(), currentUserId);
         }
 
+        List<AppDTO.EventCoordinatorDTO> coords = coordinatorRepository.findByEventId(e.getId()).stream()
+                .filter(c -> !"REMOVED".equalsIgnoreCase(c.getStatus()))
+                .map(this::toCoordinatorDTO)
+                .collect(Collectors.toList());
+
         return AppDTO.EventDTO.builder()
                 .id(e.getId())
                 .eventCode(e.getEventCode())
                 .title(e.getTitle())
                 .description(e.getDescription())
                 .category(e.getCategory())
+                .department(e.getDepartment())
                 .posterUrl(e.getPosterUrl())
                 .eventDate(e.getEventDate())
                 .startTime(e.getStartTime())
@@ -71,12 +76,34 @@ public class EventServiceImpl implements EventService {
                 .organizer(e.getOrganizer())
                 .coordinatorId(e.getCoordinator() != null ? e.getCoordinator().getId() : null)
                 .coordinatorName(e.getCoordinator() != null ? e.getCoordinator().getName() : null)
+                .coordinators(coords)
                 .maxParticipants(e.getMaxParticipants())
                 .registrationDeadline(e.getRegistrationDeadline())
                 .rules(e.getRules())
                 .status(e.getStatus().name())
                 .participantCount(count)
                 .isRegistered(isReg)
+                .createdAt(e.getCreatedAt())
+                .updatedAt(e.getUpdatedAt())
+                .build();
+    }
+
+    private AppDTO.EventCoordinatorDTO toCoordinatorDTO(EventCoordinator c) {
+        User f = c.getFaculty();
+        return AppDTO.EventCoordinatorDTO.builder()
+                .id(c.getId())
+                .eventId(c.getEvent().getId())
+                .eventTitle(c.getEvent().getTitle())
+                .facultyId(f.getId())
+                .facultyName(f.getName())
+                .facultyEmail(f.getEmail())
+                .facultyDepartment(f.getDepartment() != null ? f.getDepartment() : f.getBranch())
+                .facultyDesignation(f.getDesignation() != null ? f.getDesignation() : "Faculty Member")
+                .facultyMobile(f.getMobileNumber())
+                .assignedByName(c.getAssignedBy() != null ? c.getAssignedBy().getName() : "Administrator")
+                .assignedAt(c.getAssignedAt())
+                .status(c.getStatus())
+                .remarks(c.getRemarks())
                 .build();
     }
 
@@ -104,7 +131,7 @@ public class EventServiceImpl implements EventService {
     @Override
     public AppDTO.EventDTO getEventById(Long eventId, Long currentUserId) {
         Event e = eventRepository.findById(eventId)
-                .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found with ID: " + eventId));
         return toDTO(e, currentUserId);
     }
 
@@ -124,31 +151,42 @@ public class EventServiceImpl implements EventService {
                 .title(req.getTitle())
                 .description(req.getDescription())
                 .category(req.getCategory() != null ? req.getCategory() : "Technical")
+                .department(req.getDepartment())
                 .posterUrl(req.getPosterUrl())
                 .eventDate(req.getEventDate())
                 .startTime(req.getStartTime())
                 .endTime(req.getEndTime())
                 .venue(req.getVenue())
-                .organizer(req.getOrganizer() != null ? req.getOrganizer() : "Academic Council")
+                .organizer(req.getOrganizer() != null ? req.getOrganizer() : "Aditya University Student Council")
                 .coordinator(creator)
-                .maxParticipants(req.getMaxParticipants() != null ? req.getMaxParticipants() : 100)
+                .createdBy(creator)
+                .maxParticipants(req.getMaxParticipants() != null ? req.getMaxParticipants() : 200)
                 .registrationDeadline(req.getRegistrationDeadline() != null ? req.getRegistrationDeadline() : req.getEventDate().atStartOfDay())
                 .rules(req.getRules())
                 .status(status)
                 .build();
 
-        return toDTO(eventRepository.save(e), creatorId);
+        Event saved = eventRepository.save(e);
+
+        if (creator != null) {
+            activityLogService.log(creator.getEmail(), creator.getName(), creator.getRole().name(),
+                    "CREATE", "EVENTS", "EVENT", String.valueOf(saved.getId()),
+                    null, saved.getTitle(), "Published new campus event: " + saved.getTitle());
+        }
+
+        return toDTO(saved, creatorId);
     }
 
     @Override
     @Transactional
     public AppDTO.EventDTO updateEvent(Long eventId, AppDTO.EventDTO req) {
         Event e = eventRepository.findById(eventId)
-                .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found with ID: " + eventId));
 
         if (req.getTitle() != null) e.setTitle(req.getTitle());
         if (req.getDescription() != null) e.setDescription(req.getDescription());
         if (req.getCategory() != null) e.setCategory(req.getCategory());
+        if (req.getDepartment() != null) e.setDepartment(req.getDepartment());
         if (req.getPosterUrl() != null) e.setPosterUrl(req.getPosterUrl());
         if (req.getEventDate() != null) e.setEventDate(req.getEventDate());
         if (req.getStartTime() != null) e.setStartTime(req.getStartTime());
@@ -171,9 +209,134 @@ public class EventServiceImpl implements EventService {
     @Transactional
     public void updateEventStatus(Long eventId, String status) {
         Event e = eventRepository.findById(eventId)
-                .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found with ID: " + eventId));
         e.setStatus(Event.Status.valueOf(status.toUpperCase()));
         eventRepository.save(e);
+    }
+
+    @Override
+    @Transactional
+    public void deleteEvent(Long eventId, Long adminId) {
+        Event e = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found with ID: " + eventId));
+
+        // Delete associated coordinators
+        List<EventCoordinator> coords = coordinatorRepository.findByEventId(eventId);
+        coordinatorRepository.deleteAll(coords);
+
+        // Delete associated registrations
+        List<EventRegistration> regs = registrationRepository.findByEventId(eventId);
+        registrationRepository.deleteAll(regs);
+
+        // Delete results
+        List<EventResult> results = resultRepository.findByEventId(eventId);
+        resultRepository.deleteAll(results);
+
+        eventRepository.delete(e);
+
+        if (adminId != null) {
+            userRepository.findById(adminId).ifPresent(admin ->
+                    activityLogService.log(admin.getEmail(), admin.getName(), admin.getRole().name(),
+                            "DELETE", "EVENTS", "EVENT", String.valueOf(eventId),
+                            e.getTitle(), null, "Deleted event: " + e.getTitle())
+            );
+        }
+    }
+
+    // ================= Coordinators =================
+
+    @Override
+    public List<AppDTO.EventCoordinatorDTO> getEventCoordinators(Long eventId) {
+        if (!eventRepository.existsById(eventId)) {
+            throw new ResourceNotFoundException("Event not found with ID: " + eventId);
+        }
+        return coordinatorRepository.findByEventId(eventId).stream()
+                .filter(c -> !"REMOVED".equalsIgnoreCase(c.getStatus()))
+                .map(this::toCoordinatorDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public AppDTO.EventCoordinatorDTO assignCoordinator(Long eventId, Long facultyId, String remarks, Long adminId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found with ID: " + eventId));
+        User faculty = userRepository.findById(facultyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Faculty not found with ID: " + facultyId));
+
+        if (!"ACTIVE".equalsIgnoreCase(faculty.getStatus())) {
+            throw new ConflictException("Cannot assign coordinator: Faculty member is not active.");
+        }
+
+        // Check if already assigned
+        Optional<EventCoordinator> existing = coordinatorRepository.findByEventIdAndFacultyId(eventId, facultyId);
+        EventCoordinator coord;
+        if (existing.isPresent()) {
+            coord = existing.get();
+            if ("ACTIVE".equalsIgnoreCase(coord.getStatus())) {
+                throw new ConflictException("Faculty member " + faculty.getName() + " is already assigned as an Event Coordinator.");
+            }
+            coord.setStatus("ACTIVE");
+            coord.setRemarks(remarks);
+            coord.setAssignedAt(LocalDateTime.now());
+        } else {
+            User admin = adminId != null ? userRepository.findById(adminId).orElse(null) : null;
+            coord = EventCoordinator.builder()
+                    .event(event)
+                    .faculty(faculty)
+                    .assignedBy(admin)
+                    .assignedAt(LocalDateTime.now())
+                    .status("ACTIVE")
+                    .remarks(remarks)
+                    .build();
+        }
+
+        EventCoordinator saved = coordinatorRepository.save(coord);
+
+        // Audit log
+        if (adminId != null) {
+            userRepository.findById(adminId).ifPresent(admin ->
+                    activityLogService.log(admin.getEmail(), admin.getName(), admin.getRole().name(),
+                            "ASSIGN", "EVENTS", "COORDINATOR", String.valueOf(faculty.getId()),
+                            null, faculty.getName(), "ADMIN assigned Faculty member " + faculty.getName() + " to " + event.getTitle())
+            );
+        }
+
+        return toCoordinatorDTO(saved);
+    }
+
+    @Override
+    @Transactional
+    public void removeCoordinator(Long eventId, Long facultyId, Long adminId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found with ID: " + eventId));
+        User faculty = userRepository.findById(facultyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Faculty not found with ID: " + facultyId));
+
+        EventCoordinator coord = coordinatorRepository.findByEventIdAndFacultyId(eventId, facultyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Faculty member is not assigned as coordinator for this event."));
+
+        coordinatorRepository.delete(coord);
+
+        // Audit log
+        if (adminId != null) {
+            userRepository.findById(adminId).ifPresent(admin ->
+                    activityLogService.log(admin.getEmail(), admin.getName(), admin.getRole().name(),
+                            "REMOVE", "EVENTS", "COORDINATOR", String.valueOf(faculty.getId()),
+                            faculty.getName(), null, "ADMIN removed Faculty member " + faculty.getName() + " from " + event.getTitle())
+            );
+        }
+    }
+
+    @Override
+    public boolean isFacultyAssignedToEvent(Long eventId, Long facultyId) {
+        if (facultyId == null) return false;
+        Event event = eventRepository.findById(eventId).orElse(null);
+        if (event == null) return false;
+        if (event.getCoordinator() != null && event.getCoordinator().getId().equals(facultyId)) {
+            return true;
+        }
+        return coordinatorRepository.existsByEventIdAndFacultyIdAndStatus(eventId, facultyId, "ACTIVE");
     }
 
     // ================= Registration =================
@@ -227,6 +390,8 @@ public class EventServiceImpl implements EventService {
                 .studentId(student.getId())
                 .studentName(student.getName())
                 .rollNumber(student.getRollNumber())
+                .department(student.getDepartment() != null ? student.getDepartment() : student.getBranch())
+                .semester(student.getSemester())
                 .registeredAt(saved.getRegisteredAt())
                 .registrationStatus(saved.getStatus().name())
                 .attendanceStatus(saved.getAttendanceStatus().name())
@@ -314,7 +479,14 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
         User faculty = recordedByFacultyId != null ? userRepository.findById(recordedByFacultyId).orElse(null) : null;
 
-        EventResult.Position pos = EventResult.Position.valueOf(request.getPosition().toUpperCase());
+        String posStr = request.getPosition().toUpperCase();
+        if ("NO_CERTIFICATE".equals(posStr)) {
+            resultRepository.findByEventIdAndStudentId(eventId, student.getId())
+                    .ifPresent(resultRepository::delete);
+            return;
+        }
+
+        EventResult.Position pos = EventResult.Position.valueOf(posStr);
 
         Optional<EventResult> existing = resultRepository.findByEventIdAndStudentId(eventId, student.getId());
         EventResult result;
@@ -337,5 +509,11 @@ public class EventServiceImpl implements EventService {
         }
 
         resultRepository.save(result);
+
+        if (faculty != null) {
+            activityLogService.log(faculty.getEmail(), faculty.getName(), faculty.getRole().name(),
+                    "UPDATE", "RESULTS", "EVENT_RESULT", String.valueOf(student.getId()),
+                    null, pos.name(), faculty.getName() + " updated result for " + student.getName() + " in " + event.getTitle() + " to " + pos.name());
+        }
     }
 }

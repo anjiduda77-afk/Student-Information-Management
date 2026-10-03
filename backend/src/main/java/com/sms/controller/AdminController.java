@@ -31,6 +31,7 @@ public class AdminController {
     private final AnnouncementNotificationService announcementService;
     private final ActivityLogService activityLogService;
     private final UserRepository userRepository;
+    private final com.sms.service.AccountSecurityService accountSecurityService;
 
     // ==================== Dashboard ====================
 
@@ -180,11 +181,65 @@ public class AdminController {
         return ResponseEntity.ok(new AppDTO.MessageResponse("Announcement removed"));
     }
 
-    // ==================== Activity Logs ====================
+    // ==================== Activity / Audit Logs ====================
 
-    @GetMapping("/activity-logs")
+    @GetMapping({"/activity-logs", "/audit-logs"})
     public ResponseEntity<List<AppDTO.ActivityLogDTO>> getActivityLogs() {
         return ResponseEntity.ok(activityLogService.getRecentLogs());
+    }
+
+    // ==================== Password & Account Security ====================
+
+    @PostMapping("/users/{userId}/reset-password")
+    public ResponseEntity<?> resetPassword(@PathVariable Long userId,
+                                           @Valid @RequestBody AppDTO.AdminResetPasswordRequest req,
+                                           @AuthenticationPrincipal UserDetails ud) {
+        User admin = userRepository.findByEmail(ud.getUsername()).orElseThrow();
+        accountSecurityService.adminResetPassword(userId, req.getNewPassword(), req.getForceChangeOnNextLogin(), admin.getId());
+        return ResponseEntity.ok(new AppDTO.MessageResponse("Password reset successfully. User will be required to change password on next login if forced."));
+    }
+
+    @PatchMapping("/users/{userId}/status")
+    public ResponseEntity<?> updateUserStatus(@PathVariable Long userId,
+                                              @RequestParam String status,
+                                              @AuthenticationPrincipal UserDetails ud) {
+        User admin = userRepository.findByEmail(ud.getUsername()).orElseThrow();
+        accountSecurityService.updateAccountStatus(userId, status, admin.getId());
+        return ResponseEntity.ok(new AppDTO.MessageResponse("Account status updated to " + status));
+    }
+
+    @PutMapping("/students/{id}/photo")
+    public ResponseEntity<?> updateStudentPhoto(@PathVariable Long id,
+                                                @Valid @RequestBody AppDTO.UpdatePhotoRequest req,
+                                                @AuthenticationPrincipal UserDetails ud) {
+        User admin = userRepository.findByEmail(ud.getUsername()).orElseThrow();
+        accountSecurityService.updateProfilePhoto(id, req.getPhotoUrl(), admin.getId());
+        return ResponseEntity.ok(new AppDTO.MessageResponse("Student profile photo updated successfully"));
+    }
+
+    @DeleteMapping("/students/{id}/photo")
+    public ResponseEntity<?> removeStudentPhoto(@PathVariable Long id,
+                                                @AuthenticationPrincipal UserDetails ud) {
+        User admin = userRepository.findByEmail(ud.getUsername()).orElseThrow();
+        accountSecurityService.removeProfilePhoto(id, admin.getId());
+        return ResponseEntity.ok(new AppDTO.MessageResponse("Student profile photo removed"));
+    }
+
+    @PutMapping("/faculty/{id}/photo")
+    public ResponseEntity<?> updateFacultyPhoto(@PathVariable Long id,
+                                               @Valid @RequestBody AppDTO.UpdatePhotoRequest req,
+                                               @AuthenticationPrincipal UserDetails ud) {
+        User admin = userRepository.findByEmail(ud.getUsername()).orElseThrow();
+        accountSecurityService.updateProfilePhoto(id, req.getPhotoUrl(), admin.getId());
+        return ResponseEntity.ok(new AppDTO.MessageResponse("Faculty profile photo updated successfully"));
+    }
+
+    @DeleteMapping("/faculty/{id}/photo")
+    public ResponseEntity<?> removeFacultyPhoto(@PathVariable Long id,
+                                               @AuthenticationPrincipal UserDetails ud) {
+        User admin = userRepository.findByEmail(ud.getUsername()).orElseThrow();
+        accountSecurityService.removeProfilePhoto(id, admin.getId());
+        return ResponseEntity.ok(new AppDTO.MessageResponse("Faculty profile photo removed"));
     }
 
     // ==================== Reports ====================

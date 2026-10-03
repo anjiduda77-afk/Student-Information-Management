@@ -39,6 +39,13 @@ public class AppDTO {
         private String facultyId;
         private String designation;
         private List<String> assignedSubjects;
+        private String qualification;
+        private String specialization;
+        private String experience;
+
+        // Security
+        private Boolean forcePasswordChange;
+        private LocalDateTime lastPasswordChange;
 
         public static UserResponse from(User u) {
             return UserResponse.builder()
@@ -62,6 +69,11 @@ public class AppDTO {
                     .department(u.getDepartment())
                     .facultyId(u.getFacultyId())
                     .designation(u.getDesignation())
+                    .qualification(u.getQualification())
+                    .specialization(u.getSpecialization())
+                    .experience(u.getExperience())
+                    .forcePasswordChange(u.getForcePasswordChange())
+                    .lastPasswordChange(u.getLastPasswordChange())
                     .build();
         }
     }
@@ -395,6 +407,7 @@ public class AppDTO {
 
         private String description;
         private String category;
+        private String department;
         private String posterUrl;
 
         @NotNull(message = "Event date is required")
@@ -406,12 +419,39 @@ public class AppDTO {
         private String organizer;
         private Long coordinatorId;
         private String coordinatorName;
+        private List<EventCoordinatorDTO> coordinators;
         private Integer maxParticipants;
         private LocalDateTime registrationDeadline;
         private String rules;
         private String status;
         private long participantCount;
         private boolean isRegistered;
+        private LocalDateTime createdAt;
+        private LocalDateTime updatedAt;
+    }
+
+    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class EventCoordinatorDTO {
+        private Long id;
+        private Long eventId;
+        private String eventTitle;
+        private Long facultyId;
+        private String facultyName;
+        private String facultyEmail;
+        private String facultyDepartment;
+        private String facultyDesignation;
+        private String facultyMobile;
+        private String assignedByName;
+        private LocalDateTime assignedAt;
+        private String status;
+        private String remarks;
+    }
+
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor
+    public static class AssignCoordinatorRequest {
+        @NotNull(message = "Faculty ID is required")
+        private Long facultyId;
+        private String remarks;
     }
 
     @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
@@ -437,7 +477,7 @@ public class AppDTO {
         private Long studentId;
 
         @NotBlank(message = "Position is required")
-        private String position; // WINNER, RUNNER_UP, SECOND_RUNNER_UP, SPECIAL_RECOGNITION, PARTICIPANT
+        private String position; // WINNER, RUNNER_UP, SECOND_RUNNER_UP, SPECIAL_RECOGNITION, PARTICIPANT, NO_CERTIFICATE
 
         private Double score;
         private String remarks;
@@ -453,15 +493,60 @@ public class AppDTO {
         private String rollNumber;
         private Long eventId;
         private String eventName;
+        private Long templateId;
+        private String templateName;
         private String certificateType;
         private String position;
         private LocalDate issueDate;
         private String collegeName;
         private String departmentName;
         private String verificationUrl;
-        private String status;
+        private String status; // VALID, REVOKED
         private String signatoryName;
         private String signatoryTitle;
+        private String revocationReason;
+        private LocalDateTime revokedAt;
+        private String revokedByName;
+        private String replacedByCertificateId;
+        private LocalDateTime generatedAt;
+    }
+
+    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class CertificateTemplateDTO {
+        private Long id;
+
+        @NotBlank(message = "Template name is required")
+        private String name;
+
+        @NotBlank(message = "Certificate type is required")
+        private String templateType;
+
+        private String title;
+        private String subtitle;
+        private String collegeName;
+        private String description;
+        private String borderStyle;
+        private Integer borderWidth;
+        private String borderColor;
+        private String fontFamily;
+        private Integer fontSize;
+        private String fontWeight;
+        private String textAlignment;
+        private String textColor;
+        private String primaryColor;
+        private String secondaryColor;
+        private String backgroundColor;
+        private String signatoryTitle;
+        private String signatoryName;
+        private String signatory2Title;
+        private String signatory2Name;
+        private String logoUrl;
+        private String signatureUrl;
+        private String bodyTemplate;
+        private String status; // DRAFT, PUBLISHED
+        private Integer version;
+        private LocalDateTime createdAt;
+        private LocalDateTime updatedAt;
     }
 
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor
@@ -477,6 +562,42 @@ public class AppDTO {
 
         private String position;
         private Long templateId;
+    }
+
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor
+    public static class RevokeCertificateRequest {
+        @NotBlank(message = "Revocation reason is required")
+        private String reason;
+    }
+
+    // ---- Password & Account Security ----
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor
+    public static class ChangePasswordRequest {
+        @NotBlank(message = "Current password is required")
+        private String currentPassword;
+
+        @NotBlank(message = "New password is required")
+        @Size(min = 8, message = "Password must be at least 8 characters long")
+        private String newPassword;
+
+        @NotBlank(message = "Confirm password is required")
+        private String confirmPassword;
+    }
+
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor
+    public static class AdminResetPasswordRequest {
+        @NotBlank(message = "New password is required")
+        @Size(min = 8, message = "Password must be at least 8 characters long")
+        private String newPassword;
+
+        private String confirmPassword;
+        private Boolean forceChangeOnNextLogin;
+    }
+
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor
+    public static class UpdatePhotoRequest {
+        @NotBlank(message = "Profile photo URL is required")
+        private String photoUrl;
     }
 
     // ---- Announcement ----
@@ -522,6 +643,10 @@ public class AppDTO {
         private String userRole;
         private String action;
         private String module;
+        private String entityName;
+        private String entityId;
+        private String oldValue;
+        private String newValue;
         private String description;
         private String ipAddress;
         private LocalDateTime timestamp;

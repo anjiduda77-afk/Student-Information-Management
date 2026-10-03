@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { notificationService } from '../../services/api'
+import { notificationService, authService } from '../../services/api'
 import {
   Menu, X, Bell, LogOut, User as UserIcon,
-  Check, Shield, BookOpen, GraduationCap
+  Check, Shield, BookOpen, GraduationCap,
+  KeyRound, Lock, Eye, EyeOff, ChevronDown
 } from 'lucide-react'
 import { formatDate } from '../../utils/helpers'
+import { Modal } from '../Modal'
+import { toast } from '../Toast'
 import AuLogo from './AuLogo'
 import ThemeToggle from './ThemeToggle'
 import AmbientBackground from './AmbientBackground'
@@ -68,6 +71,35 @@ export default function Layout({ children, navItems, role, basePath, pageTitle }
       setUnreadCount(prev => Math.max(0, prev - 1))
     } catch (e) {
       // silent
+    }
+  }
+
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [passForm, setPassForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
+  const [passLoading, setPassLoading] = useState(false)
+  const [showPass, setShowPass] = useState({ current: false, new: false, confirm: false })
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault()
+    if (passForm.newPassword.length < 8) {
+      toast.error('New password must be at least 8 characters long.')
+      return
+    }
+    if (passForm.newPassword !== passForm.confirmPassword) {
+      toast.error('New password and confirm password do not match.')
+      return
+    }
+    setPassLoading(true)
+    try {
+      await authService.changePassword(passForm)
+      toast.success('Password updated successfully!')
+      setShowPasswordModal(false)
+      setPassForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update password. Please check your current password.')
+    } finally {
+      setPassLoading(false)
     }
   }
 
@@ -247,12 +279,68 @@ export default function Layout({ children, navItems, role, basePath, pageTitle }
               )}
             </div>
 
-            {/* Profile Pill */}
-            <div className="profile-pill">
-              <div className="profile-avatar">
-                {user?.name?.slice(0, 1).toUpperCase()}
-              </div>
-              <span className="profile-name">{user?.name?.split(' ')[0]}</span>
+            {/* Profile Pill & Dropdown */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setProfileOpen(!profileOpen)}
+                className="profile-pill"
+                style={{ cursor: 'pointer', border: '1px solid var(--border)', background: 'var(--surface-secondary)', display: 'flex', alignItems: 'center', gap: 8 }}
+                aria-label="User profile menu"
+              >
+                <div className="profile-avatar">
+                  {user?.name?.slice(0, 1).toUpperCase()}
+                </div>
+                <span className="profile-name">{user?.name?.split(' ')[0]}</span>
+                <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} />
+              </button>
+
+              {profileOpen && (
+                <div
+                  style={{
+                    position: 'absolute', right: 0, top: 'calc(100% + 8px)',
+                    width: 230, background: 'var(--surface)', border: '1px solid var(--border)',
+                    borderRadius: 12, boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
+                    padding: 8, zIndex: 100
+                  }}
+                >
+                  <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border)', marginBottom: 6 }}>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: 'var(--text)' }}>{user?.name}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--text-muted)' }}>{user?.email}</p>
+                    <span className="badge badge-primary" style={{ marginTop: 6, fontSize: 10, display: 'inline-block' }}>{roleTheme.badge}</span>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setProfileOpen(false)
+                      setShowPasswordModal(true)
+                    }}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '8px 12px', borderRadius: 8, border: 'none', background: 'transparent',
+                      color: 'var(--text)', fontSize: 13, cursor: 'pointer', textAlign: 'left'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-secondary)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <KeyRound size={15} style={{ color: '#d97706' }} />
+                    <span>Change Password</span>
+                  </button>
+
+                  <button
+                    onClick={handleLogout}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '8px 12px', borderRadius: 8, border: 'none', background: 'transparent',
+                      color: '#dc2626', fontSize: 13, cursor: 'pointer', textAlign: 'left', marginTop: 2
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#fef2f2'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <LogOut size={15} />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -262,6 +350,108 @@ export default function Layout({ children, navItems, role, basePath, pageTitle }
           {children}
         </main>
       </div>
+
+      {/* Change Password Modal */}
+      <Modal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+        title="Change Account Password"
+        size="sm"
+      >
+        <form onSubmit={handlePasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+            Ensure your account is using a long, random password to stay secure.
+          </p>
+
+          <div className="form-group">
+            <label className="form-label">Current Password *</label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPass.current ? 'text' : 'password'}
+                className="form-input"
+                style={{ paddingRight: 36 }}
+                value={passForm.currentPassword}
+                onChange={e => setPassForm({ ...passForm, currentPassword: e.target.value })}
+                required
+                placeholder="Enter current password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPass({ ...showPass, current: !showPass.current })}
+                style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+              >
+                {showPass.current ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">New Password * (Min 8 chars)</label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPass.new ? 'text' : 'password'}
+                className="form-input"
+                style={{ paddingRight: 36 }}
+                value={passForm.newPassword}
+                onChange={e => setPassForm({ ...passForm, newPassword: e.target.value })}
+                required
+                minLength={8}
+                placeholder="Enter new password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPass({ ...showPass, new: !showPass.new })}
+                style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+              >
+                {showPass.new ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Confirm New Password *</label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPass.confirm ? 'text' : 'password'}
+                className="form-input"
+                style={{ paddingRight: 36 }}
+                value={passForm.confirmPassword}
+                onChange={e => setPassForm({ ...passForm, confirmPassword: e.target.value })}
+                required
+                minLength={8}
+                placeholder="Confirm new password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPass({ ...showPass, confirm: !showPass.confirm })}
+                style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+              >
+                {showPass.confirm ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
+            <button
+              type="button"
+              onClick={() => setShowPasswordModal(false)}
+              className="btn btn-ghost"
+              disabled={passLoading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={passLoading}
+              style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+            >
+              <KeyRound size={16} />
+              {passLoading ? 'Updating...' : 'Update Password'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   )
 }

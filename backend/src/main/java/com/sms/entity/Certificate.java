@@ -59,11 +59,40 @@ public class Certificate {
     @Column(name = "generated_at")
     private LocalDateTime generatedAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "template_id")
+    private CertificateTemplate template;
+
+    @Column(name = "file_path")
+    private String filePath;
+
+    @Column(name = "revocation_reason", length = 500)
+    private String revocationReason;
+
+    @Column(name = "revoked_at")
+    private LocalDateTime revokedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "revoked_by")
+    private User revokedBy;
+
+    @Column(name = "replaced_by_certificate_id")
+    private String replacedByCertificateId;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     @PrePersist
     protected void onCreate() {
         if (generatedAt == null) generatedAt = LocalDateTime.now();
+        if (updatedAt == null) updatedAt = LocalDateTime.now();
         if (issueDate == null) issueDate = LocalDate.now();
         if (status == null) status = "VALID";
-        if (collegeName == null) collegeName = "APEX INSTITUTE OF TECHNOLOGY & SCIENCE";
+        if (collegeName == null) collegeName = "ADITYA UNIVERSITY";
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 }

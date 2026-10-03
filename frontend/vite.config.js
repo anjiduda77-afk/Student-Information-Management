@@ -3,9 +3,24 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  appType: 'spa', // Ensures all routes fallback to index.html (SPA mode)
+  appType: 'spa',
   define: {
     global: 'window',
+  },
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Core React runtime
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          // UI icons
+          'vendor-icons': ['lucide-react'],
+          // PDF/canvas utilities
+          'vendor-pdf': ['html2canvas', 'dompurify'],
+        },
+      },
+    },
   },
   server: {
     port: 5174,
@@ -15,7 +30,6 @@ export default defineConfig({
         changeOrigin: true,
         configure: (proxy) => {
           proxy.on('proxyReq', (proxyReq) => {
-            // Ensure Spring Boot's CORS validator sees an allowed origin
             proxyReq.setHeader('Origin', 'http://localhost:5173');
           });
         }

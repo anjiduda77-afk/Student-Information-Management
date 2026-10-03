@@ -816,13 +816,15 @@ function StudentCertificates() {
               </div>
 
               <div style={{ display: 'flex', gap: 10 }}>
-                <button
-                  onClick={() => downloadCertificatePDF(cert)}
+                <a
+                  href={`/api/certificates/${cert.certificateId}/download`}
+                  target="_blank"
+                  rel="noreferrer"
                   className="btn btn-primary btn-sm"
-                  style={{ flex: 1 }}
+                  style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, textDecoration: 'none' }}
                 >
-                  <Download size={14} /> Download
-                </button>
+                  <Download size={14} /> Download PDF
+                </a>
                 <a
                   href={`/verify/${cert.certificateId}`}
                   target="_blank"

@@ -747,26 +747,30 @@ function FacultyTimetable() {
 }
 
 // =========================================================================
-// 5. Events Panel
+// 5. Events Panel (Faculty — Coordinator View)
 // =========================================================================
 function FacultyEvents() {
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [participants, setParticipants] = useState([])
-  const [resultForm, setResultForm] = useState({ studentId: '', position: 'FIRST', remarks: '' })
+  const [activeTab, setActiveTab] = useState('participants')
+  const [resultEdits, setResultEdits] = useState({})
+  const [submitting, setSubmitting] = useState(false)
 
   const loadEvents = () => {
     setLoading(true)
     eventService.getAll()
       .then(res => setEvents(res.data || []))
+      .catch(() => toast.error('Failed to load events'))
       .finally(() => setLoading(false))
   }
 
   useEffect(() => { loadEvents() }, [])
 
-  const openParticipants = async (ev) => {
+  const openEvent = async (ev) => {
     setSelectedEvent(ev)
+    setActiveTab('participants')
     try {
       const res = await eventService.getParticipants(ev.id)
       setParticipants(res.data || [])
@@ -775,28 +779,46 @@ function FacultyEvents() {
     }
   }
 
-  const handleRecordResult = async (e) => {
-    e.preventDefault()
-    if (!resultForm.studentId) {
-      toast.warning('Please select a student to award result.')
-      return
-    }
+  const handleMarkAttendance = async (studentId, status) => {
     try {
-      await eventService.recordResult(selectedEvent.id, resultForm)
-      toast.success('Result recorded and certificate generated.')
-      setResultForm({ studentId: '', position: 'FIRST', remarks: '' })
-      openParticipants(selectedEvent)
+      await eventService.markAttendance(selectedEvent.id, studentId, status)
+      toast.success(`Attendance marked: ${status}`)
+      setParticipants(prev => prev.map(p => p.studentId === studentId ? { ...p, attendanceStatus: status } : p))
     } catch {
-      toast.error('Failed to record result.')
+      toast.error('Failed to mark attendance')
     }
   }
+
+  const handleSaveResult = async (studentId) => {
+    const data = resultEdits[studentId]
+    if (!data?.position) return toast.error('Select a position')
+    setSubmitting(true)
+    try {
+      await eventService.updateResult(selectedEvent.id, studentId, data)
+      toast.success('Result saved!')
+      const res = await eventService.getParticipants(selectedEvent.id)
+      setParticipants(res.data || [])
+      setResultEdits(prev => { const n = { ...prev }; delete n[studentId]; return n })
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to save result')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const TAB_STYLE = (active) => ({
+    padding: '7px 16px', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600,
+    fontSize: 13, transition: 'all 0.2s',
+    background: active ? '#0f766e' : 'transparent',
+    color: active ? '#fff' : '#64748b',
+  })
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div className="section-header">
         <div>
           <h2 className="section-title">Events</h2>
-          <p style={{ fontSize: 13, color: '#64748b' }}>Manage events and issue certificates</p>
+          <p style={{ fontSize: 13, color: '#64748b' }}>Manage your assigned events, participants, and results</p>
         </div>
       </div>
 
@@ -806,76 +828,126 @@ function FacultyEvents() {
             <div key={ev.id} className="card card-hover" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <span className="badge badge-purple" style={{ alignSelf: 'flex-start' }}>{ev.category}</span>
               <h4 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>{ev.title}</h4>
-              <p style={{ fontSize: 12, color: '#64748b', margin: 0, flex: 1 }}>{ev.description}</p>
+              <p style={{ fontSize: 12, color: '#64748b', margin: 0, flex: 1 }}>
+                {ev.description?.slice(0, 80)}{ev.description?.length > 80 ? '…' : ''}
+              </p>
               <div style={{ fontSize: 12, color: '#94a3b8' }}>
-                <span>📅 {formatDate(ev.eventDate)}</span> &bull; <span>👥 {ev.registeredCount || 0} registered</span>
+                <span>📅 {formatDate(ev.eventDate)}</span> &bull; <span>👥 {ev.participantCount || 0} registered</span>
               </div>
-              <button onClick={() => openParticipants(ev)} className="btn btn-primary btn-sm" style={{ marginTop: 8 }}>
-                Manage &amp; Issue Certificates
+              <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: '#f1f5f9', color: '#64748b', fontWeight: 600, width: 'fit-content' }}>
+                {ev.status?.replace('_', ' ')}
+              </span>
+              <button onClick={() => openEvent(ev)} className="btn btn-primary btn-sm" style={{ marginTop: 4 }}>
+                Manage Event
               </button>
             </div>
           ))}
           {events.length === 0 && (
-            <p style={{ color: '#94a3b8', fontSize: 14 }}>No events found.</p>
+            <p style={{ color: '#94a3b8', fontSize: 14, gridColumn: '1/-1' }}>No events assigned to you yet.</p>
           )}
         </div>
       )}
 
-      <Modal isOpen={Boolean(selectedEvent)} onClose={() => setSelectedEvent(null)} title={`${selectedEvent?.title} — Results & Certificates`} size="lg">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <form onSubmit={handleRecordResult} style={{ background: '#f8fafc', padding: 18, borderRadius: 14, border: '1px solid #e2e8f0' }}>
-            <h4 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Record Result &amp; Generate Certificate</h4>
-            <div className="grid-3">
-              <div className="form-group">
-                <label className="form-label">Student</label>
-                <select className="form-select" value={resultForm.studentId} onChange={e => setResultForm({...resultForm, studentId: e.target.value})} required>
-                  <option value="">Select Student</option>
-                  {participants.map(p => <option key={p.studentId} value={p.studentId}>{p.studentName} ({p.studentRollNumber})</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Position</label>
-                <select className="form-select" value={resultForm.position} onChange={e => setResultForm({...resultForm, position: e.target.value})}>
-                  <option value="FIRST">1st Place</option>
-                  <option value="SECOND">2nd Place</option>
-                  <option value="THIRD">3rd Place</option>
-                  <option value="SPECIAL_MENTION">Special Mention</option>
-                  <option value="PARTICIPANT">Participation</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Remarks</label>
-                <input className="form-input" value={resultForm.remarks} onChange={e => setResultForm({...resultForm, remarks: e.target.value})} placeholder="e.g. Best Project" />
-              </div>
+      <Modal isOpen={Boolean(selectedEvent)} onClose={() => { setSelectedEvent(null); setResultEdits({}) }}
+        title={selectedEvent?.title || ''} size="xl">
+        {selectedEvent && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', gap: 4, background: '#f8fafc', borderRadius: 10, padding: 4 }}>
+              <button onClick={() => setActiveTab('participants')} style={TAB_STYLE(activeTab === 'participants')}>
+                Participants ({participants.length})
+              </button>
+              <button onClick={() => setActiveTab('results')} style={TAB_STYLE(activeTab === 'results')}>
+                Record Results
+              </button>
             </div>
-            <button type="submit" className="btn btn-primary btn-sm" style={{ marginTop: 12 }}>
-              Generate Certificate
-            </button>
-          </form>
 
-          <div className="table-container">
-            <table className="data-table table-responsive">
-              <thead>
-                <tr>
-                  <th>Student</th>
-                  <th>Roll Number</th>
-                  <th>Status</th>
-                  <th>Award</th>
-                </tr>
-              </thead>
-              <tbody>
-                {participants.map(p => (
-                  <tr key={p.id}>
-                    <td data-label="Student"><strong>{p.studentName}</strong></td>
-                    <td data-label="Roll No.">{p.studentRollNumber || '—'}</td>
-                    <td data-label="Status"><span className="badge badge-success">{p.attendanceStatus || 'PRESENT'}</span></td>
-                    <td data-label="Award"><span className="badge badge-warning">{p.position || 'Registered'}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {/* Participants Tab */}
+            {activeTab === 'participants' && (
+              <div className="table-container">
+                <table className="data-table">
+                  <thead><tr>
+                    <th>Student</th><th>Roll No.</th><th>Department</th><th>Attendance</th>
+                  </tr></thead>
+                  <tbody>
+                    {participants.map(p => (
+                      <tr key={p.id}>
+                        <td><strong>{p.studentName}</strong></td>
+                        <td>{p.rollNumber || '—'}</td>
+                        <td>{p.department || '—'}</td>
+                        <td>
+                          <div style={{ display: 'flex', gap: 4 }}>
+                            {['PRESENT', 'ABSENT'].map(s => (
+                              <button key={s} onClick={() => handleMarkAttendance(p.studentId, s)}
+                                style={{
+                                  fontSize: 11, padding: '2px 8px', borderRadius: 6, border: '1.5px solid',
+                                  cursor: 'pointer', fontWeight: 700,
+                                  background: p.attendanceStatus === s ? (s === 'PRESENT' ? '#16a34a' : '#dc2626') : 'transparent',
+                                  color: p.attendanceStatus === s ? '#fff' : '#64748b',
+                                  borderColor: p.attendanceStatus === s ? (s === 'PRESENT' ? '#16a34a' : '#dc2626') : '#e2e8f0',
+                                }}>{s}</button>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {participants.length === 0 && (
+                      <tr><td colSpan={4} style={{ textAlign: 'center', padding: 24, color: '#94a3b8' }}>No participants yet.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Results Tab */}
+            {activeTab === 'results' && (
+              <div className="table-container">
+                <table className="data-table">
+                  <thead><tr>
+                    <th>Student</th><th>Current Result</th><th>New Position</th><th>Score</th><th>Save</th>
+                  </tr></thead>
+                  <tbody>
+                    {participants.map(p => {
+                      const edit = resultEdits[p.studentId] || { position: p.resultPosition || '', score: '', remarks: '' }
+                      return (
+                        <tr key={p.id}>
+                          <td><strong>{p.studentName}</strong><br /><span style={{ fontSize: 11, color: '#94a3b8' }}>{p.rollNumber}</span></td>
+                          <td><span className="badge badge-neutral" style={{ fontSize: 11 }}>{p.resultPosition || 'Not assigned'}</span></td>
+                          <td>
+                            <select className="form-select" style={{ padding: '3px 8px', fontSize: 12, height: 'auto' }}
+                              value={edit.position}
+                              onChange={e => setResultEdits(prev => ({ ...prev, [p.studentId]: { ...edit, position: e.target.value } }))}>
+                              <option value="">-- Select --</option>
+                              <option value="WINNER">🏆 Winner</option>
+                              <option value="RUNNER_UP">🥈 Runner-Up</option>
+                              <option value="SECOND_RUNNER_UP">🥉 2nd Runner-Up</option>
+                              <option value="SPECIAL_RECOGNITION">⭐ Special Recognition</option>
+                              <option value="PARTICIPANT">✅ Participant</option>
+                              <option value="NO_CERTIFICATE">❌ No Certificate</option>
+                            </select>
+                          </td>
+                          <td>
+                            <input type="number" className="form-input" style={{ width: 70, padding: '3px 8px', fontSize: 12, height: 'auto' }}
+                              placeholder="Score" value={edit.score}
+                              onChange={e => setResultEdits(prev => ({ ...prev, [p.studentId]: { ...edit, score: e.target.value } }))} />
+                          </td>
+                          <td>
+                            <button onClick={() => handleSaveResult(p.studentId)}
+                              className="btn btn-primary" style={{ padding: '4px 12px', fontSize: 12 }} disabled={submitting}>
+                              Save
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                    {participants.length === 0 && (
+                      <tr><td colSpan={5} style={{ textAlign: 'center', padding: 24, color: '#94a3b8' }}>No participants to record results.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        </div>
+        )}
       </Modal>
     </div>
   )

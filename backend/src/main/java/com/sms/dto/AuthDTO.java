@@ -38,6 +38,8 @@ public class AuthDTO {
         private Integer semester;
         private String section;
         private String designation;
+        private String profilePhoto;
+        private Boolean forcePasswordChange;
     }
 
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor

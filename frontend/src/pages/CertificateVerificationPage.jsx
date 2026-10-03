@@ -148,13 +148,15 @@ export default function CertificateVerificationPage() {
                 </div>
               </div>
 
-              <button
-                onClick={() => downloadCertificatePDF(cert)}
+              <a
+                href={`/api/certificates/${cert.certificateId}/download`}
+                target="_blank"
+                rel="noreferrer"
                 className="btn btn-primary"
-                style={{ gap: 6, fontSize: 13 }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, textDecoration: 'none' }}
               >
                 <Download size={16} /> Download Official PDF
-              </button>
+              </a>
             </div>
 
             {/* Certificate Details Card */}

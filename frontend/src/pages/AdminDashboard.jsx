@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import Layout from '../components/common/Layout'
 import {
@@ -9,8 +9,10 @@ import {
   LayoutDashboard, GraduationCap, Users, BookOpen,
   Calendar, Award, Bell, BarChart2, Shield, Plus,
   Trash2, Edit2, Search, CheckCircle, AlertTriangle,
-  Clock, Eye, UserPlus, Filter, Download
+  Clock, Eye, UserPlus, Filter, Download, FileText,
+  X, Star, Medal, Trophy, UserCheck, RefreshCw, Copy, KeyRound
 } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 import { toast } from '../components/Toast'
 import { Modal, ConfirmModal } from '../components/Modal'
 import { Spinner, TableSkeleton } from '../components/Loading'
@@ -236,6 +238,34 @@ function StudentsPanel() {
     }
   }
 
+  const [resetTarget, setResetTarget] = useState(null)
+  const [resetPasswordVal, setResetPasswordVal] = useState('student123')
+  const [forceChange, setForceChange] = useState(true)
+  const [resetting, setResetting] = useState(false)
+
+  const handleAdminResetPassword = async (e) => {
+    e.preventDefault()
+    if (!resetPasswordVal || resetPasswordVal.length < 8) {
+      toast.error('Password must be at least 8 characters long.')
+      return
+    }
+    setResetting(true)
+    try {
+      await adminService.resetUserPassword(resetTarget.id, {
+        newPassword: resetPasswordVal,
+        confirmPassword: resetPasswordVal,
+        forceChangeOnNextLogin: forceChange
+      })
+      toast.success(`Password for ${resetTarget.name} reset successfully!`)
+      setResetTarget(null)
+      setResetPasswordVal('student123')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to reset password.')
+    } finally {
+      setResetting(false)
+    }
+  }
+
   const handleToggle = async (id) => {
     try {
       await adminService.toggleStudentStatus(id)
@@ -341,6 +371,13 @@ function StudentsPanel() {
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <button
+                      onClick={() => { setResetTarget(s); setResetPasswordVal('student123'); }}
+                      style={{ background: 'none', border: 'none', color: '#d97706', cursor: 'pointer', padding: 6, marginRight: 4 }}
+                      title="Reset student password"
+                    >
+                      <KeyRound size={16} />
+                    </button>
+                    <button
                       onClick={() => setDeleteTarget(s)}
                       style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', padding: 6 }}
                       title="Delete student"
@@ -425,6 +462,62 @@ function StudentsPanel() {
         confirmText="Delete Student"
         danger
       />
+
+      {/* Admin Reset Student Password Modal */}
+      <Modal
+        isOpen={Boolean(resetTarget)}
+        onClose={() => setResetTarget(null)}
+        title={`Reset Password: ${resetTarget?.name}`}
+        size="sm"
+      >
+        <form onSubmit={handleAdminResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>
+            Set a new temporary or permanent password for student <strong>{resetTarget?.rollNumber}</strong> ({resetTarget?.email}).
+          </p>
+
+          <div className="form-group">
+            <label className="form-label">New Password * (Min 8 chars)</label>
+            <input
+              type="text"
+              className="form-input"
+              value={resetPasswordVal}
+              onChange={e => setResetPasswordVal(e.target.value)}
+              required
+              minLength={8}
+              placeholder="e.g. student123"
+            />
+          </div>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#334155', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={forceChange}
+              onChange={e => setForceChange(e.target.checked)}
+            />
+            <span>Force student to change password on next login</span>
+          </label>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => setResetTarget(null)}
+              disabled={resetting}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={resetting}
+              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              <KeyRound size={15} />
+              {resetting ? 'Resetting…' : 'Reset Password'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   )
 }
@@ -436,6 +529,10 @@ function FacultyPanel() {
   const [faculty, setFaculty] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
+  const [resetTarget, setResetTarget] = useState(null)
+  const [resetPasswordVal, setResetPasswordVal] = useState('faculty123')
+  const [forceChange, setForceChange] = useState(true)
+  const [resetting, setResetting] = useState(false)
   const [form, setForm] = useState({
     name: '', email: '', password: 'faculty123', department: 'Computer Science & Engineering',
     designation: 'Assistant Professor', facultyId: '', mobileNumber: ''
@@ -450,6 +547,39 @@ function FacultyPanel() {
   }
 
   useEffect(() => { loadFaculty() }, [])
+
+  const handleAdminResetPassword = async (e) => {
+    e.preventDefault()
+    if (!resetPasswordVal || resetPasswordVal.length < 8) {
+      toast.error('Password must be at least 8 characters long.')
+      return
+    }
+    setResetting(true)
+    try {
+      await adminService.resetUserPassword(resetTarget.id, {
+        newPassword: resetPasswordVal,
+        confirmPassword: resetPasswordVal,
+        forceChangeOnNextLogin: forceChange
+      })
+      toast.success(`Password for ${resetTarget.name} reset successfully!`)
+      setResetTarget(null)
+      setResetPasswordVal('faculty123')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to reset password.')
+    } finally {
+      setResetting(false)
+    }
+  }
+
+  const handleToggle = async (id) => {
+    try {
+      await adminService.toggleFacultyStatus(id)
+      toast.success('Faculty status updated')
+      loadFaculty()
+    } catch {
+      toast.error('Failed to toggle faculty status')
+    }
+  }
 
   const handleAdd = async (e) => {
     e.preventDefault()
@@ -487,7 +617,7 @@ function FacultyPanel() {
       </div>
 
       {loading ? (
-        <TableSkeleton rows={4} cols={5} />
+        <TableSkeleton rows={4} cols={6} />
       ) : (
         <div className="table-container">
           <table className="data-table">
@@ -498,6 +628,7 @@ function FacultyPanel() {
                 <th>Email</th>
                 <th>Department</th>
                 <th>Status</th>
+                <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -511,9 +642,23 @@ function FacultyPanel() {
                   <td>{f.email}</td>
                   <td>{f.department || '—'}</td>
                   <td>
-                    <span className={`badge ${f.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'}`}>
+                    <button
+                      onClick={() => handleToggle(f.id)}
+                      className={`badge ${f.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'}`}
+                      style={{ cursor: 'pointer', border: 'none' }}
+                      title="Click to toggle status"
+                    >
                       {f.status || 'ACTIVE'}
-                    </span>
+                    </button>
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    <button
+                      onClick={() => { setResetTarget(f); setResetPasswordVal('faculty123'); }}
+                      style={{ background: 'none', border: 'none', color: '#d97706', cursor: 'pointer', padding: 6 }}
+                      title="Reset faculty password"
+                    >
+                      <KeyRound size={16} />
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -563,6 +708,62 @@ function FacultyPanel() {
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
             <button type="button" className="btn btn-ghost" onClick={() => setShowAdd(false)}>Cancel</button>
             <button type="submit" className="btn btn-primary">Save Faculty</button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Admin Reset Faculty Password Modal */}
+      <Modal
+        isOpen={Boolean(resetTarget)}
+        onClose={() => setResetTarget(null)}
+        title={`Reset Password: ${resetTarget?.name}`}
+        size="sm"
+      >
+        <form onSubmit={handleAdminResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>
+            Set a new password for faculty member <strong>{resetTarget?.facultyId || resetTarget?.name}</strong> ({resetTarget?.email}).
+          </p>
+
+          <div className="form-group">
+            <label className="form-label">New Password * (Min 8 chars)</label>
+            <input
+              type="text"
+              className="form-input"
+              value={resetPasswordVal}
+              onChange={e => setResetPasswordVal(e.target.value)}
+              required
+              minLength={8}
+              placeholder="e.g. faculty123"
+            />
+          </div>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#334155', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={forceChange}
+              onChange={e => setForceChange(e.target.checked)}
+            />
+            <span>Force faculty to change password on next login</span>
+          </label>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => setResetTarget(null)}
+              disabled={resetting}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={resetting}
+              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              <KeyRound size={15} />
+              {resetting ? 'Resetting…' : 'Reset Password'}
+            </button>
           </div>
         </form>
       </Modal>
@@ -912,44 +1113,74 @@ function TimetablePanel() {
 }
 
 // =========================================================================
-// 6. Events & Festivals Management
+// 6. Events & Festivals Management (Full-Featured)
 // =========================================================================
+const EVENT_STATUS_COLORS = {
+  DRAFT: { bg: '#f1f5f9', color: '#64748b' },
+  REGISTRATION_OPEN: { bg: '#dcfce7', color: '#16a34a' },
+  REGISTRATION_CLOSED: { bg: '#fef3c7', color: '#d97706' },
+  ONGOING: { bg: '#dbeafe', color: '#2563eb' },
+  COMPLETED: { bg: '#e0e7ff', color: '#7c3aed' },
+  CANCELLED: { bg: '#fee2e2', color: '#dc2626' },
+}
+
+const POSITION_ICONS = {
+  WINNER: <Trophy size={14} style={{ color: '#f59e0b' }} />,
+  RUNNER_UP: <Medal size={14} style={{ color: '#94a3b8' }} />,
+  SECOND_RUNNER_UP: <Medal size={14} style={{ color: '#cd7f32' }} />,
+  SPECIAL_RECOGNITION: <Star size={14} style={{ color: '#8b5cf6' }} />,
+  PARTICIPANT: <UserCheck size={14} style={{ color: '#0ea5e9' }} />,
+  NO_CERTIFICATE: <X size={14} style={{ color: '#dc2626' }} />,
+}
+
 function EventsPanel() {
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState(null)
+  const [activeTab, setActiveTab] = useState('details') // details | coordinators | participants | results | certificates
   const [participants, setParticipants] = useState([])
+  const [coordinators, setCoordinators] = useState([])
+  const [certificates, setCertificates] = useState([])
+  const [allFaculty, setAllFaculty] = useState([])
+  const [assignFacultyId, setAssignFacultyId] = useState('')
+  const [assignRemarks, setAssignRemarks] = useState('')
+  const [resultEdits, setResultEdits] = useState({})
+  const [submitting, setSubmitting] = useState(false)
+  const [statusFilter, setStatusFilter] = useState('ALL')
   const [form, setForm] = useState({
     title: '', description: '', category: 'Technical',
     eventDate: new Date().toISOString().split('T')[0],
     startTime: '09:30', endTime: '17:00',
     venue: 'Main Campus Auditorium, Aditya University',
-    organizer: 'Aditya University Student Council', maxParticipants: 200, rules: ''
+    organizer: 'Aditya University', maxParticipants: 200, rules: ''
   })
 
-  const loadEvents = () => {
+  const loadEvents = useCallback(() => {
     setLoading(true)
     eventService.getAll()
       .then(res => setEvents(res.data || []))
       .catch(() => toast.error('Failed to load events'))
       .finally(() => setLoading(false))
-  }
+  }, [])
 
-  useEffect(() => { loadEvents() }, [])
+  useEffect(() => {
+    loadEvents()
+    adminService.getFaculty().then(res => setAllFaculty(res.data || [])).catch(() => {})
+  }, [loadEvents])
 
   const handleCreate = async (e) => {
     e.preventDefault()
+    setSubmitting(true)
     try {
-      await eventService.create({
-        ...form,
-        maxParticipants: Number(form.maxParticipants)
-      })
+      await eventService.create({ ...form, maxParticipants: Number(form.maxParticipants) })
       toast.success('Event published to university calendar!')
       setShowCreate(false)
       loadEvents()
     } catch (err) {
-      toast.error('Failed to create event')
+      toast.error(err.response?.data?.message || 'Failed to create event')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -958,97 +1189,539 @@ function EventsPanel() {
       await eventService.updateStatus(eventId, status)
       toast.success(`Event status changed to ${status}`)
       loadEvents()
-    } catch {
-      toast.error('Failed to change status')
+      if (selectedEvent?.id === eventId) setSelectedEvent(ev => ({ ...ev, status }))
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to change status')
     }
   }
 
-  const viewParticipants = async (ev) => {
-    setSelectedEvent(ev)
+  const handleDeleteEvent = async (eventId) => {
+    if (!window.confirm('Delete this event? This cannot be undone.')) return
     try {
-      const res = await eventService.getParticipants(ev.id)
-      setParticipants(res.data || [])
-    } catch {
-      toast.error('Failed to load participants')
+      await eventService.delete(eventId)
+      toast.success('Event deleted')
+      loadEvents()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Delete failed')
     }
   }
+
+  const openEventManage = async (ev) => {
+    setSelectedEvent(ev)
+    setActiveTab('details')
+    await loadEventDetails(ev.id)
+  }
+
+  const loadEventDetails = async (eventId) => {
+    try {
+      const [pRes, cRes, certRes] = await Promise.allSettled([
+        eventService.getParticipants(eventId),
+        eventService.getCoordinators(eventId),
+        eventService.getEventCertificates(eventId),
+      ])
+      setParticipants(pRes.status === 'fulfilled' ? pRes.value.data || [] : [])
+      setCoordinators(cRes.status === 'fulfilled' ? cRes.value.data || [] : [])
+      setCertificates(certRes.status === 'fulfilled' ? certRes.value.data || [] : [])
+    } catch {}
+  }
+
+  const handleAssignCoordinator = async () => {
+    if (!assignFacultyId) return toast.error('Select a faculty member')
+    setSubmitting(true)
+    try {
+      await eventService.assignCoordinator(selectedEvent.id, Number(assignFacultyId), assignRemarks)
+      toast.success('Coordinator assigned successfully!')
+      setAssignFacultyId('')
+      setAssignRemarks('')
+      const res = await eventService.getCoordinators(selectedEvent.id)
+      setCoordinators(res.data || [])
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to assign coordinator')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleRemoveCoordinator = async (facultyId) => {
+    try {
+      await eventService.removeCoordinator(selectedEvent.id, facultyId)
+      toast.success('Coordinator removed')
+      setCoordinators(prev => prev.filter(c => c.facultyId !== facultyId))
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to remove coordinator')
+    }
+  }
+
+  const handleMarkAttendance = async (studentId, status) => {
+    try {
+      await eventService.markAttendance(selectedEvent.id, studentId, status)
+      toast.success(`Attendance marked: ${status}`)
+      setParticipants(prev => prev.map(p => p.studentId === studentId ? { ...p, attendanceStatus: status } : p))
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to mark attendance')
+    }
+  }
+
+  const handleSaveResult = async (studentId) => {
+    const data = resultEdits[studentId]
+    if (!data?.position) return toast.error('Select a position')
+    setSubmitting(true)
+    try {
+      await eventService.updateResult(selectedEvent.id, studentId, data)
+      toast.success('Result saved!')
+      const res = await eventService.getParticipants(selectedEvent.id)
+      setParticipants(res.data || [])
+      setResultEdits(prev => { const n = { ...prev }; delete n[studentId]; return n })
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to save result')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleGenerateCertificate = async (participant) => {
+    const certType = participant.resultPosition === 'WINNER' ? 'WINNER'
+      : participant.resultPosition === 'RUNNER_UP' ? 'RUNNER_UP'
+      : participant.resultPosition === 'SECOND_RUNNER_UP' ? 'SECOND_RUNNER_UP'
+      : participant.resultPosition === 'SPECIAL_RECOGNITION' ? 'SPECIAL_RECOGNITION'
+      : 'PARTICIPATION'
+    try {
+      await eventService.generateCertificate(selectedEvent.id, {
+        studentId: participant.studentId,
+        certificateType: certType,
+        position: participant.resultPosition,
+      })
+      toast.success(`Certificate generated for ${participant.studentName}`)
+      const res = await eventService.getEventCertificates(selectedEvent.id)
+      setCertificates(res.data || [])
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Certificate generation failed')
+    }
+  }
+
+  const filtered = statusFilter === 'ALL' ? events : events.filter(e => e.status === statusFilter)
+
+  const TAB_STYLE = (active) => ({
+    padding: '8px 18px', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600,
+    fontSize: 13, transition: 'all 0.2s',
+    background: active ? '#2563eb' : 'transparent',
+    color: active ? '#fff' : '#64748b',
+  })
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* Header */}
       <div className="section-header">
         <div>
           <h2 className="section-title">Campus Events & Technical Symposia</h2>
-          <p style={{ fontSize: 13, color: '#64748b' }}>Conferences, hackathons, workshops, and cultural fests</p>
+          <p style={{ fontSize: 13, color: '#64748b' }}>Manage events, coordinators, participants, results, and certificates</p>
         </div>
-        <button onClick={() => setShowCreate(true)} className="btn btn-primary">
-          <Plus size={16} /> Create Campus Event
-        </button>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <select className="form-select" style={{ width: 180 }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+            <option value="ALL">All Statuses</option>
+            <option value="DRAFT">Draft</option>
+            <option value="REGISTRATION_OPEN">Registration Open</option>
+            <option value="REGISTRATION_CLOSED">Registration Closed</option>
+            <option value="ONGOING">Ongoing</option>
+            <option value="COMPLETED">Completed</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
+          <button onClick={() => setShowCreate(true)} className="btn btn-primary">
+            <Plus size={16} /> Create Event
+          </button>
+        </div>
       </div>
 
-      <div className="grid-3">
-        {events.map(ev => (
-          <div key={ev.id} className="card card-hover" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span className="badge badge-purple">{ev.category || 'General'}</span>
-              <span className={`badge ${ev.status === 'REGISTRATION_OPEN' ? 'badge-success' : 'badge-neutral'}`}>
-                {ev.status}
-              </span>
+      {/* Events Grid */}
+      {loading ? <TableSkeleton rows={3} cols={3} /> : (
+        <div className="grid-3">
+          {filtered.map(ev => {
+            const sc = EVENT_STATUS_COLORS[ev.status] || EVENT_STATUS_COLORS.DRAFT
+            return (
+              <div key={ev.id} className="card card-hover" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span className="badge badge-purple">{ev.category || 'General'}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 6, padding: '2px 8px', background: sc.bg, color: sc.color }}>
+                    {ev.status?.replace('_', ' ')}
+                  </span>
+                </div>
+                <h4 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: 0 }}>{ev.title}</h4>
+                <p style={{ fontSize: 13, color: '#64748b', margin: 0, lineHeight: 1.5, flex: 1 }}>
+                  {ev.description?.slice(0, 100)}{ev.description?.length > 100 ? '…' : ''}
+                </p>
+                <div style={{ fontSize: 12, color: '#94a3b8', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <span>📅 {formatDate(ev.eventDate)}</span>
+                  <span>📍 {ev.venue}</span>
+                  <span>👥 {ev.participantCount || 0} / {ev.maxParticipants || '∞'} registered</span>
+                </div>
+                <div style={{ display: 'flex', gap: 8, paddingTop: 10, borderTop: '1px solid #f1f5f9', flexWrap: 'wrap' }}>
+                  <button onClick={() => openEventManage(ev)} className="btn btn-ghost btn-sm" style={{ flex: 1 }}>
+                    <Eye size={14} /> Manage
+                  </button>
+                  {ev.status === 'DRAFT' && (
+                    <button onClick={() => handleStatusChange(ev.id, 'REGISTRATION_OPEN')} className="btn btn-ghost btn-sm" style={{ color: '#16a34a' }}>
+                      Publish
+                    </button>
+                  )}
+                  {ev.status === 'REGISTRATION_OPEN' && (
+                    <button onClick={() => handleStatusChange(ev.id, 'COMPLETED')} className="btn btn-ghost btn-sm" style={{ color: '#7c3aed' }}>
+                      Complete
+                    </button>
+                  )}
+                  <button onClick={() => handleDeleteEvent(ev.id)} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', padding: '4px 8px' }}>
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+          {filtered.length === 0 && (
+            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: 48, color: '#94a3b8' }}>
+              <Award size={40} style={{ opacity: 0.3, marginBottom: 12 }} />
+              <p>No events found. Create your first campus event!</p>
             </div>
-            <h4 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: 0 }}>{ev.title}</h4>
-            <p style={{ fontSize: 13, color: '#64748b', margin: 0, lineHeight: 1.5, flex: 1 }}>{ev.description}</p>
-            <div style={{ fontSize: 12, color: '#94a3b8', display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span>📅 {formatDate(ev.eventDate)} ({ev.startTime || '09:00'})</span>
-              <span>📍 {ev.venue || 'Aditya University Campus'}</span>
-              <span>👥 {ev.registeredCount || 0} registered / {ev.maxParticipants || 100} slots</span>
-            </div>
-            <div style={{ display: 'flex', gap: 8, paddingTop: 10, borderTop: '1px solid #f1f5f9' }}>
-              <button onClick={() => viewParticipants(ev)} className="btn btn-ghost btn-sm" style={{ flex: 1 }}>
-                <Eye size={14} /> Participants
-              </button>
-              {ev.status === 'REGISTRATION_OPEN' && (
-                <button onClick={() => handleStatusChange(ev.id, 'COMPLETED')} className="btn btn-ghost btn-sm" style={{ color: '#0f766e' }}>
-                  Mark Complete
+          )}
+        </div>
+      )}
+
+      {/* ========================= Event Management Modal ========================= */}
+      <Modal isOpen={Boolean(selectedEvent)} onClose={() => { setSelectedEvent(null); setResultEdits({}) }}
+        title={selectedEvent?.title || 'Manage Event'} size="xl">
+        {selectedEvent && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Tabs */}
+            <div style={{ display: 'flex', gap: 4, background: '#f8fafc', borderRadius: 10, padding: 4, flexWrap: 'wrap' }}>
+              {[
+                { key: 'details', label: 'Event Info', icon: <Award size={14} /> },
+                { key: 'coordinators', label: `Coordinators (${coordinators.length})`, icon: <Users size={14} /> },
+                { key: 'participants', label: `Participants (${participants.length})`, icon: <UserCheck size={14} /> },
+                { key: 'results', label: 'Results', icon: <Trophy size={14} /> },
+                { key: 'certificates', label: `Certificates (${certificates.length})`, icon: <FileText size={14} /> },
+              ].map(t => (
+                <button key={t.key} onClick={() => setActiveTab(t.key)} style={TAB_STYLE(activeTab === t.key)}>
+                  {t.icon} {t.label}
                 </button>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Participants Modal */}
-      <Modal isOpen={Boolean(selectedEvent)} onClose={() => setSelectedEvent(null)} title={`${selectedEvent?.title} — Registered Participants`} size="lg">
-        <div className="table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Student Name</th>
-                <th>Roll Number</th>
-                <th>Department</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {participants.map(p => (
-                <tr key={p.id}>
-                  <td><strong>{p.studentName}</strong></td>
-                  <td>{p.studentRollNumber || '—'}</td>
-                  <td>{p.department || '—'}</td>
-                  <td><span className="badge badge-success">{p.status || 'REGISTERED'}</span></td>
-                </tr>
               ))}
-              {participants.length === 0 && (
-                <tr>
-                  <td colSpan={4} style={{ textAlign: 'center', padding: 24, color: '#94a3b8' }}>
-                    No students registered for this event yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+            </div>
+
+            {/* ---- Details Tab ---- */}
+            {activeTab === 'details' && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={{ gridColumn: '1/-1' }}>
+                  <div style={{ background: '#f8fafc', borderRadius: 12, padding: 16, display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: 200 }}>
+                      <p style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', margin: '0 0 6px' }}>Event Code</p>
+                      <p style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', margin: 0 }}>{selectedEvent.eventCode || '—'}</p>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 200 }}>
+                      <p style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', margin: '0 0 6px' }}>Category</p>
+                      <p style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', margin: 0 }}>{selectedEvent.category}</p>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 200 }}>
+                      <p style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', margin: '0 0 6px' }}>Status</p>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        {['DRAFT', 'REGISTRATION_OPEN', 'REGISTRATION_CLOSED', 'ONGOING', 'COMPLETED', 'CANCELLED'].map(s => (
+                          <button key={s} onClick={() => handleStatusChange(selectedEvent.id, s)}
+                            style={{
+                              fontSize: 11, padding: '3px 10px', borderRadius: 6, border: '1.5px solid', cursor: 'pointer', fontWeight: 700,
+                              background: selectedEvent.status === s ? '#2563eb' : 'transparent',
+                              color: selectedEvent.status === s ? '#fff' : '#64748b',
+                              borderColor: selectedEvent.status === s ? '#2563eb' : '#e2e8f0',
+                            }}>
+                            {s.replace('_', ' ')}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {[
+                  { label: 'Date', value: formatDate(selectedEvent.eventDate) },
+                  { label: 'Time', value: `${selectedEvent.startTime || '—'} – ${selectedEvent.endTime || '—'}` },
+                  { label: 'Venue', value: selectedEvent.venue },
+                  { label: 'Organizer', value: selectedEvent.organizer },
+                  { label: 'Max Participants', value: selectedEvent.maxParticipants },
+                  { label: 'Registered', value: selectedEvent.participantCount || 0 },
+                ].map(item => (
+                  <div key={item.label} style={{ background: '#f8fafc', borderRadius: 10, padding: '12px 16px' }}>
+                    <p style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', margin: '0 0 4px' }}>{item.label}</p>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: '#0f172a', margin: 0 }}>{item.value || '—'}</p>
+                  </div>
+                ))}
+                <div style={{ gridColumn: '1/-1', background: '#f8fafc', borderRadius: 10, padding: '12px 16px' }}>
+                  <p style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', margin: '0 0 4px' }}>Description</p>
+                  <p style={{ fontSize: 14, color: '#334155', margin: 0, lineHeight: 1.7 }}>{selectedEvent.description || '—'}</p>
+                </div>
+                {selectedEvent.rules && (
+                  <div style={{ gridColumn: '1/-1', background: '#fffbeb', borderRadius: 10, padding: '12px 16px', borderLeft: '4px solid #d97706' }}>
+                    <p style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', margin: '0 0 4px' }}>Rules & Guidelines</p>
+                    <p style={{ fontSize: 13, color: '#334155', margin: 0, lineHeight: 1.6 }}>{selectedEvent.rules}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ---- Coordinators Tab ---- */}
+            {activeTab === 'coordinators' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {/* Assign Coordinator Form */}
+                <div style={{ background: '#f0f9ff', borderRadius: 12, padding: 16, border: '1px solid #bae6fd' }}>
+                  <h4 style={{ fontSize: 14, fontWeight: 700, color: '#0369a1', margin: '0 0 12px' }}>
+                    <UserPlus size={16} style={{ verticalAlign: 'middle', marginRight: 6 }} />
+                    Assign Faculty Coordinator
+                  </h4>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                    <div className="form-group" style={{ flex: '1 1 200px', margin: 0 }}>
+                      <label className="form-label">Faculty Member</label>
+                      <select className="form-select" value={assignFacultyId} onChange={e => setAssignFacultyId(e.target.value)}>
+                        <option value="">-- Select Faculty --</option>
+                        {allFaculty.filter(f => !coordinators.some(c => c.facultyId === f.id)).map(f => (
+                          <option key={f.id} value={f.id}>{f.name} ({f.designation || 'Faculty'})</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-group" style={{ flex: '1 1 200px', margin: 0 }}>
+                      <label className="form-label">Remarks (optional)</label>
+                      <input className="form-input" value={assignRemarks} onChange={e => setAssignRemarks(e.target.value)} placeholder="e.g. Lead Coordinator" />
+                    </div>
+                    <button onClick={handleAssignCoordinator} className="btn btn-primary" disabled={submitting}>
+                      <Plus size={14} /> Assign
+                    </button>
+                  </div>
+                </div>
+
+                {/* Coordinators List */}
+                <div className="table-container">
+                  <table className="data-table">
+                    <thead><tr>
+                      <th>Faculty Name</th><th>Designation</th><th>Department</th>
+                      <th>Remarks</th><th>Assigned</th><th>Actions</th>
+                    </tr></thead>
+                    <tbody>
+                      {coordinators.map(c => (
+                        <tr key={c.id}>
+                          <td><strong>{c.facultyName}</strong><br /><span style={{ fontSize: 11, color: '#94a3b8' }}>{c.facultyEmail}</span></td>
+                          <td>{c.facultyDesignation || '—'}</td>
+                          <td>{c.facultyDepartment || '—'}</td>
+                          <td><span style={{ fontSize: 12 }}>{c.remarks || '—'}</span></td>
+                          <td style={{ fontSize: 11, color: '#64748b' }}>{formatDate(c.assignedAt)}</td>
+                          <td>
+                            <button onClick={() => handleRemoveCoordinator(c.facultyId)}
+                              style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', padding: 4 }}>
+                              <Trash2 size={14} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {coordinators.length === 0 && (
+                        <tr><td colSpan={6} style={{ textAlign: 'center', padding: 24, color: '#94a3b8' }}>
+                          No coordinators assigned yet.
+                        </td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* ---- Participants Tab ---- */}
+            {activeTab === 'participants' && (
+              <div className="table-container">
+                <table className="data-table">
+                  <thead><tr>
+                    <th>Student</th><th>Roll No.</th><th>Department</th>
+                    <th>Semester</th><th>Registered</th><th>Attendance</th>
+                  </tr></thead>
+                  <tbody>
+                    {participants.map(p => (
+                      <tr key={p.id}>
+                        <td><strong>{p.studentName}</strong></td>
+                        <td>{p.rollNumber || '—'}</td>
+                        <td>{p.department || '—'}</td>
+                        <td>{p.semester || '—'}</td>
+                        <td style={{ fontSize: 11, color: '#64748b' }}>{formatDate(p.registeredAt)}</td>
+                        <td>
+                          <div style={{ display: 'flex', gap: 4 }}>
+                            {['PRESENT', 'ABSENT'].map(s => (
+                              <button key={s} onClick={() => handleMarkAttendance(p.studentId, s)}
+                                style={{
+                                  fontSize: 11, padding: '2px 8px', borderRadius: 6, border: '1.5px solid',
+                                  cursor: 'pointer', fontWeight: 700,
+                                  background: p.attendanceStatus === s ? (s === 'PRESENT' ? '#16a34a' : '#dc2626') : 'transparent',
+                                  color: p.attendanceStatus === s ? '#fff' : '#64748b',
+                                  borderColor: p.attendanceStatus === s ? (s === 'PRESENT' ? '#16a34a' : '#dc2626') : '#e2e8f0',
+                                }}>{s}</button>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {participants.length === 0 && (
+                      <tr><td colSpan={6} style={{ textAlign: 'center', padding: 24, color: '#94a3b8' }}>
+                        No participants registered.
+                      </td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* ---- Results Tab ---- */}
+            {activeTab === 'results' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ background: '#f0f9ff', borderRadius: 10, padding: '10px 16px', fontSize: 13, color: '#0369a1' }}>
+                  💡 Assign positions to participants. WINNER / RUNNER_UP / SECOND_RUNNER_UP / SPECIAL_RECOGNITION / PARTICIPANT / NO_CERTIFICATE
+                </div>
+                <div className="table-container">
+                  <table className="data-table">
+                    <thead><tr>
+                      <th>Student</th><th>Attendance</th><th>Position</th><th>Score</th><th>Remarks</th><th>Save</th>
+                    </tr></thead>
+                    <tbody>
+                      {participants.map(p => {
+                        const edit = resultEdits[p.studentId] || { position: p.resultPosition || '', score: p.score || '', remarks: '' }
+                        const isEditing = Boolean(resultEdits[p.studentId])
+                        return (
+                          <tr key={p.id}>
+                            <td>
+                              <strong>{p.studentName}</strong><br />
+                              <span style={{ fontSize: 11, color: '#94a3b8' }}>{p.rollNumber}</span>
+                            </td>
+                            <td>
+                              <span style={{ fontSize: 12, color: p.attendanceStatus === 'PRESENT' ? '#16a34a' : '#94a3b8' }}>
+                                {p.attendanceStatus || 'Not marked'}
+                              </span>
+                            </td>
+                            <td>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                {POSITION_ICONS[p.resultPosition]}
+                                <select className="form-select" style={{ padding: '3px 8px', fontSize: 12, height: 'auto' }}
+                                  value={edit.position}
+                                  onChange={e => setResultEdits(prev => ({ ...prev, [p.studentId]: { ...edit, position: e.target.value } }))}>
+                                  <option value="">-- Select --</option>
+                                  <option value="WINNER">🏆 Winner</option>
+                                  <option value="RUNNER_UP">🥈 Runner-Up</option>
+                                  <option value="SECOND_RUNNER_UP">🥉 2nd Runner-Up</option>
+                                  <option value="SPECIAL_RECOGNITION">⭐ Special Recognition</option>
+                                  <option value="PARTICIPANT">✅ Participant</option>
+                                  <option value="NO_CERTIFICATE">❌ No Certificate</option>
+                                </select>
+                              </div>
+                            </td>
+                            <td>
+                              <input type="number" className="form-input" style={{ width: 70, padding: '3px 8px', fontSize: 12, height: 'auto' }}
+                                placeholder="Score" value={edit.score}
+                                onChange={e => setResultEdits(prev => ({ ...prev, [p.studentId]: { ...edit, score: e.target.value } }))} />
+                            </td>
+                            <td>
+                              <input className="form-input" style={{ width: 120, padding: '3px 8px', fontSize: 12, height: 'auto' }}
+                                placeholder="Remarks" value={edit.remarks}
+                                onChange={e => setResultEdits(prev => ({ ...prev, [p.studentId]: { ...edit, remarks: e.target.value } }))} />
+                            </td>
+                            <td>
+                              <button onClick={() => handleSaveResult(p.studentId)}
+                                className="btn btn-primary" style={{ padding: '4px 12px', fontSize: 12 }} disabled={submitting}>
+                                <CheckCircle size={12} /> Save
+                              </button>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                      {participants.length === 0 && (
+                        <tr><td colSpan={6} style={{ textAlign: 'center', padding: 24, color: '#94a3b8' }}>
+                          No participants to record results for.
+                        </td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* ---- Certificates Tab ---- */}
+            {activeTab === 'certificates' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ background: '#f0fdf4', borderRadius: 10, padding: '10px 16px', fontSize: 13, color: '#166534', border: '1px solid #bbf7d0' }}>
+                  ✅ Generate certificates for participants who have result positions assigned. Download links open as PDFs.
+                </div>
+                {/* Generate from participants */}
+                <div>
+                  <h4 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', margin: '0 0 10px' }}>Generate Certificates</h4>
+                  <div className="table-container">
+                    <table className="data-table">
+                      <thead><tr><th>Student</th><th>Position</th><th>Already Generated</th><th>Action</th></tr></thead>
+                      <tbody>
+                        {participants.filter(p => p.resultPosition && p.resultPosition !== 'NO_CERTIFICATE').map(p => {
+                          const existing = certificates.find(c => c.studentId === p.studentId)
+                          return (
+                            <tr key={p.id}>
+                              <td><strong>{p.studentName}</strong><br /><span style={{ fontSize: 11, color: '#94a3b8' }}>{p.rollNumber}</span></td>
+                              <td><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>{POSITION_ICONS[p.resultPosition]}<span style={{ fontSize: 13 }}>{p.resultPosition?.replace('_', ' ')}</span></div></td>
+                              <td>
+                                {existing ? (
+                                  <span className="badge badge-success">Generated</span>
+                                ) : (
+                                  <span className="badge badge-neutral">Not yet</span>
+                                )}
+                              </td>
+                              <td style={{ display: 'flex', gap: 6 }}>
+                                {existing ? (
+                                  <a href={`/api/certificates/${existing.certificateId}/download`} target="_blank" rel="noreferrer"
+                                    className="btn btn-ghost btn-sm" style={{ color: '#2563eb' }}>
+                                    <Download size={14} /> Download PDF
+                                  </a>
+                                ) : (
+                                  <button onClick={() => handleGenerateCertificate(p)} className="btn btn-primary" style={{ padding: '4px 12px', fontSize: 12 }}>
+                                    <FileText size={12} /> Generate
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                        {participants.filter(p => p.resultPosition && p.resultPosition !== 'NO_CERTIFICATE').length === 0 && (
+                          <tr><td colSpan={4} style={{ textAlign: 'center', padding: 24, color: '#94a3b8' }}>
+                            Assign results first to enable certificate generation.
+                          </td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Issued Certificates */}
+                {certificates.length > 0 && (
+                  <div>
+                    <h4 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', margin: '0 0 10px' }}>All Issued Certificates ({certificates.length})</h4>
+                    <div className="table-container">
+                      <table className="data-table">
+                        <thead><tr><th>Certificate ID</th><th>Student</th><th>Type</th><th>Status</th><th>Issued</th><th>Actions</th></tr></thead>
+                        <tbody>
+                          {certificates.map(c => (
+                            <tr key={c.id}>
+                              <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{c.certificateId}</td>
+                              <td><strong>{c.studentName}</strong></td>
+                              <td><span className="badge badge-purple">{c.certificateType?.replace('_', ' ')}</span></td>
+                              <td><span className={`badge ${c.status === 'VALID' ? 'badge-success' : 'badge-danger'}`}>{c.status}</span></td>
+                              <td style={{ fontSize: 11, color: '#64748b' }}>{formatDate(c.generatedAt)}</td>
+                              <td>
+                                <a href={`/api/certificates/${c.certificateId}/download`} target="_blank" rel="noreferrer"
+                                  className="btn btn-ghost btn-sm"><Download size={14} /> PDF</a>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </Modal>
 
-      {/* Create Event Modal */}
+      {/* ========================= Create Event Modal ========================= */}
       <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Publish New Campus Event" size="md">
         <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className="form-group">
@@ -1064,6 +1737,8 @@ function EventsPanel() {
                 <option value="Cultural">Cultural</option>
                 <option value="Sports">Sports</option>
                 <option value="Seminar">Seminar</option>
+                <option value="Hackathon">Hackathon</option>
+                <option value="Symposium">Symposium</option>
               </select>
             </div>
             <div className="form-group">
@@ -1083,13 +1758,29 @@ function EventsPanel() {
             <label className="form-label">Venue</label>
             <input className="form-input" value={form.venue} onChange={e => setForm({...form, venue: e.target.value})} required />
           </div>
+          <div className="grid-2">
+            <div className="form-group">
+              <label className="form-label">Organizer</label>
+              <input className="form-input" value={form.organizer} onChange={e => setForm({...form, organizer: e.target.value})} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Max Participants</label>
+              <input className="form-input" type="number" value={form.maxParticipants} onChange={e => setForm({...form, maxParticipants: e.target.value})} />
+            </div>
+          </div>
           <div className="form-group">
-            <label className="form-label">Description</label>
-            <textarea className="form-textarea" value={form.description} onChange={e => setForm({...form, description: e.target.value})} required />
+            <label className="form-label">Description *</label>
+            <textarea className="form-textarea" rows={3} value={form.description} onChange={e => setForm({...form, description: e.target.value})} required placeholder="Describe the event..." />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Rules & Guidelines</label>
+            <textarea className="form-textarea" rows={2} value={form.rules} onChange={e => setForm({...form, rules: e.target.value})} placeholder="Optional event rules..." />
           </div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
             <button type="button" className="btn btn-ghost" onClick={() => setShowCreate(false)}>Cancel</button>
-            <button type="submit" className="btn btn-primary">Publish Event</button>
+            <button type="submit" className="btn btn-primary" disabled={submitting}>
+              {submitting ? <Spinner size={14} /> : <Plus size={14} />} Publish Event
+            </button>
           </div>
         </form>
       </Modal>
@@ -1299,6 +1990,359 @@ function AuditLogsPanel() {
 }
 
 // =========================================================================
+// 8. Certificate Templates Management
+// =========================================================================
+function CertificatesPanel() {
+  const [templates, setTemplates] = useState([])
+  const [certificates, setCertificates] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [activeSubTab, setActiveSubTab] = useState('templates') // templates | records
+  const [showCreate, setShowCreate] = useState(false)
+  const [editTemplate, setEditTemplate] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [defaultTemplate, setDefaultTemplate] = useState({
+    name: '', templateType: 'PARTICIPATION',
+    title: 'Certificate of Participation',
+    subtitle: 'This is to certify that',
+    collegeName: 'Aditya University',
+    description: 'has participated in the event organized by Aditya University',
+    borderStyle: 'CLASSIC', borderWidth: 2, borderColor: '#1e3a8a',
+    fontFamily: 'Times New Roman', fontSize: 14, fontWeight: 'normal',
+    textAlignment: 'center', textColor: '#1a1a1a',
+    primaryColor: '#1e3a8a', secondaryColor: '#d97706',
+    backgroundColor: '#ffffff',
+    signatoryTitle: 'Principal', signatoryName: 'Dr. Name',
+    signatory2Title: 'HOD', signatory2Name: 'Dr. Name',
+    bodyTemplate: 'has successfully participated in {eventName} held on {eventDate} at {venue}.',
+  })
+  const [form, setForm] = useState({ ...defaultTemplate })
+
+  const loadData = useCallback(() => {
+    setLoading(true)
+    Promise.allSettled([
+      certificateService.getTemplates(),
+      certificateService.getAll(),
+    ]).then(([tRes, cRes]) => {
+      setTemplates(tRes.status === 'fulfilled' ? tRes.value.data || [] : [])
+      setCertificates(cRes.status === 'fulfilled' ? cRes.value.data || [] : [])
+    }).finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => { loadData() }, [loadData])
+
+  const handleCreate = async (e) => {
+    e.preventDefault()
+    setSubmitting(true)
+    try {
+      await certificateService.createTemplate(form)
+      toast.success('Certificate template created!')
+      setShowCreate(false)
+      setForm({ ...defaultTemplate })
+      loadData()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to create template')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleUpdate = async (e) => {
+    e.preventDefault()
+    setSubmitting(true)
+    try {
+      await certificateService.updateTemplate(editTemplate.id, form)
+      toast.success('Template updated!')
+      setEditTemplate(null)
+      loadData()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update template')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handlePublish = async (id) => {
+    try {
+      await certificateService.publishTemplate(id)
+      toast.success('Template published!')
+      loadData()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to publish')
+    }
+  }
+
+  const handleDuplicate = async (id) => {
+    try {
+      await certificateService.duplicateTemplate(id)
+      toast.success('Template duplicated!')
+      loadData()
+    } catch (err) {
+      toast.error('Failed to duplicate')
+    }
+  }
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this template?')) return
+    try {
+      await certificateService.deleteTemplate(id)
+      toast.success('Template deleted')
+      loadData()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Cannot delete published template')
+    }
+  }
+
+  const handleRevoke = async (id) => {
+    const reason = prompt('Enter revocation reason:')
+    if (!reason) return
+    try {
+      await certificateService.revoke(id, reason)
+      toast.success('Certificate revoked')
+      loadData()
+    } catch (err) {
+      toast.error('Failed to revoke')
+    }
+  }
+
+  const TAB_STYLE = (active) => ({
+    padding: '8px 20px', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600,
+    fontSize: 13, transition: 'all 0.2s',
+    background: active ? '#2563eb' : 'transparent',
+    color: active ? '#fff' : '#64748b',
+  })
+
+  const TemplateForm = ({ onSubmit, title }) => (
+    <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div className="grid-2">
+        <div className="form-group">
+          <label className="form-label">Template Name *</label>
+          <input className="form-input" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required placeholder="e.g. Participation Certificate 2026" />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Certificate Type</label>
+          <select className="form-select" value={form.templateType} onChange={e => setForm({...form, templateType: e.target.value})}>
+            <option value="PARTICIPATION">Participation</option>
+            <option value="WINNER">Winner</option>
+            <option value="RUNNER_UP">Runner Up</option>
+            <option value="ACHIEVEMENT">Achievement</option>
+            <option value="SPECIAL_RECOGNITION">Special Recognition</option>
+          </select>
+        </div>
+        <div className="form-group">
+          <label className="form-label">Certificate Title</label>
+          <input className="form-input" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
+        </div>
+        <div className="form-group">
+          <label className="form-label">College Name</label>
+          <input className="form-input" value={form.collegeName} onChange={e => setForm({...form, collegeName: e.target.value})} />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Primary Color</label>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <input type="color" value={form.primaryColor} onChange={e => setForm({...form, primaryColor: e.target.value})} style={{ width: 40, height: 36, border: 'none', borderRadius: 6, cursor: 'pointer' }} />
+            <input className="form-input" value={form.primaryColor} onChange={e => setForm({...form, primaryColor: e.target.value})} placeholder="#1e3a8a" style={{ flex: 1 }} />
+          </div>
+        </div>
+        <div className="form-group">
+          <label className="form-label">Secondary Color</label>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <input type="color" value={form.secondaryColor} onChange={e => setForm({...form, secondaryColor: e.target.value})} style={{ width: 40, height: 36, border: 'none', borderRadius: 6, cursor: 'pointer' }} />
+            <input className="form-input" value={form.secondaryColor} onChange={e => setForm({...form, secondaryColor: e.target.value})} placeholder="#d97706" style={{ flex: 1 }} />
+          </div>
+        </div>
+        <div className="form-group">
+          <label className="form-label">Signatory 1 Name</label>
+          <input className="form-input" value={form.signatoryName} onChange={e => setForm({...form, signatoryName: e.target.value})} placeholder="Dr. Principal Name" />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Signatory 1 Title</label>
+          <input className="form-input" value={form.signatoryTitle} onChange={e => setForm({...form, signatoryTitle: e.target.value})} placeholder="Principal" />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Signatory 2 Name</label>
+          <input className="form-input" value={form.signatory2Name} onChange={e => setForm({...form, signatory2Name: e.target.value})} placeholder="Dr. HOD Name" />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Signatory 2 Title</label>
+          <input className="form-input" value={form.signatory2Title} onChange={e => setForm({...form, signatory2Title: e.target.value})} placeholder="Head of Department" />
+        </div>
+      </div>
+      <div className="form-group">
+        <label className="form-label">Body Text Template</label>
+        <textarea className="form-textarea" rows={2} value={form.bodyTemplate}
+          onChange={e => setForm({...form, bodyTemplate: e.target.value})}
+          placeholder="Use {studentName}, {eventName}, {eventDate}, {venue}, {position} as placeholders" />
+        <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>Available placeholders: {'{studentName}'}, {'{eventName}'}, {'{eventDate}'}, {'{venue}'}, {'{position}'}, {'{collegeName}'}</p>
+      </div>
+      <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+        <button type="button" className="btn btn-ghost" onClick={() => { setShowCreate(false); setEditTemplate(null) }}>Cancel</button>
+        <button type="submit" className="btn btn-primary" disabled={submitting}>
+          {submitting ? <Spinner size={14} /> : <CheckCircle size={14} />} {title}
+        </button>
+      </div>
+    </form>
+  )
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div className="section-header">
+        <div>
+          <h2 className="section-title">Certificates & Templates</h2>
+          <p style={{ fontSize: 13, color: '#64748b' }}>Design certificate templates and manage issued certificates</p>
+        </div>
+        {activeSubTab === 'templates' && (
+          <button onClick={() => { setForm({ ...defaultTemplate }); setShowCreate(true) }} className="btn btn-primary">
+            <Plus size={16} /> New Template
+          </button>
+        )}
+      </div>
+
+      {/* Sub-tabs */}
+      <div style={{ display: 'flex', gap: 4, background: '#f8fafc', borderRadius: 10, padding: 4, width: 'fit-content' }}>
+        <button onClick={() => setActiveSubTab('templates')} style={TAB_STYLE(activeSubTab === 'templates')}>
+          <FileText size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />Templates ({templates.length})
+        </button>
+        <button onClick={() => setActiveSubTab('records')} style={TAB_STYLE(activeSubTab === 'records')}>
+          <Award size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />Issued Certificates ({certificates.length})
+        </button>
+      </div>
+
+      {loading ? <TableSkeleton rows={4} cols={5} /> : (
+        <>
+          {/* Templates Tab */}
+          {activeSubTab === 'templates' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div className="grid-2">
+                {templates.map(t => (
+                  <div key={t.id} className="card" style={{
+                    borderLeft: `4px solid ${t.primaryColor || '#2563eb'}`,
+                    display: 'flex', flexDirection: 'column', gap: 10
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                      <div>
+                        <h4 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '0 0 4px' }}>{t.name}</h4>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <span className="badge badge-purple">{t.templateType?.replace('_', ' ')}</span>
+                          <span className={`badge ${t.status === 'PUBLISHED' ? 'badge-success' : 'badge-neutral'}`}>
+                            {t.status}
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        <button onClick={() => { setForm({ ...t }); setEditTemplate(t) }}
+                          style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', padding: 4 }}>
+                          <Edit2 size={14} />
+                        </button>
+                        <button onClick={() => handleDuplicate(t.id)}
+                          style={{ background: 'none', border: 'none', color: '#0f766e', cursor: 'pointer', padding: 4 }}>
+                          <Copy size={14} />
+                        </button>
+                        <button onClick={() => handleDelete(t.id)}
+                          style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', padding: 4 }}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 12, color: '#475569' }}>
+                      <span>College: {t.collegeName || '—'}</span>
+                      <span>Font: {t.fontFamily || 'Default'}</span>
+                      <span>Signatory 1: {t.signatoryName || '—'}</span>
+                      <span>Signatory 2: {t.signatory2Name || '—'}</span>
+                    </div>
+                    {/* Color Swatches */}
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                      <span style={{ width: 18, height: 18, borderRadius: 4, background: t.primaryColor, border: '1px solid #e2e8f0', display: 'inline-block' }} />
+                      <span style={{ width: 18, height: 18, borderRadius: 4, background: t.secondaryColor, border: '1px solid #e2e8f0', display: 'inline-block' }} />
+                      <span style={{ fontSize: 11, color: '#94a3b8' }}>{t.primaryColor} / {t.secondaryColor}</span>
+                    </div>
+                    {t.status !== 'PUBLISHED' && (
+                      <button onClick={() => handlePublish(t.id)} className="btn btn-primary" style={{ fontSize: 12, padding: '6px 14px' }}>
+                        <CheckCircle size={12} /> Publish Template
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {templates.length === 0 && (
+                  <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: 48, color: '#94a3b8' }}>
+                    <FileText size={36} style={{ opacity: 0.3, marginBottom: 12 }} />
+                    <p>No templates yet. Create your first certificate template.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Records Tab */}
+          {activeSubTab === 'records' && (
+            <div className="table-container">
+              <table className="data-table">
+                <thead><tr>
+                  <th>Certificate ID</th><th>Student</th><th>Event</th>
+                  <th>Type</th><th>Status</th><th>Issued</th><th>Actions</th>
+                </tr></thead>
+                <tbody>
+                  {certificates.map(c => (
+                    <tr key={c.id}>
+                      <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{c.certificateId}</td>
+                      <td>
+                        <strong>{c.studentName}</strong><br />
+                        <span style={{ fontSize: 11, color: '#94a3b8' }}>{c.rollNumber}</span>
+                      </td>
+                      <td style={{ fontSize: 13 }}>{c.eventName}</td>
+                      <td><span className="badge badge-purple">{c.certificateType?.replace('_', ' ')}</span></td>
+                      <td>
+                        <span className={`badge ${c.status === 'VALID' ? 'badge-success' : 'badge-danger'}`}>
+                          {c.status}
+                        </span>
+                        {c.status === 'REVOKED' && (
+                          <p style={{ fontSize: 10, color: '#dc2626', margin: '2px 0 0' }}>{c.revocationReason}</p>
+                        )}
+                      </td>
+                      <td style={{ fontSize: 11, color: '#64748b' }}>{formatDate(c.generatedAt)}</td>
+                      <td>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          <a href={`/api/certificates/${c.certificateId}/download`} target="_blank" rel="noreferrer"
+                            className="btn btn-ghost btn-sm"><Download size={12} /> PDF</a>
+                          {c.status === 'VALID' && (
+                            <button onClick={() => handleRevoke(c.id)}
+                              style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                              Revoke
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {certificates.length === 0 && (
+                    <tr><td colSpan={7} style={{ textAlign: 'center', padding: 32, color: '#94a3b8' }}>
+                      No certificates issued yet.
+                    </td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Create Template Modal */}
+      <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Create Certificate Template" size="lg">
+        <TemplateForm onSubmit={handleCreate} title="Create Template" />
+      </Modal>
+
+      {/* Edit Template Modal */}
+      <Modal isOpen={Boolean(editTemplate)} onClose={() => setEditTemplate(null)} title="Edit Certificate Template" size="lg">
+        <TemplateForm onSubmit={handleUpdate} title="Update Template" />
+      </Modal>
+    </div>
+  )
+}
+
+// =========================================================================
+// 9. Audit Logs Panel
+// =========================================================================
+
+// =========================================================================
 // Main Admin Dashboard Component
 // =========================================================================
 const ADMIN_NAV = [
@@ -1308,6 +2352,7 @@ const ADMIN_NAV = [
   { path: 'academics', label: 'Departments & Courses', icon: BookOpen },
   { path: 'timetable', label: 'Timetable', icon: Calendar },
   { path: 'events', label: 'Events', icon: Award },
+  { path: 'certificates', label: 'Certificates', icon: FileText },
   { path: 'announcements', label: 'Notices', icon: Bell },
   { path: 'audit_logs', label: 'Audit Logs', icon: Shield },
 ]
@@ -1323,6 +2368,7 @@ export default function AdminDashboard() {
         <Route path="academics" element={<AcademicsPanel />} />
         <Route path="timetable" element={<TimetablePanel />} />
         <Route path="events" element={<EventsPanel />} />
+        <Route path="certificates" element={<CertificatesPanel />} />
         <Route path="announcements" element={<AnnouncementsPanel />} />
         <Route path="audit_logs" element={<AuditLogsPanel />} />
         <Route path="*" element={<Navigate to="dashboard" replace />} />

@@ -82,6 +82,10 @@ public class FacultyServiceImpl implements FacultyService {
         if (request.getDepartment() != null) faculty.setDepartment(request.getDepartment());
         if (request.getDesignation() != null) faculty.setDesignation(request.getDesignation());
         if (request.getMobileNumber() != null) faculty.setMobileNumber(request.getMobileNumber());
+        if (request.getAddress() != null) faculty.setAddress(request.getAddress());
+        if (request.getQualification() != null) faculty.setQualification(request.getQualification());
+        if (request.getSpecialization() != null) faculty.setSpecialization(request.getSpecialization());
+        if (request.getExperience() != null) faculty.setExperience(request.getExperience());
         if (request.getStatus() != null) faculty.setStatus(request.getStatus());
 
         return AppDTO.UserResponse.from(userRepository.save(faculty));

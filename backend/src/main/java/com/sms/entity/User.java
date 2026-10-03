@@ -76,6 +76,17 @@ public class User {
     private String designation; // Professor, Associate Professor, Assistant Professor, HOD
 
     @Builder.Default
+    @Column(name = "force_password_change")
+    private Boolean forcePasswordChange = false;
+
+    @Column(name = "last_password_change")
+    private LocalDateTime lastPasswordChange;
+
+    private String qualification;
+    private String specialization;
+    private String experience;
+
+    @Builder.Default
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_courses",
             joinColumns = @JoinColumn(name = "user_id"),
@@ -87,6 +98,7 @@ public class User {
         if (createdAt == null) createdAt = LocalDateTime.now();
         if (status == null) status = "ACTIVE";
         if (username == null) username = email;
+        if (forcePasswordChange == null) forcePasswordChange = false;
     }
 
     public enum Role {

@@ -11,6 +11,13 @@ public interface EventService {
     AppDTO.EventDTO createEvent(AppDTO.EventDTO request, Long creatorId);
     AppDTO.EventDTO updateEvent(Long eventId, AppDTO.EventDTO request);
     void updateEventStatus(Long eventId, String status);
+    void deleteEvent(Long eventId, Long adminId);
+
+    // Coordinators
+    List<AppDTO.EventCoordinatorDTO> getEventCoordinators(Long eventId);
+    AppDTO.EventCoordinatorDTO assignCoordinator(Long eventId, Long facultyId, String remarks, Long adminId);
+    void removeCoordinator(Long eventId, Long facultyId, Long adminId);
+    boolean isFacultyAssignedToEvent(Long eventId, Long facultyId);
 
     // Registration
     AppDTO.EventParticipantDTO registerStudent(Long eventId, Long studentId);

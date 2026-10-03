@@ -36,6 +36,9 @@ export default api
 export const authService = {
   login: (identifier, password) => api.post('/auth/login', { identifier, email: identifier, password }),
   me: () => api.get('/auth/me'),
+  changePassword: (data) => api.post('/auth/change-password', data),
+  updateProfile: (data) => api.put('/auth/profile', data),
+  updatePhoto: (photoUrl) => api.patch('/auth/profile/photo', { photoUrl }),
 }
 
 // ---- Admin ----
@@ -67,6 +70,10 @@ export const adminService = {
 
   getActivityLogs: () => api.get('/admin/activity-logs'),
   getReports: () => api.get('/admin/reports/overview'),
+
+  // Account Security — Admin can reset passwords
+  resetUserPassword: (userId, data) => api.post(`/admin/users/${userId}/reset-password`, data),
+  toggleUserStatus: (userId) => api.patch(`/admin/users/${userId}/toggle-status`),
 }
 
 // ---- Courses / Subjects ----
@@ -137,32 +144,68 @@ export const timetableService = {
 
 // ---- Events ----
 export const eventService = {
-  getAll: () => api.get('/student/events/all'),
-  getUpcoming: () => api.get('/student/events'),
-  getById: (id) => api.get(`/student/events/${id}`),
+  // All users — read events
+  getAll: () => api.get('/events'),
+  getUpcoming: () => api.get('/events/upcoming'),
+  getCompleted: () => api.get('/events/completed'),
+  getById: (id) => api.get(`/events/${id}`),
+
+  // Student — registration
   register: (eventId) => api.post(`/student/events/${eventId}/register`),
   cancelRegistration: (eventId) => api.delete(`/student/events/${eventId}/cancel`),
   getMyRegistrations: () => api.get('/student/events/my-registrations'),
 
-  // Faculty / Admin
-  create: (data) => api.post('/faculty/events', data),
-  update: (id, data) => api.put(`/faculty/events/${id}`, data),
-  updateStatus: (id, status) => api.patch(`/faculty/events/${id}/status`, null, { params: { status } }),
-  getParticipants: (eventId) => api.get(`/faculty/events/${eventId}/participants`),
+  // Admin / Faculty — Event CRUD
+  create: (data) => api.post('/events', data),
+  update: (id, data) => api.put(`/events/${id}`, data),
+  delete: (id) => api.delete(`/events/${id}`),
+  updateStatus: (id, status) => api.patch(`/events/${id}/status`, null, { params: { status } }),
+
+  // Coordinators (Admin only)
+  getCoordinators: (eventId) => api.get(`/events/${eventId}/coordinators`),
+  assignCoordinator: (eventId, facultyId, remarks) =>
+    api.post(`/events/${eventId}/coordinators`, { facultyId, remarks }),
+  removeCoordinator: (eventId, facultyId) => api.delete(`/events/${eventId}/coordinators/${facultyId}`),
+
+  // Participants
+  getParticipants: (eventId) => api.get(`/events/${eventId}/participants`),
+  registerStudent: (eventId, studentId) => api.post(`/events/${eventId}/participants/${studentId}`),
+  removeParticipant: (eventId, studentId) => api.delete(`/events/${eventId}/participants/${studentId}`),
   markAttendance: (eventId, studentId, status) =>
-    api.patch(`/faculty/events/${eventId}/participants/${studentId}/attendance`, null, { params: { status } }),
-  recordResult: (eventId, data) => api.post(`/faculty/events/${eventId}/results`, data),
-  getEventCertificates: (eventId) => api.get(`/faculty/events/${eventId}/certificates`),
+    api.patch(`/events/${eventId}/participants/${studentId}/attendance`, null, { params: { status } }),
+
+  // Results
+  getResults: (eventId) => api.get(`/events/${eventId}/results`),
+  updateResult: (eventId, studentId, data) => api.put(`/events/${eventId}/results/${studentId}`, data),
+
+  // Certificates for event
+  getEventCertificates: (eventId) => api.get(`/events/${eventId}/certificates`),
+  generateCertificate: (eventId, data) => api.post(`/events/${eventId}/certificates/generate`, data),
 }
 
 // ---- Certificates ----
 export const certificateService = {
+  // Student
   getMyCertificates: () => api.get('/student/certificates'),
   getCertificate: (certId) => api.get(`/student/certificates/${certId}`),
+
+  // Public verification
   verify: (certId) => api.get(`/certificates/verify/${certId}`),
-  generate: (data) => api.post('/faculty/certificates/generate', data),
-  batchGenerate: (eventId, data) => api.post(`/faculty/events/${eventId}/certificates/batch`, data),
-  getTemplates: () => api.get('/faculty/certificate-templates'),
+
+  // Admin — Certificate records
+  getAll: () => api.get('/certificates'),
+  getById: (certId) => api.get(`/certificates/${certId}`),
+  downloadPdfUrl: (certId) => `/api/certificates/${certId}/download`,
+  revoke: (id, reason) => api.post(`/certificates/${id}/revoke`, { reason }),
+
+  // Admin — Certificate Templates
+  getTemplates: () => api.get('/certificates/templates'),
+  getTemplate: (id) => api.get(`/certificates/templates/${id}`),
+  createTemplate: (data) => api.post('/certificates/templates', data),
+  updateTemplate: (id, data) => api.put(`/certificates/templates/${id}`, data),
+  publishTemplate: (id) => api.post(`/certificates/templates/${id}/publish`),
+  duplicateTemplate: (id) => api.post(`/certificates/templates/${id}/duplicate`),
+  deleteTemplate: (id) => api.delete(`/certificates/templates/${id}`),
 }
 
 // ---- Notifications ----

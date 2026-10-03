@@ -29,6 +29,7 @@ public class AuthController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final ActivityLogService activityLogService;
+    private final com.sms.service.AccountSecurityService accountSecurityService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody AuthDTO.LoginRequest request) {
@@ -77,7 +78,39 @@ public class AuthController {
                 .semester(user.getSemester())
                 .section(user.getSection())
                 .designation(user.getDesignation())
+                .profilePhoto(user.getProfilePhoto())
+                .forcePasswordChange(user.getForcePasswordChange())
                 .build());
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@Valid @RequestBody AppDTO.ChangePasswordRequest req,
+                                            @AuthenticationPrincipal UserDetails ud) {
+        if (ud == null) {
+            return ResponseEntity.status(401).body(new AppDTO.MessageResponse("Authentication required"));
+        }
+        User user = userRepository.findByEmail(ud.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!req.getNewPassword().equals(req.getConfirmPassword())) {
+            return ResponseEntity.badRequest().body(new AppDTO.MessageResponse("New passwords do not match."));
+        }
+
+        accountSecurityService.selfChangePassword(user.getId(), req.getCurrentPassword(), req.getNewPassword());
+        return ResponseEntity.ok(new AppDTO.MessageResponse("Password changed successfully. Please sign in again."));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody java.util.Map<String, String> body) {
+        String email = body.get("email");
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest().body(new AppDTO.MessageResponse("Registered email is required."));
+        }
+        User user = userRepository.findByEmail(email.trim()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.ok(new AppDTO.MessageResponse("If the account exists, instructions have been dispatched."));
+        }
+        return ResponseEntity.ok(new AppDTO.MessageResponse("Password recovery request received. Please contact the administrator at admin@apex.edu.in for temporary credentials."));
     }
 
     @PostMapping("/register")
