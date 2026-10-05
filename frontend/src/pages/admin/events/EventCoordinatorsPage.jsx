@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { eventService, adminService } from '../../../services/api'
 import { toast } from '../../../components/Toast'
-import { TableSkeleton, Spinner } from '../../../components/Loading'
+import { TableSkeleton } from '../../../components/Loading'
 import { Modal, ConfirmModal } from '../../../components/Modal'
 import { formatDate } from '../../../utils/helpers'
 import {

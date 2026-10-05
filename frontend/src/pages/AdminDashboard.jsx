@@ -21,7 +21,6 @@ import {
 } from 'lucide-react'
 import AdminAttendanceSection from '../components/attendance/AdminAttendanceSection'
 import AcademicTimetable from '../components/timetable/AcademicTimetable'
-import { useAuth } from '../context/AuthContext'
 import { toast } from '../components/Toast'
 import { Modal, ConfirmModal } from '../components/Modal'
 import { Spinner, TableSkeleton } from '../components/Loading'

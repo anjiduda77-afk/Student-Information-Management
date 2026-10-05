@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { eventService, adminService } from '../../../services/api'
 import { toast } from '../../../components/Toast'
 import { Modal, ConfirmModal } from '../../../components/Modal'
-import { TableSkeleton, Spinner } from '../../../components/Loading'
+import { TableSkeleton } from '../../../components/Loading'
 import { formatDate } from '../../../utils/helpers'
 import {
   Calendar, MapPin, Users, Award, Plus, Search, Filter,

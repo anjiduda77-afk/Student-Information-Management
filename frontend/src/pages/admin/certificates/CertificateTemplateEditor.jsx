@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { certificateService } from '../../../services/api'
 import { toast } from '../../../components/Toast'
-import { TableSkeleton, Spinner } from '../../../components/Loading'
+import { TableSkeleton } from '../../../components/Loading'
 import CertificatePreview from '../../../components/certificates/CertificatePreview'
 import { downloadCertificatePDF } from '../../../utils/certificateGenerator'
 import {

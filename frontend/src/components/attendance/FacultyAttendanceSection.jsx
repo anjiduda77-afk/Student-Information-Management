@@ -8,7 +8,6 @@ import {
 } from 'lucide-react'
 import { attendanceService } from '../../services/api'
 import { toast } from '../Toast'
-import { Modal } from '../Modal'
 import { TableSkeleton, Spinner } from '../Loading'
 import { formatDate } from '../../utils/helpers'
 

@@ -13,10 +13,9 @@ import {
 import { useAuth } from '../context/AuthContext'
 import { toast } from '../components/Toast'
 import { Modal } from '../components/Modal'
-import { TableSkeleton, Spinner } from '../components/Loading'
+import { TableSkeleton } from '../components/Loading'
 import { formatDate } from '../utils/helpers'
 import { isFutureDate } from '../utils/validators'
-import { downloadCertificatePDF } from '../utils/certificateGenerator'
 import CertificatePreview from '../components/certificates/CertificatePreview'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer

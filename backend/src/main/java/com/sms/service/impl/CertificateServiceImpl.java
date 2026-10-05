@@ -2,7 +2,6 @@ package com.sms.service.impl;
 
 import com.sms.dto.AppDTO;
 import com.sms.entity.*;
-import com.sms.exception.ConflictException;
 import com.sms.exception.ResourceNotFoundException;
 import com.sms.repository.*;
 import com.sms.service.ActivityLogService;

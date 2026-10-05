@@ -1,6 +1,5 @@
 package com.sms.service;
 
-import com.sms.dto.AppDTO;
 import com.sms.entity.User;
 import com.sms.exception.ConflictException;
 import com.sms.exception.ResourceNotFoundException;
