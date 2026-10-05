@@ -33,21 +33,32 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configure(http))
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints
+
+                // ── Fully Public — NO auth required ──────────────────────────────
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/certificates/verify/**").permitAll()
+
+                // Public certificate verification (no login needed — employers, recruiters, etc.)
+                .requestMatchers("/api/certificates/verify/**", "/api/certificates/verify", "/api/verify/**").permitAll()
+
+                // Public certificate PDF download (anyone with a certificate ID can download)
                 .requestMatchers("/api/certificates/*/download").permitAll()
+
+                // Swagger / API docs
                 .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
+
+                // WebSocket handshake
                 .requestMatchers("/ws/**").permitAll()
 
-                // Role-gated endpoints
+                // ── Role-gated endpoints ──────────────────────────────────────────
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/faculty/**").hasAnyRole("ADMIN", "FACULTY")
                 .requestMatchers("/api/student/**").hasAnyRole("ADMIN", "FACULTY", "STUDENT")
 
-                // General resource endpoints
+                // ── All other /api/certificates/** and /api/events/** require auth ─
+                // NOTE: specific permitAll() rules above take priority over this
                 .requestMatchers("/api/events/**").authenticated()
                 .requestMatchers("/api/certificates/**").authenticated()
+
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session

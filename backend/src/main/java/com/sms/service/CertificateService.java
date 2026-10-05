@@ -15,6 +15,7 @@ public interface CertificateService {
     AppDTO.CertificateTemplateDTO createTemplate(AppDTO.CertificateTemplateDTO dto, Long adminId);
     AppDTO.CertificateTemplateDTO updateTemplate(Long id, AppDTO.CertificateTemplateDTO dto, Long adminId);
     AppDTO.CertificateTemplateDTO publishTemplate(Long id, Long adminId);
+    AppDTO.CertificateTemplateDTO archiveTemplate(Long id, Long adminId);
     AppDTO.CertificateTemplateDTO duplicateTemplate(Long id, Long adminId);
     void deleteTemplate(Long id, Long adminId);
 

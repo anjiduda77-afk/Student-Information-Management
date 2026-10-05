@@ -222,6 +222,16 @@ public class AppDTO {
         private String rollNumber;
         private Long courseId;
         private String courseName;
+        private Long subjectId;
+        private String subjectName;
+        private String subjectCode;
+        private Long facultyId;
+        private String facultyName;
+        private Integer period;
+        private String section;
+        private String dayOfWeek;
+        private String room;
+        private Long sessionId;
         private LocalDate date;
         private String status;
         private String verificationMethod;
@@ -229,13 +239,37 @@ public class AppDTO {
         private Double percentage;
 
         public static AttendanceResponse from(Attendance a) {
+            String subName = a.getSubject() != null ? a.getSubject().getName()
+                    : (a.getCourse() != null ? a.getCourse().getName() : "Subject");
+            String subCode = a.getSubject() != null ? a.getSubject().getCode()
+                    : (a.getCourse() != null ? a.getCourse().getCode() : "SUB");
+            String facName = a.getFaculty() != null ? a.getFaculty().getName()
+                    : (a.getSession() != null && a.getSession().getFaculty() != null ? a.getSession().getFaculty().getName() : null);
+            Long facId = a.getFaculty() != null ? a.getFaculty().getId()
+                    : (a.getSession() != null && a.getSession().getFaculty() != null ? a.getSession().getFaculty().getId() : null);
+            Integer per = a.getPeriod() != null ? a.getPeriod()
+                    : (a.getSession() != null ? a.getSession().getPeriod() : 1);
+            String sec = a.getSection() != null ? a.getSection()
+                    : (a.getSession() != null ? a.getSession().getSection() : (a.getStudent() != null ? a.getStudent().getSection() : "A"));
+            String rm = a.getSession() != null ? a.getSession().getRoom() : null;
+
             return AttendanceResponse.builder()
                     .id(a.getId())
                     .studentId(a.getStudent() != null ? a.getStudent().getId() : null)
                     .studentName(a.getStudent() != null ? a.getStudent().getName() : null)
                     .rollNumber(a.getStudent() != null ? a.getStudent().getRollNumber() : null)
                     .courseId(a.getCourse() != null ? a.getCourse().getId() : null)
-                    .courseName(a.getCourse() != null ? a.getCourse().getName() : (a.getSubject() != null ? a.getSubject().getName() : "Subject"))
+                    .courseName(a.getCourse() != null ? a.getCourse().getName() : subName)
+                    .subjectId(a.getSubject() != null ? a.getSubject().getId() : null)
+                    .subjectName(subName)
+                    .subjectCode(subCode)
+                    .facultyId(facId)
+                    .facultyName(facName)
+                    .period(per)
+                    .section(sec)
+                    .dayOfWeek(a.getDate() != null ? a.getDate().getDayOfWeek().name() : null)
+                    .room(rm)
+                    .sessionId(a.getSession() != null ? a.getSession().getId() : null)
                     .date(a.getDate())
                     .status(a.getStatus().name())
                     .verificationMethod(a.getVerificationMethod())
@@ -248,17 +282,32 @@ public class AppDTO {
     public static class AttendanceSessionDTO {
         private Long id;
         private String sessionCode;
+        private Long courseId;
+        private String courseName;
+        private Long departmentId;
+        private String departmentName;
         private Long subjectId;
         private String subjectName;
+        private String subjectCode;
         private Long facultyId;
         private String facultyName;
         private LocalDate date;
+        private Integer period;
+        private java.time.LocalTime startTime;
+        private java.time.LocalTime endTime;
+        private String room;
         private String section;
+        private String academicYear;
+        private Integer semester;
         private LocalDateTime createdAt;
         private LocalDateTime expiresAt;
         private String status;
         private String sessionType;
+        private long totalStudents;
         private long presentCount;
+        private long absentCount;
+        private long lateCount;
+        private long excusedCount;
     }
 
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor
@@ -373,8 +422,12 @@ public class AppDTO {
         private Integer semester;
 
         private String section;
+        private Integer period; // 1, 2, 3, etc.
         private Long subjectId;
         private String subjectName;
+        private String subjectCode;
+        private String programmeName;
+        private String year;
 
         @NotNull(message = "Faculty ID is required")
         private Long facultyId;
@@ -394,6 +447,146 @@ public class AppDTO {
         private String classroom;
 
         private String status;
+    }
+
+    // ---- Attendance Academic Structures ----
+    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class FacultyTodayClassDTO {
+        private Long timetableId;
+        private Integer period;
+        private LocalTime startTime;
+        private LocalTime endTime;
+        private Long courseId;
+        private String courseName;
+        private String programmeName;
+        private Long departmentId;
+        private String departmentName;
+        private Long subjectId;
+        private String subjectName;
+        private String subjectCode;
+        private Integer semester;
+        private String year;
+        private String section;
+        private String classroom;
+        private Long activeSessionId;
+        private String sessionCode;
+        private String sessionStatus; // NONE, ACTIVE, CLOSED
+        private Long totalStudents;
+        private Long presentCount;
+    }
+
+    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class AttendanceSubjectSummaryDTO {
+        private Long subjectId;
+        private String subjectCode;
+        private String subjectName;
+        private Long courseId;
+        private String courseName;
+        private Long facultyId;
+        private String facultyName;
+        private String section;
+        private Integer semester;
+        private long totalClasses;
+        private long attendedClasses;
+        private long absentClasses;
+        private long lateClasses;
+        private long excusedClasses;
+        private double percentage;
+        private Double attendancePercentage;
+        private String status; // Good, Shortage
+        private boolean isShortage; // true if < 75%
+        private boolean hasShortage; // alias
+        private Long enrolledStudents;
+        private Long studentsWithShortage;
+
+        public Double getAttendancePercentage() {
+            return attendancePercentage != null ? attendancePercentage : percentage;
+        }
+
+        public boolean isHasShortage() {
+            return isShortage;
+        }
+    }
+
+    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class ShortageStudentDTO {
+        private Long studentId;
+        private String studentName;
+        private String rollNumber;
+        private String department;
+        private String programme;
+        private Integer semester;
+        private String section;
+        private Long subjectId;
+        private String subjectCode;
+        private String subjectName;
+        private long totalClasses;
+        private long attendedClasses;
+        private long presentClasses;
+        private double percentage;
+        private Double attendancePercentage;
+
+        public Double getAttendancePercentage() {
+            return attendancePercentage != null ? attendancePercentage : percentage;
+        }
+
+        public long getAttendedClasses() {
+            return attendedClasses > 0 ? attendedClasses : presentClasses;
+        }
+    }
+
+    // ---- Manual Attendance Flow ----
+    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class ManualAttendanceRosterResponse {
+        private LocalDate date;
+        private String department;
+        private String departmentName;
+        private String section;
+        private Long facultyId;
+        private String facultyName;
+        private Long subjectId;
+        private String subjectName;
+        private String subjectCode;
+        private Integer period;
+        private Long courseId;
+        private String courseName;
+        private String classroom;
+        private boolean isExisting;
+        private List<StudentRosterItem> students;
+        private long presentCount;
+        private long absentCount;
+        private long lateCount;
+        private long excusedCount;
+        private long totalCount;
+    }
+
+    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class StudentRosterItem {
+        private Long studentId;
+        private String name;
+        private String rollNumber;
+        private String department;
+        private String section;
+        private Attendance.Status status;
+        private String remarks;
+        private Long attendanceId;
+    }
+
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor
+    public static class SaveManualAttendanceRequest {
+        private LocalDate date;
+        private String department;
+        private String section;
+        private Long subjectId;
+        private Integer period;
+        private List<StudentStatusRecord> records;
+    }
+
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor
+    public static class StudentStatusRecord {
+        private Long studentId;
+        private Attendance.Status status;
+        private String remarks;
     }
 
     // ---- Event ----
@@ -495,6 +688,7 @@ public class AppDTO {
         private String eventName;
         private Long templateId;
         private String templateName;
+        private Integer templateVersion;
         private String certificateType;
         private String position;
         private LocalDate issueDate;

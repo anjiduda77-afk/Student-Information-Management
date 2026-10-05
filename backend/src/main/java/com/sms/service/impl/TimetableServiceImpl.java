@@ -24,17 +24,42 @@ public class TimetableServiceImpl implements TimetableService {
     private final SubjectRepository subjectRepository;
 
     private AppDTO.TimetableDTO toDTO(Timetable t) {
+        String subCode = t.getSubject() != null ? t.getSubject().getCode() : "SUB";
+        String progName = t.getCourse() != null ? t.getCourse().getName() : "";
+        String deptName = t.getDepartment() != null ? t.getDepartment().getName()
+                : (t.getCourse() != null && t.getCourse().getDepartment() != null ? t.getCourse().getDepartment().getName() : "General");
+        Long deptId = t.getDepartment() != null ? t.getDepartment().getId()
+                : (t.getCourse() != null && t.getCourse().getDepartment() != null ? t.getCourse().getDepartment().getId() : null);
+        Integer sem = t.getSemester() != null ? t.getSemester() : 1;
+        int yrNum = (sem + 1) / 2;
+        String yrName = yrNum == 1 ? "1st Year" : yrNum == 2 ? "2nd Year" : yrNum == 3 ? "3rd Year" : yrNum + "th Year";
+
+        Integer period = t.getPeriod();
+        if (period == null && t.getStartTime() != null) {
+            int h = t.getStartTime().getHour();
+            if (h <= 9) period = 1;
+            else if (h == 10) period = 2;
+            else if (h == 11) period = 3;
+            else if (h >= 13 && h < 14) period = 4;
+            else if (h == 14) period = 5;
+            else period = 6;
+        }
+
         return AppDTO.TimetableDTO.builder()
                 .id(t.getId())
-                .departmentId(t.getDepartment() != null ? t.getDepartment().getId() : null)
-                .departmentName(t.getDepartment() != null ? t.getDepartment().getName() : null)
+                .departmentId(deptId)
+                .departmentName(deptName)
                 .courseId(t.getCourse().getId())
                 .courseName(t.getCourse().getName())
+                .programmeName(progName)
                 .academicYear(t.getAcademicYear())
                 .semester(t.getSemester())
+                .year(yrName)
                 .section(t.getSection())
+                .period(period != null ? period : 1)
                 .subjectId(t.getSubject() != null ? t.getSubject().getId() : null)
                 .subjectName(t.getSubject() != null ? t.getSubject().getName() : (t.getSubjectName() != null ? t.getSubjectName() : t.getCourse().getName()))
+                .subjectCode(subCode)
                 .facultyId(t.getFaculty().getId())
                 .facultyName(t.getFaculty().getName())
                 .dayOfWeek(t.getDayOfWeek().name())
@@ -153,6 +178,7 @@ public class TimetableServiceImpl implements TimetableService {
                 .academicYear(req.getAcademicYear() != null ? req.getAcademicYear() : "2025-2026")
                 .semester(req.getSemester() != null ? req.getSemester() : course.getSemester())
                 .section(req.getSection() != null ? req.getSection().toUpperCase() : "A")
+                .period(req.getPeriod())
                 .subject(subject)
                 .subjectName(subName)
                 .faculty(faculty)
@@ -190,7 +216,14 @@ public class TimetableServiceImpl implements TimetableService {
         if (req.getClassroom() != null) t.setClassroom(req.getClassroom().trim());
         if (req.getSection() != null) t.setSection(req.getSection().toUpperCase());
         if (req.getSemester() != null) t.setSemester(req.getSemester());
-        if (req.getSubjectName() != null) t.setSubjectName(req.getSubjectName());
+        if (req.getPeriod() != null) t.setPeriod(req.getPeriod());
+        if (req.getSubjectId() != null) {
+            Subject s = subjectRepository.findById(req.getSubjectId()).orElse(null);
+            t.setSubject(s);
+            if (s != null) t.setSubjectName(s.getName());
+        } else if (req.getSubjectName() != null) {
+            t.setSubjectName(req.getSubjectName());
+        }
 
         return toDTO(timetableRepository.save(t));
     }

@@ -6,9 +6,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "attendance", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"student_id", "course_id", "date"})
-})
+@Table(name = "attendance")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Attendance {
 
@@ -32,8 +30,23 @@ public class Attendance {
     @JoinColumn(name = "session_id")
     private AttendanceSession session;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "faculty_id")
+    private User faculty;
+
     @Column(nullable = false)
     private LocalDate date;
+
+    private Integer period; // 1, 2, 3, 4, etc.
+
+    private String section; // A, B, etc.
+
+    @Column(name = "academic_year")
+    private String academicYear;
+
+    private Integer semester;
+
+    private String remarks;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

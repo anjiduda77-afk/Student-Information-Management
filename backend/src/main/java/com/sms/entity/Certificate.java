@@ -63,6 +63,9 @@ public class Certificate {
     @JoinColumn(name = "template_id")
     private CertificateTemplate template;
 
+    @Column(name = "template_version")
+    private Integer templateVersion;
+
     @Column(name = "file_path")
     private String filePath;
 

@@ -1,5 +1,6 @@
 {
-  "name": "student-management-frontend",
+  "name": "smart-student-information-system-frontend",
+  "description": "Smart Student Information System - Aditya University",
   "private": true,
   "version": "1.0.0",
   "type": "module",

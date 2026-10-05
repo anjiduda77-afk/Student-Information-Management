@@ -20,8 +20,12 @@ api.interceptors.response.use(
   err => {
     const isLoginEndpoint = err.config?.url?.includes('/auth/login')
     const isOnLoginPage = window.location.pathname === '/login'
+    const isVerifyRoute = window.location.pathname.startsWith('/verify') ||
+                          window.location.pathname.startsWith('/certificates/verify') ||
+                          err.config?.url?.includes('/certificates/verify') ||
+                          err.config?.url?.includes('/verify')
 
-    if (err.response?.status === 401 && !isLoginEndpoint && !isOnLoginPage) {
+    if (err.response?.status === 401 && !isLoginEndpoint && !isOnLoginPage && !isVerifyRoute) {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
       window.location.href = '/login'
@@ -95,7 +99,27 @@ export const courseService = {
 
 // ---- Attendance ----
 export const attendanceService = {
-  // Faculty / Admin
+  // Faculty
+  getTodayClasses: (date) =>
+    api.get('/faculty/attendance/today-classes', { params: date ? { date } : {} }),
+  startSessionFromTimetable: (timetableId, sessionType = 'ONLINE_QR') =>
+    api.post(`/faculty/attendance/session/start-from-timetable/${timetableId}`, null, { params: { sessionType } }),
+  getSessionStudents: (sessionId) =>
+    api.get(`/faculty/attendance/session/${sessionId}/students`),
+  markSessionManual: (sessionId, records) =>
+    api.post(`/faculty/attendance/session/${sessionId}/manual`, records),
+  getFacultyHistory: (params) =>
+    api.get('/faculty/attendance/history', { params }),
+  getFacultySubjectSummary: (subjectId) =>
+    api.get('/faculty/attendance/subject-summary', { params: { subjectId } }),
+
+  // Faculty Manual Attendance Flow
+  getAttendanceDepartments: () => api.get('/faculty/attendance/departments'),
+  getAttendanceSections: (department) => api.get('/faculty/attendance/sections', { params: { department } }),
+  getManualRoster: (date, department, section, subjectId, period) =>
+    api.get('/faculty/attendance/roster', { params: { date, department, section, subjectId, period } }),
+  saveManualRoster: (data) => api.post('/faculty/attendance/save-roster', data),
+
   startSession: (courseId, section, sessionType) =>
     api.post(`/faculty/attendance/session/start`, null, { params: { courseId, section, sessionType } }),
   closeSession: (sessionId) => api.post(`/faculty/attendance/session/${sessionId}/close`),
@@ -111,11 +135,19 @@ export const attendanceService = {
   // Student
   checkIn: (data) => api.post('/student/attendance/check-in', data),
   getMyAttendance: () => api.get('/student/attendance'),
+  getMySubjectWiseAttendance: () => api.get('/student/attendance/subject-wise'),
+  getMyDateWiseAttendance: (params) => api.get('/student/attendance/date-wise', { params }),
   getByStudent: () => api.get('/student/attendance'),
   getAttendanceSummary: () => api.get('/student/attendance/summary'),
   submitCorrection: (data) => api.post('/student/attendance/correction', data),
   getMyCorrections: () => api.get('/student/attendance/corrections'),
   mark: (record) => api.post('/faculty/attendance/manual', [record], { params: { courseId: record.courseId, date: record.date } }),
+
+  // Admin
+  getAdminOverview: (params) => api.get('/admin/attendance/overview', { params }),
+  getAdminShortageReport: (params) => api.get('/admin/attendance/shortage-report', { params }),
+  adminCorrectAttendance: (id, newStatus, reason) =>
+    api.post(`/admin/attendance/${id}/correct`, null, { params: { newStatus, reason } }),
 }
 
 // ---- Marks ----
@@ -181,6 +213,7 @@ export const eventService = {
   // Certificates for event
   getEventCertificates: (eventId) => api.get(`/events/${eventId}/certificates`),
   generateCertificate: (eventId, data) => api.post(`/events/${eventId}/certificates/generate`, data),
+  generateBatchCertificates: (eventId, reqs) => api.post(`/events/${eventId}/certificates/batch`, reqs),
 }
 
 // ---- Certificates ----
@@ -196,14 +229,40 @@ export const certificateService = {
   getAll: () => api.get('/certificates'),
   getById: (certId) => api.get(`/certificates/${certId}`),
   downloadPdfUrl: (certId) => `/api/certificates/${certId}/download`,
+  downloadPdf: async (certId, fallbackCertData) => {
+    try {
+      const response = await api.get(`/certificates/${certId}/download`, {
+        responseType: 'blob'
+      })
+      const blob = new Blob([response.data], { type: 'application/pdf' })
+      const blobUrl = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = blobUrl
+      link.download = `Aditya_University_Certificate_${certId}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000)
+      return true
+    } catch (err) {
+      console.warn('Backend PDF download error, attempting client-side generator fallback:', err)
+      if (fallbackCertData) {
+        const { downloadCertificatePDF } = await import('../utils/certificateGenerator')
+        await downloadCertificatePDF(fallbackCertData)
+        return true
+      }
+      throw err
+    }
+  },
   revoke: (id, reason) => api.post(`/certificates/${id}/revoke`, { reason }),
 
-  // Admin — Certificate Templates
+  // Certificate Templates
   getTemplates: () => api.get('/certificates/templates'),
   getTemplate: (id) => api.get(`/certificates/templates/${id}`),
   createTemplate: (data) => api.post('/certificates/templates', data),
   updateTemplate: (id, data) => api.put(`/certificates/templates/${id}`, data),
   publishTemplate: (id) => api.post(`/certificates/templates/${id}/publish`),
+  archiveTemplate: (id) => api.post(`/certificates/templates/${id}/archive`),
   duplicateTemplate: (id) => api.post(`/certificates/templates/${id}/duplicate`),
   deleteTemplate: (id) => api.delete(`/certificates/templates/${id}`),
 }

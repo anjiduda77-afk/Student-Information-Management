@@ -31,9 +31,13 @@ public class CertificateController {
 
     // ==================== Public Verification ====================
 
-    @GetMapping("/verify/{certificateId}")
-    public ResponseEntity<?> verifyCertificate(@PathVariable String certificateId) {
-        return ResponseEntity.ok(certificateService.verifyCertificatePublic(certificateId));
+    @GetMapping({"/verify/{certificateId}", "/verify"})
+    public ResponseEntity<?> verifyCertificate(
+            @PathVariable(required = false) String certificateId,
+            @RequestParam(required = false) String code,
+            @RequestParam(required = false) String certId) {
+        String id = (certificateId != null && !certificateId.trim().isEmpty()) ? certificateId : (code != null ? code : certId);
+        return ResponseEntity.ok(certificateService.verifyCertificatePublic(id));
     }
 
     // ==================== Templates CRUD (Admin Only) ====================
@@ -71,6 +75,14 @@ public class CertificateController {
                                              @AuthenticationPrincipal UserDetails ud) {
         User u = getUser(ud);
         return ResponseEntity.ok(certificateService.publishTemplate(id, u != null ? u.getId() : null));
+    }
+
+    @PostMapping("/templates/{id}/archive")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> archiveTemplate(@PathVariable Long id,
+                                             @AuthenticationPrincipal UserDetails ud) {
+        User u = getUser(ud);
+        return ResponseEntity.ok(certificateService.archiveTemplate(id, u != null ? u.getId() : null));
     }
 
     @PostMapping("/templates/{id}/duplicate")

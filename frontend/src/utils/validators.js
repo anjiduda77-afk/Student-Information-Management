@@ -1,5 +1,5 @@
 /**
- * Reusable validation rules and form helpers for Student Management System
+ * Reusable validation rules and form helpers for Smart Student Information System - Aditya University
  */
 
 export const isValidEmail = (email) => {

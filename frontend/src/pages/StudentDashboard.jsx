@@ -8,7 +8,7 @@ import {
 import {
   LayoutDashboard, ClipboardCheck, BarChart2, Calendar,
   Award, Download, ExternalLink, AlertTriangle,
-  CheckCircle, Clock, BookOpen, ShieldCheck, Plus
+  CheckCircle, Clock, BookOpen, ShieldCheck, Plus, Eye, Sparkles
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { toast } from '../components/Toast'
@@ -17,28 +17,29 @@ import { TableSkeleton, Spinner } from '../components/Loading'
 import { formatDate } from '../utils/helpers'
 import { isFutureDate } from '../utils/validators'
 import { downloadCertificatePDF } from '../utils/certificateGenerator'
+import CertificatePreview from '../components/certificates/CertificatePreview'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer
 } from 'recharts'
+import StudentAttendanceSection from '../components/attendance/StudentAttendanceSection'
+import AcademicTimetable from '../components/timetable/AcademicTimetable'
 
 const BASE = '/student'
 
 const NAV_ITEMS = [
-  { path: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: 'attendance', label: 'Attendance', icon: ClipboardCheck },
-  { path: 'marks', label: 'Marks & Grades', icon: BarChart2 },
-  { path: 'timetable', label: 'Timetable', icon: Calendar },
-  { path: 'events', label: 'Upcoming Events', icon: Award },
-  { path: 'certificates', label: 'My Certificates', icon: ShieldCheck },
+  { path: 'dashboard', label: 'Student Dashboard', icon: LayoutDashboard },
+  { path: 'attendance', label: 'Attendance Summary', icon: ClipboardCheck },
+  { path: 'marks', label: 'Marks Memo & Grade Card', icon: BarChart2 },
+  { path: 'timetable', label: 'Academic Class Time Table', icon: Calendar },
+  { path: 'events', label: 'Campus Events & Symposia', icon: Calendar },
+  { path: 'certificates', label: 'My Certificates', icon: Award },
 ]
 
 // =========================================================================
 // 1. Student Dashboard Overview
 // =========================================================================
-function StudentHome({ user, courses, marks, attendance, onCheckInSuccess }) {
+function StudentHome({ user, courses, marks, attendance }) {
   const navigate = useNavigate()
-  const [sessionCode, setSessionCode] = useState('')
-  const [checkingIn, setCheckingIn] = useState(false)
 
   const totalClasses = attendance.length
   const attended = attendance.filter(a => a.status === 'PRESENT').length
@@ -47,22 +48,6 @@ function StudentHome({ user, courses, marks, attendance, onCheckInSuccess }) {
   const avgMarks = marks.length > 0
     ? Math.round(marks.reduce((acc, m) => acc + (m.percentage || 0), 0) / marks.length)
     : 82
-
-  const handleQuickCheckIn = async (e) => {
-    e.preventDefault()
-    if (!sessionCode.trim()) return
-    setCheckingIn(true)
-    try {
-      await attendanceService.checkIn({ sessionCode: sessionCode.trim() })
-      toast.success('Attendance marked successfully!')
-      setSessionCode('')
-      onCheckInSuccess?.()
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Invalid or expired session code.')
-    } finally {
-      setCheckingIn(false)
-    }
-  }
 
   const chartData = courses.map(c => {
     const cMarks = marks.filter(m => m.courseName === c.name || m.courseCode === c.code)
@@ -82,21 +67,21 @@ function StudentHome({ user, courses, marks, attendance, onCheckInSuccess }) {
       }}>
         <div>
           <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', opacity: 0.85 }}>
-            Student Information Portal
+            Aditya University &bull; Student Academic Portal
           </span>
           <h2 style={{ fontSize: 24, fontWeight: 800, margin: '6px 0 8px' }}>
-            Welcome back, {user?.name}
+            Namaste &bull; Welcome back, {user?.name}
           </h2>
           <p style={{ fontSize: 14, opacity: 0.9, margin: 0 }}>
-            Roll No: <strong>{user?.rollNumber || 'CSE2023001'}</strong> &bull; Sem {user?.semester || 4} (Sec {user?.section || 'A'}) &bull; {user?.department || 'Computer Science & Engineering'}
+            Roll No / Hall Ticket No: <strong>{user?.rollNumber || '23A91A0501'}</strong> &bull; Semester {user?.semester || 4} (Sec {user?.section || 'A'}) &bull; {user?.department || 'Department of Computer Science & Engineering'}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={() => navigate(`${BASE}/attendance`)} className="btn" style={{ background: '#fff', color: '#1e3a8a', fontWeight: 700 }}>
-            <ClipboardCheck size={16} /> View Attendance
+            <ClipboardCheck size={16} /> Attendance Summary
           </button>
-          <button onClick={() => navigate(`${BASE}/marks`)} className="btn" style={{ background: 'rgba(255,255,255,0.2)', color: '#fff' }}>
-            <BarChart2 size={16} /> Grade Sheet
+          <button onClick={() => navigate(`${BASE}/marks`)} className="btn" style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', fontWeight: 700 }}>
+            <BarChart2 size={16} /> Marks Memo
           </button>
         </div>
       </div>
@@ -106,7 +91,7 @@ function StudentHome({ user, courses, marks, attendance, onCheckInSuccess }) {
         <div className="alert alert-danger" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <AlertTriangle size={24} style={{ flexShrink: 0 }} />
           <div>
-            <strong>Attendance Shortage:</strong> Your attendance is {attendancePct}%, which is below the required 75%. Please contact your faculty adviser.
+            <strong>University Academic Regulations (AR) Notice:</strong> Cumulative attendance is <strong>{attendancePct}%</strong>, which is below the mandatory <strong>75%</strong> threshold. Students with attendance shortage are liable to pay condonation fees or face debarment from Semester End Examinations (SEE). Please consult your Class In-Charge or Head of Department (HOD) immediately.
           </div>
         </div>
       )}
@@ -121,7 +106,7 @@ function StudentHome({ user, courses, marks, attendance, onCheckInSuccess }) {
             <p className="stat-value" style={{ color: attendancePct >= 75 ? '#16a34a' : '#dc2626' }}>
               {attendancePct}%
             </p>
-            <p className="stat-label">Attendance</p>
+            <p className="stat-label">Cumulative Attendance</p>
           </div>
         </div>
 
@@ -131,17 +116,17 @@ function StudentHome({ user, courses, marks, attendance, onCheckInSuccess }) {
           </div>
           <div>
             <p className="stat-value">{avgMarks}%</p>
-            <p className="stat-label">Academic Average</p>
+            <p className="stat-label">Internal Marks Avg</p>
           </div>
         </div>
 
-        <div className="stat-card" style={{ cursor: 'default' }}>
+        <div className="stat-card" onClick={() => navigate(`${BASE}/timetable`)} style={{ cursor: 'pointer' }}>
           <div className="stat-icon" style={{ background: '#faf5ff', color: '#7c3aed' }}>
             <BookOpen size={26} />
           </div>
           <div>
             <p className="stat-value">{courses.length || 3}</p>
-            <p className="stat-label">Enrolled Courses</p>
+            <p className="stat-label">Registered Subjects</p>
           </div>
         </div>
 
@@ -151,53 +136,48 @@ function StudentHome({ user, courses, marks, attendance, onCheckInSuccess }) {
           </div>
           <div>
             <p className="stat-value">Certs</p>
-            <p className="stat-label">My Certificates</p>
+            <p className="stat-label">Merit Certificates</p>
           </div>
         </div>
       </div>
 
       {/* Check-In & Chart Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
-        {/* Attendance Check-In Widget */}
+        {/* Attendance Summary Widget */}
         <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
             <div className="section-header">
-              <h3 className="section-title">Quick Attendance Check-In</h3>
-              <span className="badge badge-success">Live Session</span>
+              <h3 className="section-title">Attendance Register Status</h3>
+              <span className={`badge ${attendancePct >= 75 ? 'badge-success' : 'badge-danger'}`}>
+                {attendancePct >= 75 ? 'Good Standing' : 'Shortage Alert'}
+              </span>
             </div>
-            <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.5 }}>
-              Enter the 6-digit session code shown by your faculty to mark your attendance.
+            <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.5, margin: '0 0 16px' }}>
+              Academic attendance is recorded period-wise by course faculty. Maintain a minimum of 75% overall to be eligible for Semester End Examinations.
             </p>
-          </div>
-
-          <form onSubmit={handleQuickCheckIn} style={{ marginTop: 20 }}>
-            <div className="form-group">
-              <label className="form-label">Session Code</label>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <input
-                  className="form-input"
-                  value={sessionCode}
-                  onChange={e => setSessionCode(e.target.value.toUpperCase())}
-                  placeholder="e.g. 748291"
-                  maxLength={10}
-                  style={{
-                    fontSize: 20, fontWeight: 800, letterSpacing: 4,
-                    textAlign: 'center', fontFamily: 'monospace'
-                  }}
-                  required
-                />
-                <button type="submit" disabled={checkingIn} className="btn btn-primary" style={{ padding: '0 20px', flexShrink: 0 }}>
-                  {checkingIn ? <Spinner size={16} color="#fff" /> : 'Check In'}
-                </button>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <div style={{ background: '#f8fafc', borderRadius: 8, padding: '10px 14px', border: '1px solid #e2e8f0', flex: 1, minWidth: 120 }}>
+                <span style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>Attended</span>
+                <p style={{ fontSize: 18, fontWeight: 800, color: '#16a34a', margin: '2px 0 0' }}>{attended} Classes</p>
+              </div>
+              <div style={{ background: '#f8fafc', borderRadius: 8, padding: '10px 14px', border: '1px solid #e2e8f0', flex: 1, minWidth: 120 }}>
+                <span style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>Conducted</span>
+                <p style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', margin: '2px 0 0' }}>{totalClasses} Classes</p>
               </div>
             </div>
-          </form>
+          </div>
+
+          <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end' }}>
+            <button onClick={() => navigate(`${BASE}/attendance`)} className="btn btn-outline btn-sm" style={{ fontWeight: 700 }}>
+              <ClipboardCheck size={15} /> Open Attendance Register
+            </button>
+          </div>
         </div>
 
         {/* Performance Chart */}
         <div className="card">
           <div className="section-header">
-            <h3 className="section-title">Course Performance</h3>
+            <h3 className="section-title">Subject / Paper Performance</h3>
             <span className="badge badge-primary">Current Semester</span>
           </div>
           {chartData.length > 0 ? (
@@ -418,33 +398,33 @@ function StudentAttendanceView({ courses, onRefresh }) {
         )}
       </div>
 
-      {/* Correction Requests */}
+      {/* Regularization / OD Requests */}
       {corrections.length > 0 && (
         <div className="card">
-          <h3 className="section-title" style={{ marginBottom: 14 }}>My Correction Requests</h3>
+          <h3 className="section-title" style={{ marginBottom: 14 }}>Attendance Regularization &amp; Official Duty (OD) Records</h3>
           <div className="table-container">
             <table className="data-table table-responsive">
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Course</th>
-                  <th>Reason</th>
+                  <th>Date of Absence / OD</th>
+                  <th>Paper / Subject</th>
+                  <th>Grounds / Justification</th>
                   <th>Status</th>
-                  <th>Faculty Remarks</th>
+                  <th>Faculty In-Charge Remarks</th>
                 </tr>
               </thead>
               <tbody>
                 {corrections.map(c => (
                   <tr key={c.id}>
                     <td data-label="Date">{formatDate(c.attendanceDate)}</td>
-                    <td data-label="Course">{c.courseName}</td>
-                    <td data-label="Reason">{c.reason}</td>
+                    <td data-label="Subject" style={{ fontWeight: 600, color: '#1e3a8a' }}>{c.courseName}</td>
+                    <td data-label="Grounds">{c.reason}</td>
                     <td data-label="Status">
                       <span className={`badge ${c.status === 'APPROVED' ? 'badge-success' : c.status === 'REJECTED' ? 'badge-danger' : 'badge-warning'}`}>
                         {c.status}
                       </span>
                     </td>
-                    <td data-label="Remarks" style={{ fontSize: 12, color: '#64748b' }}>{c.facultyRemarks || 'Pending review'}</td>
+                    <td data-label="Remarks" style={{ fontSize: 12, color: '#64748b' }}>{c.facultyRemarks || 'Pending scrutiny'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -454,27 +434,27 @@ function StudentAttendanceView({ courses, onRefresh }) {
       )}
 
       {/* Correction Request Modal */}
-      <Modal isOpen={showCorrectionModal} onClose={() => setShowCorrectionModal(false)} title="Request Attendance Correction" size="md">
+      <Modal isOpen={showCorrectionModal} onClose={() => setShowCorrectionModal(false)} title="Apply for Attendance Regularization / OD" size="md">
         <form onSubmit={handleSubmitCorrection} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className="form-group">
-            <label className="form-label">Course</label>
+            <label className="form-label">Paper / Subject *</label>
             <select className="form-select" value={correctionForm.courseId || ''} onChange={e => setCorrectionForm({...correctionForm, courseId: e.target.value})} required>
-              {courses.length === 0 && <option value="">No courses enrolled</option>}
+              {courses.length === 0 && <option value="">No subjects registered</option>}
               {courses.map(c => <option key={c.id} value={c.id}>{c.code} — {c.name}</option>)}
             </select>
           </div>
           <div className="form-group">
-            <label className="form-label">Date of Missed Class</label>
+            <label className="form-label">Date of Missed Class / OD Period *</label>
             <input className="form-input" type="date" value={correctionForm.attendanceDate} onChange={e => setCorrectionForm({...correctionForm, attendanceDate: e.target.value})} required />
           </div>
           <div className="form-group">
-            <label className="form-label">Reason</label>
+            <label className="form-label">Grounds &amp; Justification *</label>
             <textarea
               className="form-textarea"
               rows={4}
               value={correctionForm.reason}
               onChange={e => setCorrectionForm({...correctionForm, reason: e.target.value})}
-              placeholder="Provide a valid reason for the absence..."
+              placeholder="State clear reasons (e.g. Medical indisposition with certificate, or University representation in Technical Symposia / Sports OD)..."
               required
             />
           </div>
@@ -500,7 +480,7 @@ function StudentMarksView() {
   useEffect(() => {
     marksService.getMyMarks()
       .then(res => setMarks(res.data || []))
-      .catch(() => toast.error('Could not load marks. Please try again.'))
+      .catch(() => toast.error('Could not load marks memo. Please try again.'))
       .finally(() => setLoading(false))
   }, [])
 
@@ -514,12 +494,12 @@ function StudentMarksView() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div className="section-header">
         <div>
-          <h2 className="section-title">Marks &amp; Grades</h2>
-          <p style={{ fontSize: 13, color: '#64748b' }}>10-point CBCS grading system</p>
+          <h2 className="section-title">Marks Memo &amp; Semester Grade Register</h2>
+          <p style={{ fontSize: 13, color: '#64748b' }}>10-Point Choice Based Credit System (CBCS) under UGC / AICTE Norms</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#eff6ff', padding: '8px 16px', borderRadius: 12, border: '1px solid #bfdbfe' }}>
-          <span style={{ fontSize: 12, color: '#1e3a8a', fontWeight: 600 }}>SGPA</span>
-          <span style={{ fontSize: 18, fontWeight: 800, color: '#1d4ed8' }}>{sgpa} / 10.0</span>
+          <span style={{ fontSize: 12, color: '#1e3a8a', fontWeight: 700 }}>Semester Grade Point Average (SGPA)</span>
+          <span style={{ fontSize: 18, fontWeight: 900, color: '#1d4ed8' }}>{sgpa} / 10.0</span>
         </div>
       </div>
 
@@ -531,23 +511,23 @@ function StudentMarksView() {
             <table className="data-table table-responsive">
               <thead>
                 <tr>
-                  <th>Course</th>
-                  <th>Exam Type</th>
-                  <th>Marks</th>
-                  <th>Max</th>
+                  <th>Paper / Subject Title</th>
+                  <th>Assessment / Examination</th>
+                  <th>Marks Secured</th>
+                  <th>Max Marks</th>
                   <th>Percentage</th>
-                  <th>Grade</th>
+                  <th>Grade Letter</th>
                 </tr>
               </thead>
               <tbody>
                 {marks.map(m => (
                   <tr key={m.id}>
-                    <td data-label="Course" style={{ fontWeight: 600, color: '#1e3a8a' }}>{m.courseName}</td>
+                    <td data-label="Subject" style={{ fontWeight: 700, color: '#1e3a8a' }}>{m.courseName}</td>
                     <td data-label="Exam Type"><span className="badge badge-neutral">{m.examType}</span></td>
-                    <td data-label="Marks" style={{ fontWeight: 700 }}>{m.marksObtained}</td>
-                    <td data-label="Max">{m.totalMarks}</td>
-                    <td data-label="%">{m.percentage}%</td>
-                    <td data-label="Grade">
+                    <td data-label="Marks Secured" style={{ fontWeight: 800 }}>{m.marksObtained}</td>
+                    <td data-label="Max Marks">{m.totalMarks}</td>
+                    <td data-label="Percentage">{m.percentage}%</td>
+                    <td data-label="Grade Letter">
                       <span className={`badge ${m.grade === 'O' || m.grade === 'A+' ? 'badge-success' : m.grade === 'F' ? 'badge-danger' : 'badge-primary'}`}>
                         {m.grade}
                       </span>
@@ -557,7 +537,7 @@ function StudentMarksView() {
                 {marks.length === 0 && (
                   <tr>
                     <td colSpan={6} style={{ textAlign: 'center', padding: 32, color: '#94a3b8' }}>
-                      No marks published yet for this semester.
+                      No marks memo published yet for this semester.
                     </td>
                   </tr>
                 )}
@@ -571,122 +551,26 @@ function StudentMarksView() {
 }
 
 // =========================================================================
-// 4. Timetable Panel
-// =========================================================================
-function StudentTimetable() {
-  const [schedule, setSchedule] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [selectedDay, setSelectedDay] = useState('Monday')
-
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-
-  useEffect(() => {
-    timetableService.getMyTimetable()
-      .then(res => setSchedule(res.data || []))
-      .catch(() => toast.error('Could not load timetable. Please try again.'))
-      .finally(() => setLoading(false))
-  }, [])
-
-  const daySchedule = schedule.filter(s => s.dayOfWeek === selectedDay)
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div className="section-header">
-        <div>
-          <h2 className="section-title">Timetable</h2>
-          <p style={{ fontSize: 13, color: '#64748b' }}>Weekly class schedule</p>
-        </div>
-      </div>
-
-      {/* Desktop Table */}
-      <div className="card timetable-desktop">
-        {loading ? (
-          <TableSkeleton rows={6} cols={5} />
-        ) : (
-          <div className="table-container">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Day</th>
-                  <th>Time</th>
-                  <th>Course</th>
-                  <th>Faculty</th>
-                  <th>Room</th>
-                </tr>
-              </thead>
-              <tbody>
-                {schedule.map(s => (
-                  <tr key={s.id}>
-                    <td><strong>{s.dayOfWeek}</strong></td>
-                    <td><span className="badge badge-neutral" style={{ fontFamily: 'monospace' }}>{s.startTime} – {s.endTime}</span></td>
-                    <td style={{ fontWeight: 600, color: '#1e3a8a' }}>{s.courseName}</td>
-                    <td>{s.facultyName || '—'}</td>
-                    <td>{s.classroom}</td>
-                  </tr>
-                ))}
-                {schedule.length === 0 && (
-                  <tr>
-                    <td colSpan={5} style={{ textAlign: 'center', padding: 32, color: '#94a3b8' }}>
-                      No timetable available for your section.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Mobile Day View */}
-      <div className="timetable-mobile">
-        <div className="day-selector">
-          {days.map(day => (
-            <button
-              key={day}
-              onClick={() => setSelectedDay(day)}
-              className={`day-btn ${selectedDay === day ? 'day-btn-active' : ''}`}
-            >
-              {day.slice(0, 3)}
-            </button>
-          ))}
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
-          {loading ? <TableSkeleton rows={4} cols={2} /> : daySchedule.length === 0 ? (
-            <div className="card" style={{ textAlign: 'center', padding: 32, color: '#94a3b8' }}>
-              No classes on {selectedDay}.
-            </div>
-          ) : daySchedule.map(s => (
-            <div key={s.id} className="card" style={{ padding: 16, borderLeft: '4px solid #2563eb' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <span className="badge badge-neutral" style={{ fontFamily: 'monospace' }}>{s.startTime} – {s.endTime}</span>
-                <span style={{ fontSize: 12, color: '#64748b' }}>{s.classroom}</span>
-              </div>
-              <p style={{ fontWeight: 700, color: '#1e3a8a', margin: '0 0 4px' }}>{s.courseName}</p>
-              <p style={{ fontSize: 12, color: '#64748b', margin: 0 }}>{s.facultyName || 'Faculty'}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // =========================================================================
 // 5. Events Panel
 // =========================================================================
 function StudentEvents() {
+  const navigate = useNavigate()
   const [events, setEvents] = useState([])
   const [myRegistrations, setMyRegistrations] = useState([])
+  const [myCertificates, setMyCertificates] = useState([])
   const [loading, setLoading] = useState(true)
 
   const loadData = () => {
     setLoading(true)
     Promise.all([
       eventService.getAll(),
-      eventService.getMyRegistrations()
-    ]).then(([eRes, rRes]) => {
+      eventService.getMyRegistrations(),
+      certificateService.getMyCertificates()
+    ]).then(([eRes, rRes, cRes]) => {
       setEvents(eRes.data || [])
       setMyRegistrations(rRes.data || [])
+      setMyCertificates(cRes.data || [])
     }).finally(() => setLoading(false))
   }
 
@@ -713,13 +597,14 @@ function StudentEvents() {
   }
 
   const registeredEventIds = new Set(myRegistrations.map(r => r.eventId))
+  const certMap = new Map(myCertificates.map(c => [c.eventId, c]))
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div className="section-header">
         <div>
-          <h2 className="section-title">Upcoming Events</h2>
-          <p style={{ fontSize: 13, color: '#64748b' }}>Register for campus events and competitions</p>
+          <h2 className="section-title">Campus Events & Symposia</h2>
+          <p style={{ fontSize: 13, color: '#64748b' }}>Register for hackathons, paper presentations, workshops, and college fests</p>
         </div>
       </div>
 
@@ -735,11 +620,19 @@ function StudentEvents() {
         <div className="grid-3">
           {events.map(ev => {
             const isRegistered = registeredEventIds.has(ev.id)
+            const earnedCert = certMap.get(ev.id)
+
             return (
               <div key={ev.id} className="card card-hover" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span className="badge badge-purple">{ev.category}</span>
-                  {isRegistered && <span className="badge badge-success">REGISTERED</span>}
+                  {earnedCert ? (
+                    <span className="badge badge-success" style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a' }}>
+                      🏆 CERTIFICATE ISSUED
+                    </span>
+                  ) : isRegistered ? (
+                    <span className="badge badge-success">REGISTERED</span>
+                  ) : null}
                 </div>
                 <h4 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>{ev.title}</h4>
                 <p style={{ fontSize: 12, color: '#64748b', margin: 0, lineHeight: 1.5, flex: 1 }}>{ev.description}</p>
@@ -747,8 +640,17 @@ function StudentEvents() {
                   <span>📅 {formatDate(ev.eventDate)} ({ev.startTime || '09:30'})</span>
                   <span>📍 {ev.venue || 'Main Auditorium'}</span>
                 </div>
-                <div style={{ paddingTop: 12, borderTop: '1px solid #f1f5f9' }}>
-                  {isRegistered ? (
+
+                <div style={{ paddingTop: 12, borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {earnedCert ? (
+                    <button
+                      onClick={() => navigate(`${BASE}/certificates`)}
+                      className="btn btn-sm"
+                      style={{ background: '#d97706', color: '#fff', fontWeight: 700, justifyContent: 'center', gap: 6 }}
+                    >
+                      <Award size={14} /> View Earned Certificate
+                    </button>
+                  ) : isRegistered ? (
                     <button onClick={() => handleCancel(ev.id)} className="btn btn-ghost btn-sm" style={{ width: '100%', color: '#dc2626' }}>
                       Cancel Registration
                     </button>
@@ -768,84 +670,281 @@ function StudentEvents() {
 }
 
 // =========================================================================
-// 6. Certificates Panel
+// 6. Certificates Panel — Screen 9: My Certificates
 // =========================================================================
 function StudentCertificates() {
   const [certs, setCerts] = useState([])
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [previewCert, setPreviewCert] = useState(null)
+  const [downloadingId, setDownloadingId] = useState(null)
 
-  useEffect(() => {
+  const loadCertificates = () => {
+    setLoading(true)
     certificateService.getMyCertificates()
       .then(res => setCerts(res.data || []))
       .catch(() => toast.error('Could not load certificates. Please try again.'))
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    loadCertificates()
   }, [])
+
+  const handleDownloadPdf = async (cert) => {
+    setDownloadingId(cert.certificateId)
+    try {
+      toast.info(`Preparing official certificate PDF for ${cert.certificateId}...`)
+      await certificateService.downloadPdf(cert.certificateId, cert)
+      toast.success('Certificate PDF downloaded successfully!')
+    } catch (err) {
+      console.error(err)
+      toast.error('Could not download PDF. Please try again.')
+    } finally {
+      setDownloadingId(null)
+    }
+  }
+
+  const getCertificateTypeDisplay = (cert) => {
+    const type = cert.certificateType?.toUpperCase() || ''
+    const pos = cert.position?.toUpperCase() || ''
+    if (type === 'WINNER' || pos.includes('WINNER') || pos.includes('FIRST')) {
+      return { label: 'Winner Certificate', bg: '#fef3c7', color: '#b45309', border: '#fde68a' }
+    }
+    if (type === 'RUNNER_UP' || pos.includes('RUNNER') || pos.includes('SECOND')) {
+      return { label: 'Runner-up Certificate', bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' }
+    }
+    if (type === 'SPECIAL_RECOGNITION') {
+      return { label: 'Special Recognition', bg: '#fce7f3', color: '#be185d', border: '#fbcfe8' }
+    }
+    return { label: 'Participation Certificate', bg: '#dcfce7', color: '#15803d', border: '#bbf7d0' }
+  }
+
+  const filteredCerts = certs.filter(c => {
+    if (!search) return true
+    const q = search.toLowerCase()
+    return (
+      c.eventName?.toLowerCase().includes(q) ||
+      c.certificateType?.toLowerCase().includes(q) ||
+      c.position?.toLowerCase().includes(q) ||
+      c.certificateId?.toLowerCase().includes(q)
+    )
+  })
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div className="section-header">
+      {/* Header matching Screen 9 */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
         <div>
-          <h2 className="section-title">My Certificates</h2>
-          <p style={{ fontSize: 13, color: '#64748b' }}>Verified certificates issued by Aditya University</p>
+          <h2 className="section-title" style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>
+            My Certificates
+          </h2>
+          <p style={{ fontSize: 13, color: '#64748b', margin: '4px 0 0' }}>
+            Certificates issued to you for events and activities.
+          </p>
+        </div>
+
+        {/* Search bar matching Screen 9 */}
+        <div style={{ position: 'relative', width: 280 }}>
+          <input
+            type="text"
+            className="form-input"
+            style={{ paddingLeft: 36, height: 38, fontSize: 13, borderRadius: 10 }}
+            placeholder="Search certificates, events..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          <Search size={15} style={{ position: 'absolute', left: 12, top: 12, color: '#94a3b8' }} />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              style={{ position: 'absolute', right: 10, top: 11, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
       </div>
 
       {loading ? (
-        <TableSkeleton rows={3} cols={4} />
-      ) : certs.length > 0 ? (
-        <div className="grid-2">
-          {certs.map(cert => (
-            <div key={cert.id} className="card card-hover" style={{ border: '2px solid #e2e8f0' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Award size={24} />
-                </div>
-                <span className="badge badge-success">VERIFIED</span>
-              </div>
+        <TableSkeleton rows={4} cols={4} />
+      ) : filteredCerts.length === 0 ? (
+        <div className="card" style={{ textAlign: 'center', padding: '50px 24px', borderRadius: 14 }}>
+          <Award size={48} style={{ margin: '0 auto 12px', color: '#cbd5e1' }} />
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', margin: '0 0 6px' }}>
+            No Certificates Found
+          </h3>
+          <p style={{ fontSize: 13, color: '#64748b', maxWidth: 440, margin: '0 auto' }}>
+            {search ? 'No certificates matching your search query.' : 'Participate in campus symposia, competitions, and technical fests. Once faculty generates certificates, they will appear here with View and Download options.'}
+          </p>
+        </div>
+      ) : (
+        <div className="card" style={{ padding: 0, overflow: 'hidden', borderRadius: 14, border: '1px solid var(--border)' }}>
+          <div className="table-container">
+            <table className="data-table">
+              <thead>
+                <tr style={{ background: '#f8fafc', borderBottom: '1.5px solid #e2e8f0' }}>
+                  <th style={{ padding: '14px 18px', fontSize: 13, fontWeight: 700, color: '#475569' }}>Date</th>
+                  <th style={{ padding: '14px 18px', fontSize: 13, fontWeight: 700, color: '#475569' }}>Event Name</th>
+                  <th style={{ padding: '14px 18px', fontSize: 13, fontWeight: 700, color: '#475569' }}>Certificate Type</th>
+                  <th style={{ padding: '14px 18px', fontSize: 13, fontWeight: 700, color: '#475569', textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredCerts.map((cert) => {
+                  const typeBadge = getCertificateTypeDisplay(cert)
+                  const isDownloading = downloadingId === cert.certificateId
 
-              <h4 style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', margin: '0 0 4px' }}>
-                {cert.eventName || 'Academic Certificate'}
-              </h4>
-              <p style={{ fontSize: 13, color: '#d97706', fontWeight: 700, margin: '0 0 10px' }}>
-                {cert.position ? `${cert.position} Place` : 'Certificate of Participation'}
-              </p>
+                  return (
+                    <tr key={cert.id || cert.certificateId} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      {/* Column 1: Date */}
+                      <td style={{ padding: '14px 18px', fontSize: 13, color: '#334155', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                        {formatDate(cert.issueDate)}
+                      </td>
 
-              <div style={{ background: '#f8fafc', padding: 12, borderRadius: 10, fontSize: 11, color: '#64748b', marginBottom: 16 }}>
-                <div><strong>Certificate ID:</strong> {cert.certificateId}</div>
-                <div><strong>Issue Date:</strong> {formatDate(cert.issueDate)}</div>
+                      {/* Column 2: Event Name */}
+                      <td style={{ padding: '14px 18px', fontSize: 14, fontWeight: 700, color: '#0f172a' }}>
+                        {cert.eventName || 'University Event'}
+                        <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500, marginTop: 2, fontFamily: 'monospace' }}>
+                          ID: {cert.certificateId}
+                        </div>
+                      </td>
+
+                      {/* Column 3: Certificate Type */}
+                      <td style={{ padding: '14px 18px' }}>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          padding: '4px 12px',
+                          borderRadius: 20,
+                          fontSize: 12,
+                          fontWeight: 700,
+                          background: typeBadge.bg,
+                          color: typeBadge.color,
+                          border: `1px solid ${typeBadge.border}`
+                        }}>
+                          {typeBadge.label}
+                        </span>
+                      </td>
+
+                      {/* Column 4: Actions [View] [Download] matching Screen 9 */}
+                      <td style={{ padding: '14px 18px', textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', gap: 8, justifyContent: 'flex-end' }}>
+                          {/* [View] Button */}
+                          <button
+                            onClick={() => setPreviewCert(cert)}
+                            className="btn btn-sm"
+                            style={{
+                              background: '#eff6ff',
+                              color: '#1d4ed8',
+                              border: '1px solid #bfdbfe',
+                              fontWeight: 700,
+                              fontSize: 12,
+                              padding: '5px 14px',
+                              borderRadius: 8,
+                              gap: 6,
+                              display: 'inline-flex',
+                              alignItems: 'center'
+                            }}
+                          >
+                            <Eye size={13} />
+                            <span>View</span>
+                          </button>
+
+                          {/* [Download] Button */}
+                          <button
+                            onClick={() => handleDownloadPdf(cert)}
+                            disabled={isDownloading}
+                            className="btn btn-sm"
+                            style={{
+                              background: '#f0fdf4',
+                              color: '#15803d',
+                              border: '1px solid #bbf7d0',
+                              fontWeight: 700,
+                              fontSize: 12,
+                              padding: '5px 14px',
+                              borderRadius: 8,
+                              gap: 6,
+                              display: 'inline-flex',
+                              alignItems: 'center'
+                            }}
+                          >
+                            <Download size={13} />
+                            <span>{isDownloading ? 'Downloading…' : 'Download'}</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* View Certificate Modal */}
+      {previewCert && (
+        <Modal
+          isOpen={Boolean(previewCert)}
+          onClose={() => setPreviewCert(null)}
+          title={`Certificate: ${previewCert.eventName} (${previewCert.certificateId})`}
+          size="lg"
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{
+              background: '#f8fafc',
+              padding: 12,
+              borderRadius: 12,
+              border: '1px solid #e2e8f0',
+              display: 'flex',
+              justifyContent: 'center'
+            }}>
+              <CertificatePreview
+                certificate={previewCert}
+                mode="full"
+                sampleData={{
+                  studentName: previewCert.studentName,
+                  eventName: previewCert.eventName,
+                  position: previewCert.position || 'Participation',
+                  date: formatDate(previewCert.issueDate),
+                  certificateId: previewCert.certificateId,
+                  department: previewCert.departmentName
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTop: '1px solid #e2e8f0' }}>
+              <div style={{ fontSize: 12, color: '#64748b' }}>
+                Verified Official Credential &bull; <strong style={{ color: '#0f172a' }}>{previewCert.certificateId}</strong>
               </div>
 
               <div style={{ display: 'flex', gap: 10 }}>
-                <a
-                  href={`/api/certificates/${cert.certificateId}/download`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn btn-primary btn-sm"
-                  style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, textDecoration: 'none' }}
-                >
-                  <Download size={14} /> Download PDF
-                </a>
-                <a
-                  href={`/verify/${cert.certificateId}`}
-                  target="_blank"
-                  rel="noreferrer"
+                <button
+                  onClick={() => setPreviewCert(null)}
                   className="btn btn-ghost btn-sm"
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}
                 >
-                  <ExternalLink size={14} /> Verify
-                </a>
+                  Close
+                </button>
+                <button
+                  onClick={() => handleDownloadPdf(previewCert)}
+                  disabled={downloadingId === previewCert.certificateId}
+                  className="btn btn-primary btn-sm"
+                  style={{
+                    background: '#15803d',
+                    borderColor: '#15803d',
+                    gap: 6,
+                    fontWeight: 700
+                  }}
+                >
+                  <Download size={14} />
+                  <span>Download Official PDF</span>
+                </button>
               </div>
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className="card" style={{ textAlign: 'center', padding: 48 }}>
-          <Award size={48} style={{ margin: '0 auto 12px', color: '#cbd5e1' }} />
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>No Certificates Yet</h3>
-          <p style={{ fontSize: 13, color: '#64748b', maxWidth: 400, margin: '0 auto' }}>
-            Participate in campus events to earn certificates.
-          </p>
-        </div>
+          </div>
+        </Modal>
       )}
     </div>
   )
@@ -875,11 +974,12 @@ export default function StudentDashboard() {
       <Routes>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={
-          <StudentHome user={user} courses={courses} marks={marks} attendance={attendance} onCheckInSuccess={loadOverview} />
+          <StudentHome user={user} courses={courses} marks={marks} attendance={attendance} />
         } />
-        <Route path="attendance" element={<StudentAttendanceView courses={courses} onRefresh={loadOverview} />} />
+        <Route path="attendance" element={<StudentAttendanceSection user={user} initialTab="subject-wise" />} />
+        <Route path="attendance/*" element={<StudentAttendanceSection user={user} />} />
         <Route path="marks" element={<StudentMarksView />} />
-        <Route path="timetable" element={<StudentTimetable />} />
+        <Route path="timetable" element={<AcademicTimetable role="STUDENT" user={user} />} />
         <Route path="events" element={<StudentEvents />} />
         <Route path="certificates" element={<StudentCertificates />} />
         <Route path="*" element={<Navigate to="dashboard" replace />} />

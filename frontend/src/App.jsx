@@ -9,16 +9,41 @@ import StudentDashboard from './pages/StudentDashboard'
 import CertificateVerificationPage from './pages/CertificateVerificationPage'
 import { Spinner } from './components/Loading'
 
+// ✅ Official Aditya University Logo URL
+const AU_LOGO = 'https://www.aec.edu.in/adityanew/images/au_2.png'
+
 // Protected route: requires auth, optional role check
 function ProtectedRoute({ children, roles }) {
   const { user, loading } = useAuth()
 
   if (loading) {
     return (
-      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
+      <div style={{
+        height: '100vh', display: 'flex', alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%)'
+      }}>
         <div style={{ textAlign: 'center' }}>
-          <Spinner size={36} />
-          <p style={{ marginTop: 16, color: '#64748b', fontSize: 14 }}>Loading…</p>
+          <img
+            src={AU_LOGO}
+            alt="Aditya University"
+            onError={(e) => { e.target.onerror = null; e.target.src = '/aditya-logo.png' }}
+            style={{
+              width: 88, height: 88, marginBottom: 24,
+              objectFit: 'contain',
+              filter: 'drop-shadow(0 0 20px rgba(217,155,38,0.8))',
+              animation: 'spin 3s linear infinite'
+            }}
+          />
+          <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
+          <Spinner size={32} />
+          <p style={{
+            marginTop: 16, color: '#d99b26', fontSize: 13,
+            fontFamily: 'Inter, sans-serif', letterSpacing: 1.5,
+            textTransform: 'uppercase', fontWeight: 600
+          }}>
+            Aditya University SIS
+          </p>
         </div>
       </div>
     )
@@ -27,7 +52,6 @@ function ProtectedRoute({ children, roles }) {
   if (!user) return <Navigate to="/login" replace />
 
   if (roles && !roles.includes(user.role)) {
-    // Redirect to the correct dashboard based on actual role
     if (user.role === 'ADMIN') return <Navigate to="/admin/dashboard" replace />
     if (user.role === 'FACULTY') return <Navigate to="/faculty/dashboard" replace />
     return <Navigate to="/student/dashboard" replace />
@@ -58,7 +82,7 @@ function RoleRouter() {
   return <Navigate to="/student/dashboard" replace />
 }
 
-// Professional 404 page
+// Professional 404 page — Aditya University branded
 function NotFoundPage() {
   const { user } = useAuth()
   const dashboardPath = user?.role === 'ADMIN' ? '/admin/dashboard'
@@ -69,36 +93,57 @@ function NotFoundPage() {
   return (
     <div style={{
       height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: '#f8fafc', fontFamily: 'Inter, sans-serif'
+      background: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%)',
+      fontFamily: 'Inter, sans-serif'
     }}>
-      <div style={{ textAlign: 'center', maxWidth: 420, padding: '0 24px' }}>
+      <div style={{ textAlign: 'center', maxWidth: 440, padding: '0 24px' }}>
+        {/* Official Logo */}
+        <img
+          src={AU_LOGO}
+          alt="Aditya University"
+          onError={(e) => { e.target.onerror = null; e.target.src = '/aditya-logo.png' }}
+          style={{
+            width: 96, height: 96, marginBottom: 24, objectFit: 'contain',
+            filter: 'drop-shadow(0 0 16px rgba(217,155,38,0.6))'
+          }}
+        />
         <div style={{
-          fontSize: 80, fontWeight: 900, color: '#e2e8f0', lineHeight: 1,
-          marginBottom: 8, letterSpacing: -4
+          fontSize: 90, fontWeight: 900,
+          color: 'rgba(255,255,255,0.08)',
+          lineHeight: 1, marginBottom: 8, letterSpacing: -4
         }}>404</div>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', margin: '0 0 12px' }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f1f5f9', margin: '0 0 10px' }}>
           Page Not Found
         </h1>
-        <p style={{ fontSize: 14, color: '#64748b', margin: '0 0 28px', lineHeight: 1.6 }}>
+        <p style={{ fontSize: 14, color: '#94a3b8', margin: '0 0 28px', lineHeight: 1.7 }}>
           The page you are looking for does not exist or has been moved.
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
           <a href={dashboardPath} style={{
-            padding: '10px 20px', background: '#2563eb', color: '#fff',
-            borderRadius: 10, textDecoration: 'none', fontSize: 14, fontWeight: 600
+            padding: '11px 22px',
+            background: 'linear-gradient(135deg, #d99b26, #b8860b)',
+            color: '#0f172a', borderRadius: 10,
+            textDecoration: 'none', fontSize: 14, fontWeight: 700,
+            boxShadow: '0 4px 14px rgba(217,155,38,0.35)'
           }}>
             Go to Dashboard
           </a>
           <button
             onClick={() => window.history.back()}
             style={{
-              padding: '10px 20px', background: '#fff', color: '#475569',
-              borderRadius: 10, border: '1px solid #e2e8f0', fontSize: 14, fontWeight: 600, cursor: 'pointer'
+              padding: '11px 22px',
+              background: 'rgba(255,255,255,0.08)',
+              color: '#f1f5f9', borderRadius: 10,
+              border: '1px solid rgba(255,255,255,0.18)',
+              fontSize: 14, fontWeight: 600, cursor: 'pointer'
             }}
           >
             Go Back
           </button>
         </div>
+        <p style={{ marginTop: 24, fontSize: 12, color: '#475569' }}>
+          Aditya University — Smart Student Information System
+        </p>
       </div>
     </div>
   )
@@ -111,15 +156,22 @@ export default function App() {
         <ToastProvider>
           <BrowserRouter>
             <Routes>
-              {/* Public routes */}
+
+              {/* ── Public routes ─────────────────────────────────── */}
               <Route path="/login" element={<LoginGuard><LoginPage /></LoginGuard>} />
+
+              {/* Certificate public verification — no login required */}
+              <Route path="/verify/certificate" element={<CertificateVerificationPage />} />
+              <Route path="/verify/certificate/:certificateId" element={<CertificateVerificationPage />} />
               <Route path="/verify" element={<CertificateVerificationPage />} />
               <Route path="/verify/:certificateId" element={<CertificateVerificationPage />} />
+              <Route path="/certificates/verify" element={<CertificateVerificationPage />} />
+              <Route path="/certificates/verify/:certificateId" element={<CertificateVerificationPage />} />
 
               {/* Root redirect */}
               <Route path="/" element={<RoleRouter />} />
 
-              {/* Student routes */}
+              {/* ── Student routes ─────────────────────────────────── */}
               <Route
                 path="/student/*"
                 element={
@@ -129,7 +181,7 @@ export default function App() {
                 }
               />
 
-              {/* Faculty routes */}
+              {/* ── Faculty routes ─────────────────────────────────── */}
               <Route
                 path="/faculty/*"
                 element={
@@ -139,7 +191,7 @@ export default function App() {
                 }
               />
 
-              {/* Admin routes */}
+              {/* ── Admin routes (includes /admin/certificates/*) ──── */}
               <Route
                 path="/admin/*"
                 element={
@@ -149,8 +201,9 @@ export default function App() {
                 }
               />
 
-              {/* 404 */}
+              {/* ── 404 ───────────────────────────────────────────── */}
               <Route path="*" element={<NotFoundPage />} />
+
             </Routes>
           </BrowserRouter>
         </ToastProvider>

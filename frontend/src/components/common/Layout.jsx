@@ -166,9 +166,13 @@ export default function Layout({ children, navItems, role, basePath, pageTitle }
         <nav className="sidebar-nav">
           {navItems?.map(item => {
             const fullPath = item.path ? `${basePath}/${item.path}` : basePath
+            const hasMoreSpecificMatch = navItems?.some(other =>
+              other !== item && other.path && other.path.startsWith(`${item.path}/`) &&
+              (location.pathname === `${basePath}/${other.path}` || location.pathname.startsWith(`${basePath}/${other.path}/`))
+            )
             const isActive = item.path === 'dashboard' || item.path === ''
               ? (location.pathname === basePath || location.pathname === `${basePath}/` || location.pathname === `${basePath}/dashboard`)
-              : location.pathname === fullPath || location.pathname.startsWith(`${fullPath}/`)
+              : !hasMoreSpecificMatch && (location.pathname === fullPath || location.pathname.startsWith(`${fullPath}/`))
 
             const Icon = item.icon
 
@@ -195,7 +199,7 @@ export default function Layout({ children, navItems, role, basePath, pageTitle }
 
         {/* Logout */}
         <div className="sidebar-footer">
-          <button onClick={handleLogout} className="logout-btn">
+          <button id="sidebar-logout-btn" onClick={handleLogout} className="logout-btn">
             <LogOut size={16} />
             <span>Logout</span>
           </button>
@@ -327,6 +331,7 @@ export default function Layout({ children, navItems, role, basePath, pageTitle }
                   </button>
 
                   <button
+                    id="header-logout-btn"
                     onClick={handleLogout}
                     style={{
                       width: '100%', display: 'flex', alignItems: 'center', gap: 10,
@@ -337,7 +342,7 @@ export default function Layout({ children, navItems, role, basePath, pageTitle }
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
                     <LogOut size={15} />
-                    <span>Sign Out</span>
+                    <span>Logout</span>
                   </button>
                 </div>
               )}

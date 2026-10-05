@@ -10,7 +10,9 @@ import java.util.List;
 public interface TimetableRepository extends JpaRepository<Timetable, Long> {
     List<Timetable> findByCourseId(Long courseId);
     List<Timetable> findByFacultyId(Long facultyId);
+    List<Timetable> findByFacultyIdAndDayOfWeek(Long facultyId, Timetable.DayOfWeek dayOfWeek);
     List<Timetable> findByCourseIdAndSemesterAndSection(Long courseId, Integer semester, String section);
+    List<Timetable> findByCourseIdAndSemesterAndSectionAndDayOfWeek(Long courseId, Integer semester, String section, Timetable.DayOfWeek dayOfWeek);
     List<Timetable> findByClassroom(String classroom);
 
     @Query("SELECT t FROM Timetable t WHERE t.faculty.id = :facultyId AND t.dayOfWeek = :dayOfWeek " +

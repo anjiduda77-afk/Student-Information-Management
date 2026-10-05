@@ -13,6 +13,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -240,6 +241,45 @@ public class AdminController {
         User admin = userRepository.findByEmail(ud.getUsername()).orElseThrow();
         accountSecurityService.removeProfilePhoto(id, admin.getId());
         return ResponseEntity.ok(new AppDTO.MessageResponse("Faculty profile photo removed"));
+    }
+
+    // ==================== Attendance Oversight & Reports ====================
+
+    @GetMapping("/attendance/overview")
+    public ResponseEntity<?> getAttendanceOverview(
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) Integer semester,
+            @RequestParam(required = false) String section,
+            @RequestParam(required = false) Long subjectId,
+            @RequestParam(required = false) String fromDate,
+            @RequestParam(required = false) String toDate) {
+        LocalDate from = (fromDate != null && !fromDate.isBlank()) ? LocalDate.parse(fromDate) : null;
+        LocalDate to = (toDate != null && !toDate.isBlank()) ? LocalDate.parse(toDate) : null;
+        return ResponseEntity.ok(attendanceService.getAdminAttendanceOverview(departmentId, courseId, semester, section, subjectId, from, to));
+    }
+
+    @GetMapping("/attendance/shortage-report")
+    public ResponseEntity<List<AppDTO.ShortageStudentDTO>> getShortageReport(
+            @RequestParam(defaultValue = "75.0") Double thresholdPct,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) Integer semester,
+            @RequestParam(required = false) String section) {
+        return ResponseEntity.ok(attendanceService.getAdminShortageReport(thresholdPct, departmentId, courseId, semester, section));
+    }
+
+    @RequestMapping(value = "/attendance/{id}/correct", method = {RequestMethod.POST, RequestMethod.PUT})
+    public ResponseEntity<?> adminManualCorrection(
+            @PathVariable Long id,
+            @RequestParam(required = false) String newStatus,
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "Authorised by Administrator") String reason,
+            @AuthenticationPrincipal UserDetails ud) {
+        User admin = userRepository.findByEmail(ud.getUsername()).orElseThrow();
+        String effectiveStatus = newStatus != null ? newStatus : status;
+        if (effectiveStatus == null) effectiveStatus = "PRESENT";
+        return ResponseEntity.ok(attendanceService.adminManualCorrection(id, effectiveStatus, reason, admin.getId()));
     }
 
     // ==================== Reports ====================

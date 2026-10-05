@@ -80,6 +80,92 @@ public class FacultyController {
 
     // ==================== Attendance ====================
 
+    @GetMapping("/attendance/departments")
+    public ResponseEntity<List<AppDTO.DepartmentDTO>> getFacultyAuthorizedDepartments(@AuthenticationPrincipal UserDetails ud) {
+        User u = getCurrentUser(ud);
+        return ResponseEntity.ok(attendanceService.getFacultyAuthorizedDepartments(u.getId()));
+    }
+
+    @GetMapping("/attendance/sections")
+    public ResponseEntity<List<String>> getFacultyDepartmentSections(@AuthenticationPrincipal UserDetails ud,
+                                                                    @RequestParam String department) {
+        User u = getCurrentUser(ud);
+        return ResponseEntity.ok(attendanceService.getFacultyDepartmentSections(u.getId(), department));
+    }
+
+    @GetMapping("/attendance/roster")
+    public ResponseEntity<AppDTO.ManualAttendanceRosterResponse> getManualAttendanceRoster(
+            @AuthenticationPrincipal UserDetails ud,
+            @RequestParam(required = false) String date,
+            @RequestParam String department,
+            @RequestParam String section,
+            @RequestParam(required = false) Long subjectId,
+            @RequestParam(required = false) Integer period) {
+        User u = getCurrentUser(ud);
+        LocalDate parsedDate = (date != null && !date.isBlank()) ? LocalDate.parse(date) : LocalDate.now();
+        return ResponseEntity.ok(attendanceService.getManualAttendanceRoster(u.getId(), parsedDate, department, section, subjectId, period));
+    }
+
+    @PostMapping("/attendance/save-roster")
+    public ResponseEntity<AppDTO.ManualAttendanceRosterResponse> saveManualAttendanceRoster(
+            @AuthenticationPrincipal UserDetails ud,
+            @RequestBody AppDTO.SaveManualAttendanceRequest request) {
+        User u = getCurrentUser(ud);
+        return ResponseEntity.ok(attendanceService.saveManualAttendanceRoster(u.getId(), request));
+    }
+
+    @GetMapping("/attendance/today-classes")
+    public ResponseEntity<List<AppDTO.FacultyTodayClassDTO>> getTodayClasses(@AuthenticationPrincipal UserDetails ud,
+                                                                             @RequestParam(required = false) String date) {
+        User u = getCurrentUser(ud);
+        LocalDate parsedDate = (date != null && !date.isBlank()) ? LocalDate.parse(date) : LocalDate.now();
+        return ResponseEntity.ok(attendanceService.getFacultyTodayClasses(u.getId(), parsedDate));
+    }
+
+    @PostMapping("/attendance/session/start-from-timetable/{timetableId}")
+    public ResponseEntity<AppDTO.AttendanceSessionDTO> startSessionFromTimetable(@AuthenticationPrincipal UserDetails ud,
+                                                                                 @PathVariable Long timetableId,
+                                                                                 @RequestParam(defaultValue = "ONLINE_QR") String sessionType) {
+        User u = getCurrentUser(ud);
+        return ResponseEntity.ok(attendanceService.startSessionFromTimetable(u.getId(), timetableId, sessionType));
+    }
+
+    @GetMapping("/attendance/session/{sessionId}/students")
+    public ResponseEntity<List<AppDTO.UserResponse>> getSessionStudents(@PathVariable Long sessionId) {
+        return ResponseEntity.ok(attendanceService.getSessionStudents(sessionId));
+    }
+
+    @PostMapping("/attendance/session/{sessionId}/manual")
+    public ResponseEntity<?> markManualBatchWithSession(@AuthenticationPrincipal UserDetails ud,
+                                                        @PathVariable Long sessionId,
+                                                        @RequestBody List<AppDTO.AttendanceRequest> records) {
+        User u = getCurrentUser(ud);
+        return ResponseEntity.ok(attendanceService.markManualBatchWithSession(u.getId(), sessionId, records));
+    }
+
+    @GetMapping("/attendance/history")
+    public ResponseEntity<List<AppDTO.AttendanceSessionDTO>> getFacultyAttendanceHistory(@AuthenticationPrincipal UserDetails ud,
+                                                                                         @RequestParam(required = false) Long subjectId,
+                                                                                         @RequestParam(required = false) String section,
+                                                                                         @RequestParam(required = false) String fromDate,
+                                                                                         @RequestParam(required = false) String toDate) {
+        User u = getCurrentUser(ud);
+        LocalDate from = (fromDate != null && !fromDate.isBlank()) ? LocalDate.parse(fromDate) : null;
+        LocalDate to = (toDate != null && !toDate.isBlank()) ? LocalDate.parse(toDate) : null;
+        return ResponseEntity.ok(attendanceService.getFacultyAttendanceHistory(u.getId(), subjectId, section, from, to));
+    }
+
+    @GetMapping("/attendance/subject-summary")
+    public ResponseEntity<?> getFacultySubjectSummary(@AuthenticationPrincipal UserDetails ud,
+                                                      @RequestParam(required = false) Long subjectId) {
+        User u = getCurrentUser(ud);
+        if (subjectId != null) {
+            return ResponseEntity.ok(attendanceService.getFacultySubjectSummary(u.getId(), subjectId));
+        } else {
+            return ResponseEntity.ok(attendanceService.getAllFacultySubjectSummaries(u.getId()));
+        }
+    }
+
     @PostMapping("/attendance/session/start")
     public ResponseEntity<?> startAttendanceSession(@AuthenticationPrincipal UserDetails ud,
                                                     @RequestParam Long courseId,
@@ -89,7 +175,7 @@ public class FacultyController {
         return ResponseEntity.ok(attendanceService.startAttendanceSession(u.getId(), courseId, section, sessionType));
     }
 
-    @PostMapping("/attendance/session/{sessionId}/close")
+    @RequestMapping(value = "/attendance/session/{sessionId}/close", method = {RequestMethod.POST, RequestMethod.PUT})
     public ResponseEntity<?> closeAttendanceSession(@PathVariable Long sessionId) {
         attendanceService.closeAttendanceSession(sessionId);
         return ResponseEntity.ok(new AppDTO.MessageResponse("Attendance session closed"));
@@ -231,7 +317,9 @@ public class FacultyController {
 
     @GetMapping("/certificate-templates")
     public ResponseEntity<?> getCertificateTemplates() {
-        return ResponseEntity.ok(certificateService.getAllTemplates());
+        return ResponseEntity.ok(certificateService.getAllTemplates().stream()
+                .filter(t -> "PUBLISHED".equalsIgnoreCase(t.getStatus()))
+                .toList());
     }
 
     // ==================== Notifications ====================

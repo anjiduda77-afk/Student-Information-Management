@@ -1,6 +1,12 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import Layout from '../components/common/Layout'
+import AdminEventsList from './admin/events/AdminEventsList'
+import EventDetailsPage from './admin/events/EventDetailsPage'
+import EventCoordinatorsPage from './admin/events/EventCoordinatorsPage'
+import CertificateTemplatesList from './admin/certificates/CertificateTemplatesList'
+import CertificateTemplateEditor from './admin/certificates/CertificateTemplateEditor'
+import CertificateTemplatePreviewPage from './admin/certificates/CertificateTemplatePreviewPage'
 import {
   adminService, courseService, timetableService,
   eventService, certificateService
@@ -10,8 +16,11 @@ import {
   Calendar, Award, Bell, BarChart2, Shield, Plus,
   Trash2, Edit2, Search, CheckCircle, AlertTriangle,
   Clock, Eye, UserPlus, Filter, Download, FileText,
-  X, Star, Medal, Trophy, UserCheck, RefreshCw, Copy, KeyRound
+  X, Star, Medal, Trophy, UserCheck, RefreshCw, Copy, KeyRound,
+  ClipboardCheck
 } from 'lucide-react'
+import AdminAttendanceSection from '../components/attendance/AdminAttendanceSection'
+import AcademicTimetable from '../components/timetable/AcademicTimetable'
 import { useAuth } from '../context/AuthContext'
 import { toast } from '../components/Toast'
 import { Modal, ConfirmModal } from '../components/Modal'
@@ -41,10 +50,10 @@ function AdminHome() {
   if (loading) return <TableSkeleton rows={4} cols={4} />
 
   const stats = [
-    { label: 'Total Students', value: data?.totalStudents || 0, icon: GraduationCap, color: '#2563eb', bg: '#eff6ff', tab: 'students' },
-    { label: 'Faculty Members', value: data?.totalFaculty || 0, icon: Users, color: '#0f766e', bg: '#f0fdf4', tab: 'faculty' },
-    { label: 'Academic Programs', value: data?.totalCourses || 0, icon: BookOpen, color: '#7c3aed', bg: '#faf5ff', tab: 'academics' },
-    { label: 'Academic Departments', value: data?.totalDepartments || 0, icon: Shield, color: '#d97706', bg: '#fffbeb', tab: 'academics' },
+    { label: 'Total Students on Roll', value: data?.totalStudents || 0, icon: GraduationCap, color: '#2563eb', bg: '#eff6ff', tab: 'students' },
+    { label: 'Faculty & Staff Roster', value: data?.totalFaculty || 0, icon: Users, color: '#0f766e', bg: '#f0fdf4', tab: 'faculty' },
+    { label: 'Academic Programmes', value: data?.totalCourses || 0, icon: BookOpen, color: '#7c3aed', bg: '#faf5ff', tab: 'academics' },
+    { label: 'Departments & Branches', value: data?.totalDepartments || 0, icon: Shield, color: '#d97706', bg: '#fffbeb', tab: 'academics' },
   ]
 
   const attSummary = data?.attendanceSummary || {}
@@ -59,21 +68,21 @@ function AdminHome() {
       }}>
         <div>
           <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', opacity: 0.85 }}>
-            Central Administration Console
+            Aditya University Central Administration
           </span>
           <h2 style={{ fontSize: 24, fontWeight: 800, margin: '6px 0 8px' }}>
-            Aditya University
+            Institutional Administration Console
           </h2>
-          <p style={{ fontSize: 14, opacity: 0.85, margin: 0, maxWidth: 600 }}>
-            Monitor university operations, student registries, faculty allocations, timetable conflicts, and event accreditations in real-time.
+          <p style={{ fontSize: 14, opacity: 0.85, margin: 0, maxWidth: 640 }}>
+            Monitor university operations, student roll lists, faculty teaching allotments, class time table matrix, and statutory attendance compliance in real-time.
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={() => navigate('/admin/students')} className="btn" style={{ background: '#fff', color: '#1e3a8a', fontWeight: 700 }}>
-            <UserPlus size={16} /> Enroll Student
+            <UserPlus size={16} /> Admit Student
           </button>
-          <button onClick={() => navigate('/admin/announcements')} className="btn" style={{ background: 'rgba(255,255,255,0.2)', color: '#fff' }}>
-            <Bell size={16} /> Post Notice
+          <button onClick={() => navigate('/admin/announcements')} className="btn" style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', fontWeight: 700 }}>
+            <Bell size={16} /> Issue Official Circular
           </button>
         </div>
       </div>
@@ -934,6 +943,7 @@ function AcademicsPanel() {
 // 5. Timetable Panel (Weekly Schedule & 4-way Conflict Check)
 // =========================================================================
 function TimetablePanel() {
+  const [activeTab, setActiveTab] = useState('grid') // 'grid' | 'manager'
   const [timetables, setTimetables] = useState([])
   const [courses, setCourses] = useState([])
   const [faculty, setFaculty] = useState([])
@@ -941,7 +951,7 @@ function TimetablePanel() {
   const [showAdd, setShowAdd] = useState(false)
   const [form, setForm] = useState({
     courseId: '', facultyId: '', dayOfWeek: 'MONDAY',
-    startTime: '09:00', endTime: '10:00', classroom: 'Lecture Hall 101',
+    startTime: '09:00', endTime: '09:50', classroom: 'Lecture Hall 101',
     semester: 4, section: 'A'
   })
 
@@ -974,18 +984,18 @@ function TimetablePanel() {
         facultyId: Number(form.facultyId),
         semester: Number(form.semester)
       })
-      toast.success('Timetable entry scheduled!')
+      toast.success('Time table slot allotted successfully!')
       setShowAdd(false)
       loadData()
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Schedule conflict detected!')
+      toast.error(err.response?.data?.message || 'Schedule conflict detected! Check faculty, room or student section.')
     }
   }
 
   const handleDelete = async (id) => {
     try {
       await timetableService.delete(id)
-      toast.success('Slot removed')
+      toast.success('Slot deallocated')
       loadData()
     } catch {
       toast.error('Failed to remove slot')
@@ -996,82 +1006,132 @@ function TimetablePanel() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div className="section-header">
+      {/* Top Header & Tab Switcher */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
         <div>
-          <h2 className="section-title">Institutional Timetable & Schedules</h2>
-          <p style={{ fontSize: 13, color: '#64748b' }}>Automated conflict-checked class timetables</p>
+          <h2 className="section-title">Institutional Academic Time Table &amp; Period Allocation</h2>
+          <p style={{ fontSize: 13, color: '#64748b' }}>Aditya University Master Matrix &amp; 4-Way Automated Conflict Checking</p>
         </div>
-        <button onClick={() => setShowAdd(true)} className="btn btn-primary">
-          <Plus size={16} /> Schedule Class
-        </button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={() => setActiveTab('grid')}
+            className="btn btn-sm"
+            style={{
+              background: activeTab === 'grid' ? '#1e3a8a' : '#f8fafc',
+              color: activeTab === 'grid' ? '#fff' : '#475569',
+              border: '1px solid #cbd5e1',
+              fontWeight: 800,
+              gap: 6
+            }}
+          >
+            <Calendar size={14} /> Master Time Table Matrix
+          </button>
+          <button
+            onClick={() => setActiveTab('manager')}
+            className="btn btn-sm"
+            style={{
+              background: activeTab === 'manager' ? '#1e3a8a' : '#f8fafc',
+              color: activeTab === 'manager' ? '#fff' : '#475569',
+              border: '1px solid #cbd5e1',
+              fontWeight: 800,
+              gap: 6
+            }}
+          >
+            <Clock size={14} /> Slot Allocator &amp; Engine ({timetables.length})
+          </button>
+          {activeTab === 'manager' && (
+            <button onClick={() => setShowAdd(true)} className="btn btn-primary btn-sm" style={{ fontWeight: 800 }}>
+              <Plus size={14} /> Allot Period Slot
+            </button>
+          )}
+        </div>
       </div>
 
-      {loading ? (
-        <TableSkeleton rows={6} cols={6} />
+      {/* TAB 1: MASTER TIME TABLE MATRIX (Indian University Standard) */}
+      {activeTab === 'grid' ? (
+        <AcademicTimetable role="ADMIN" />
       ) : (
-        <div className="table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Day</th>
-                <th>Time Window</th>
-                <th>Course</th>
-                <th>Faculty</th>
-                <th>Classroom / Lab</th>
-                <th>Sem & Sec</th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {timetables.map(t => (
-                <tr key={t.id}>
-                  <td><strong>{t.dayOfWeek}</strong></td>
-                  <td>
-                    <span className="badge badge-neutral" style={{ fontFamily: 'monospace' }}>
-                      {t.startTime} – {t.endTime}
-                    </span>
-                  </td>
-                  <td style={{ fontWeight: 600, color: '#1e3a8a' }}>{t.courseName}</td>
-                  <td>{t.facultyName || '—'}</td>
-                  <td>{t.classroom}</td>
-                  <td>Sem {t.semester} ({t.section})</td>
-                  <td style={{ textAlign: 'right' }}>
-                    <button
-                      onClick={() => handleDelete(t.id)}
-                      style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', padding: 4 }}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {timetables.length === 0 && (
-                <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: 32, color: '#94a3b8' }}>
-                    No timetable slots configured yet. Click "Schedule Class" to begin.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        /* TAB 2: SLOT ALLOCATOR & CONFLICT ENGINE */
+        <div className="card">
+          <div style={{ marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h3 style={{ fontSize: 16, fontWeight: 800, margin: 0, color: '#0f172a' }}>Allotted Teaching Slots</h3>
+              <p style={{ fontSize: 12, color: '#64748b', margin: '2px 0 0' }}>Manage individual period allotments, faculty assignments, and venue allocation</p>
+            </div>
+            <button onClick={() => setShowAdd(true)} className="btn btn-primary btn-sm">
+              <Plus size={14} /> Allot New Slot
+            </button>
+          </div>
+
+          {loading ? (
+            <TableSkeleton rows={6} cols={6} />
+          ) : (
+            <div className="table-container">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Day</th>
+                    <th>Time Window</th>
+                    <th>Paper / Subject</th>
+                    <th>Faculty In-Charge</th>
+                    <th>Lecture Hall / Lab</th>
+                    <th>Sem &amp; Sec</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {timetables.map(t => (
+                    <tr key={t.id}>
+                      <td><strong>{t.dayOfWeek}</strong></td>
+                      <td>
+                        <span className="badge badge-neutral" style={{ fontFamily: 'monospace' }}>
+                          {t.startTime} – {t.endTime}
+                        </span>
+                      </td>
+                      <td style={{ fontWeight: 700, color: '#1e3a8a' }}>{t.courseName}</td>
+                      <td>{t.facultyName || '—'}</td>
+                      <td>{t.classroom}</td>
+                      <td>Sem {t.semester} ({t.section})</td>
+                      <td style={{ textAlign: 'right' }}>
+                        <button
+                          onClick={() => handleDelete(t.id)}
+                          style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', padding: 4 }}
+                          title="Remove slot"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {timetables.length === 0 && (
+                    <tr>
+                      <td colSpan={7} style={{ textAlign: 'center', padding: 32, color: '#94a3b8' }}>
+                        No time table slots configured yet. Click "Allot New Slot" to begin.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
       {/* Add Slot Modal */}
-      <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title="Schedule New Class Slot" size="md">
+      <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title="Allot New Class Time Table Slot" size="md">
         <form onSubmit={handleAdd} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className="grid-2">
             <div className="form-group">
-              <label className="form-label">Course *</label>
+              <label className="form-label">Paper / Subject *</label>
               <select className="form-select" value={form.courseId} onChange={e => setForm({...form, courseId: e.target.value})} required>
-                <option value="">Select Course</option>
+                <option value="">Select Paper / Subject</option>
                 {courses.map(c => <option key={c.id} value={c.id}>{c.code} — {c.name}</option>)}
               </select>
             </div>
             <div className="form-group">
-              <label className="form-label">Faculty *</label>
+              <label className="form-label">Faculty In-Charge *</label>
               <select className="form-select" value={form.facultyId} onChange={e => setForm({...form, facultyId: e.target.value})} required>
-                <option value="">Select Faculty</option>
+                <option value="">Select Faculty Member</option>
                 {faculty.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
               </select>
             </div>
@@ -1082,7 +1142,7 @@ function TimetablePanel() {
               </select>
             </div>
             <div className="form-group">
-              <label className="form-label">Classroom / Lab *</label>
+              <label className="form-label">Lecture Hall / Lab *</label>
               <input className="form-input" value={form.classroom} onChange={e => setForm({...form, classroom: e.target.value})} required placeholder="e.g. Hall 204 or Lab 3" />
             </div>
             <div className="form-group">
@@ -1094,17 +1154,17 @@ function TimetablePanel() {
               <input className="form-input" type="time" value={form.endTime} onChange={e => setForm({...form, endTime: e.target.value})} required />
             </div>
             <div className="form-group">
-              <label className="form-label">Semester</label>
+              <label className="form-label">Semester *</label>
               <input className="form-input" type="number" min="1" max="8" value={form.semester} onChange={e => setForm({...form, semester: e.target.value})} required />
             </div>
             <div className="form-group">
-              <label className="form-label">Section</label>
-              <input className="form-input" maxLength="2" value={form.section} onChange={e => setForm({...form, section: e.target.value})} required />
+              <label className="form-label">Section *</label>
+              <input className="form-input" maxLength="2" value={form.section} onChange={e => setForm({...form, section: e.target.value})} required placeholder="A or B" />
             </div>
           </div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
             <button type="button" className="btn btn-ghost" onClick={() => setShowAdd(false)}>Cancel</button>
-            <button type="submit" className="btn btn-primary">Schedule Class</button>
+            <button type="submit" className="btn btn-primary">Allot Time Table Slot</button>
           </div>
         </form>
       </Modal>
@@ -2346,15 +2406,16 @@ function CertificatesPanel() {
 // Main Admin Dashboard Component
 // =========================================================================
 const ADMIN_NAV = [
-  { path: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: 'students', label: 'Students', icon: GraduationCap },
-  { path: 'faculty', label: 'Faculty', icon: Users },
-  { path: 'academics', label: 'Departments & Courses', icon: BookOpen },
-  { path: 'timetable', label: 'Timetable', icon: Calendar },
-  { path: 'events', label: 'Events', icon: Award },
-  { path: 'certificates', label: 'Certificates', icon: FileText },
-  { path: 'announcements', label: 'Notices', icon: Bell },
-  { path: 'audit_logs', label: 'Audit Logs', icon: Shield },
+  { path: 'dashboard', label: 'Administration Console', icon: LayoutDashboard },
+  { path: 'students', label: 'Student Admissions & Rolls', icon: GraduationCap },
+  { path: 'faculty', label: 'Faculty & Staff Roster', icon: Users },
+  { path: 'academics', label: 'Programmes & Branches', icon: BookOpen },
+  { path: 'timetable', label: 'Academic Class Time Table', icon: Calendar },
+  { path: 'attendance', label: 'Attendance Central Oversight', icon: ClipboardCheck },
+  { path: 'events', label: 'Campus Events & Symposia', icon: Award },
+  { path: 'certificates', label: 'Academic Certificates', icon: FileText },
+  { path: 'announcements', label: 'Official Circulars & Notices', icon: Bell },
+  { path: 'audit_logs', label: 'Institutional Audit Logs', icon: Shield },
 ]
 
 export default function AdminDashboard() {
@@ -2367,8 +2428,14 @@ export default function AdminDashboard() {
         <Route path="faculty" element={<FacultyPanel />} />
         <Route path="academics" element={<AcademicsPanel />} />
         <Route path="timetable" element={<TimetablePanel />} />
-        <Route path="events" element={<EventsPanel />} />
-        <Route path="certificates" element={<CertificatesPanel />} />
+        <Route path="attendance" element={<AdminAttendanceSection />} />
+        <Route path="events" element={<AdminEventsList />} />
+        <Route path="events/:eventId" element={<EventDetailsPage />} />
+        <Route path="events/:eventId/coordinators" element={<EventCoordinatorsPage />} />
+        <Route path="certificates" element={<CertificateTemplatesList />} />
+        <Route path="certificates/templates/new" element={<CertificateTemplateEditor isNew />} />
+        <Route path="certificates/templates/:templateId/edit" element={<CertificateTemplateEditor />} />
+        <Route path="certificates/templates/:templateId/preview" element={<CertificateTemplatePreviewPage />} />
         <Route path="announcements" element={<AnnouncementsPanel />} />
         <Route path="audit_logs" element={<AuditLogsPanel />} />
         <Route path="*" element={<Navigate to="dashboard" replace />} />

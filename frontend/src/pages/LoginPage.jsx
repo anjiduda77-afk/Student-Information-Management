@@ -7,7 +7,7 @@ import { Spinner } from '../components/Loading'
 import AuLogo from '../components/common/AuLogo'
 import ThemeToggle from '../components/common/ThemeToggle'
 import AntigravityCanvas from '../components/common/AntigravityCanvas'
-import { Shield, Eye, EyeOff, ShieldCheck, GraduationCap, Users } from 'lucide-react'
+import { Eye, EyeOff, ShieldCheck } from 'lucide-react'
 
 import { isValidEmail } from '../utils/validators'
 
@@ -56,16 +56,6 @@ export default function LoginPage() {
     }
   }
 
-  const fillDemo = (role) => {
-    const creds = {
-      admin:   { id: '1122',                           pw: 'aditya1' },
-      faculty: { id: 'priya.sharma@apex.edu.in',        pw: 'faculty123' },
-      student: { id: 'rahul.gupta@student.apex.edu.in', pw: 'student123' },
-    }
-    setIdentifier(creds[role].id)
-    setPassword(creds[role].pw)
-    toast.info(`Filled demo ${role} credentials`)
-  }
 
   return (
     <div className={`au-login-viewport ${isDark ? 'mode-dark' : 'mode-bright'}`}>
@@ -96,7 +86,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="au-login-form">
             <div className="au-field-group">
               <label htmlFor="au-email-input" className="au-label">
-                University Email or ID
+                University Email / Roll No. / Staff ID
               </label>
               <div className="au-input-wrapper">
                 <input
@@ -105,7 +95,7 @@ export default function LoginPage() {
                   type="text"
                   value={identifier}
                   onChange={e => setIdentifier(e.target.value)}
-                  placeholder="e.g. 1122 or name@adityauniversity.in"
+                  placeholder="e.g. Roll No. / Staff ID or email"
                   autoComplete="username"
                   autoFocus
                   required
@@ -116,7 +106,7 @@ export default function LoginPage() {
             <div className="au-field-group">
               <div className="au-label-row">
                 <label htmlFor="au-password-input" className="au-label">
-                  Password
+                  Account Password
                 </label>
               </div>
               <div className="au-input-wrapper password-wrapper">
@@ -149,58 +139,82 @@ export default function LoginPage() {
               {loading ? (
                 <>
                   <Spinner size={16} color="#0f172a" />
-                  <span>Signing in…</span>
+                  <span>Logging in…</span>
                 </>
               ) : (
-                'Sign in'
+                'Login to Portal'
               )}
             </button>
           </form>
 
-          {/* Quick Demo Credentials */}
-          <div className="au-demo-section">
-            <p className="au-demo-title">Quick Demo Access</p>
-            <div className="au-demo-buttons">
-              <button
-                type="button"
-                onClick={() => fillDemo('student')}
-                className="au-demo-btn"
-                title="Fill Student Demo"
-              >
-                <GraduationCap size={14} />
-                <span>Student</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => fillDemo('faculty')}
-                className="au-demo-btn"
-                title="Fill Faculty Demo"
-              >
-                <Users size={14} />
-                <span>Faculty</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => fillDemo('admin')}
-                className="au-demo-btn"
-                title="Fill Administrator Demo"
-              >
-                <Shield size={14} />
-                <span>Admin</span>
-              </button>
-            </div>
-          </div>
-
-          <p className="au-card-role-hint">
-            Your role decides the portal you see: Student, Faculty or Administration.
-          </p>
         </div>
 
-        {/* Visually Separate Certificate Verification Link */}
-        <div className="au-verify-wrapper">
-          <Link to="/verify" className="au-verify-link">
-            <ShieldCheck size={16} className="au-verify-icon" />
-            <span>Verify a certificate</span>
+        {/* ── Public Certificate Verification Section (No Login Required) ── */}
+        <div style={{
+          marginTop: '24px',
+          padding: '20px',
+          background: 'rgba(255, 255, 255, 0.05)',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
+          borderRadius: '16px',
+          textAlign: 'center',
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 8px 30px rgba(0, 0, 0, 0.25)'
+        }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '38px',
+            height: '38px',
+            borderRadius: '10px',
+            background: 'rgba(217, 119, 6, 0.2)',
+            color: '#fbbf24',
+            marginBottom: '10px'
+          }}>
+            <ShieldCheck size={20} />
+          </div>
+          <div style={{
+            fontSize: '14px',
+            fontWeight: '700',
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            color: '#f8fafc',
+            marginBottom: '6px'
+          }}>
+            Certificate Verification
+          </div>
+          <p style={{
+            fontSize: '12px',
+            color: '#94a3b8',
+            margin: '0 auto 16px',
+            maxWidth: '300px',
+            lineHeight: 1.5
+          }}>
+            Publicly verify credentials and awards issued by Aditya University without logging in.
+          </p>
+          <Link
+            to="/verify/certificate"
+            id="public-verify-cert-btn"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              width: '100%',
+              padding: '11px 20px',
+              borderRadius: '10px',
+              background: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%)',
+              border: '1px solid rgba(96, 165, 250, 0.4)',
+              color: '#ffffff',
+              fontSize: '13px',
+              fontWeight: '700',
+              textDecoration: 'none',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 4px 14px rgba(30, 58, 138, 0.35)'
+            }}
+          >
+            <ShieldCheck size={16} />
+            <span>Verify Certificate</span>
           </Link>
         </div>
       </main>

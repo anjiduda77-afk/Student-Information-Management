@@ -22,8 +22,18 @@ public class Subject {
     @JoinColumn(name = "course_id")
     private Course course;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id")
+    private Department department;
+
     private Integer semester;
     private Integer credits;
+
+    private String year; // e.g. "2nd Year"
+    private String section; // e.g. "A"
+
+    @Column(name = "academic_year")
+    private String academicYear; // e.g. "2025-2026"
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "faculty_id")

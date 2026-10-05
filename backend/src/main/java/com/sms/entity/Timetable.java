@@ -53,10 +53,12 @@ public class Timetable {
     @Column(nullable = false)
     private String classroom; // e.g. "LH-101", "Lab-2"
 
+    private Integer period; // 1, 2, 3, 4, 5, etc.
+
     @Builder.Default
     private String status = "PUBLISHED"; // DRAFT, PUBLISHED
 
     public enum DayOfWeek {
-        MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY
+        MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY
     }
 }

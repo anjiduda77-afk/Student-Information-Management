@@ -1,6 +1,6 @@
-# Contributing to Student Management System
+# Contributing to Smart Student Information System — Aditya University
 
-First off, thank you for considering contributing to the Student Management System! It's people like you that make it a great tool for educational environments.
+Thank you for your interest in contributing to the Smart Student Information System developed for Aditya University.
 
 ## Code of Conduct
 

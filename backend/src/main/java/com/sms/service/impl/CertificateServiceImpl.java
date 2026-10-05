@@ -53,6 +53,7 @@ public class CertificateServiceImpl implements CertificateService {
                 .eventName(c.getEventName())
                 .templateId(c.getTemplate() != null ? c.getTemplate().getId() : null)
                 .templateName(c.getTemplate() != null ? c.getTemplate().getName() : "Standard Certificate")
+                .templateVersion(c.getTemplateVersion() != null ? c.getTemplateVersion() : (c.getTemplate() != null ? c.getTemplate().getVersion() : 1))
                 .certificateType(c.getCertificateType())
                 .position(c.getPosition())
                 .issueDate(c.getIssueDate())
@@ -237,6 +238,29 @@ public class CertificateServiceImpl implements CertificateService {
         CertificateTemplate t = getTemplateById(id);
         t.setStatus("PUBLISHED");
         CertificateTemplate saved = templateRepository.save(t);
+        if (adminId != null) {
+            userRepository.findById(adminId).ifPresent(admin ->
+                    activityLogService.log(admin.getEmail(), admin.getName(), admin.getRole().name(),
+                            "PUBLISH", "CERTIFICATES", "TEMPLATE", String.valueOf(saved.getId()),
+                            null, saved.getName(), "ADMIN published certificate template: " + saved.getName())
+            );
+        }
+        return toTemplateDTO(saved);
+    }
+
+    @Override
+    @Transactional
+    public AppDTO.CertificateTemplateDTO archiveTemplate(Long id, Long adminId) {
+        CertificateTemplate t = getTemplateById(id);
+        t.setStatus("ARCHIVED");
+        CertificateTemplate saved = templateRepository.save(t);
+        if (adminId != null) {
+            userRepository.findById(adminId).ifPresent(admin ->
+                    activityLogService.log(admin.getEmail(), admin.getName(), admin.getRole().name(),
+                            "ARCHIVE", "CERTIFICATES", "TEMPLATE", String.valueOf(saved.getId()),
+                            null, saved.getName(), "ADMIN archived certificate template: " + saved.getName())
+            );
+        }
         return toTemplateDTO(saved);
     }
 
@@ -326,6 +350,7 @@ public class CertificateServiceImpl implements CertificateService {
                         .student(student)
                         .event(event)
                         .template(template)
+                        .templateVersion(template != null && template.getVersion() != null ? template.getVersion() : 1)
                         .certificateType(req.getCertificateType())
                         .position(req.getPosition() != null ? req.getPosition() : "Participant")
                         .issueDate(LocalDate.now())
@@ -334,7 +359,7 @@ public class CertificateServiceImpl implements CertificateService {
                         .eventName(event.getTitle())
                         .collegeName(DEFAULT_COLLEGE)
                         .departmentName(student.getDepartment() != null ? student.getDepartment() : student.getBranch())
-                        .verificationUrl("/verify/" + newCertId)
+                        .verificationUrl("/verify/certificate/" + newCertId)
                         .status("VALID")
                         .build();
             } else {
@@ -343,7 +368,10 @@ public class CertificateServiceImpl implements CertificateService {
                 cert.setGeneratedBy(faculty);
                 cert.setGeneratedAt(LocalDateTime.now());
                 cert.setIssueDate(LocalDate.now());
-                if (template != null) cert.setTemplate(template);
+                if (template != null) {
+                    cert.setTemplate(template);
+                    cert.setTemplateVersion(template.getVersion() != null ? template.getVersion() : 1);
+                }
             }
         } else {
             int currentYear = LocalDate.now().getYear();
@@ -354,6 +382,7 @@ public class CertificateServiceImpl implements CertificateService {
                     .student(student)
                     .event(event)
                     .template(template)
+                    .templateVersion(template != null && template.getVersion() != null ? template.getVersion() : 1)
                     .certificateType(req.getCertificateType())
                     .position(req.getPosition() != null ? req.getPosition() : "Participant")
                     .issueDate(LocalDate.now())
@@ -362,7 +391,7 @@ public class CertificateServiceImpl implements CertificateService {
                     .eventName(event.getTitle())
                     .collegeName(DEFAULT_COLLEGE)
                     .departmentName(student.getDepartment() != null ? student.getDepartment() : student.getBranch())
-                    .verificationUrl("/verify/" + certId)
+                    .verificationUrl("/verify/certificate/" + certId)
                     .status("VALID")
                     .build();
         }
@@ -465,37 +494,79 @@ public class CertificateServiceImpl implements CertificateService {
 
     @Override
     public Map<String, Object> verifyCertificatePublic(String certificateId) {
+        if (certificateId == null || certificateId.trim().isEmpty()) {
+            Map<String, Object> res = new HashMap<>();
+            res.put("status", "INVALID");
+            res.put("isValid", false);
+            res.put("certificateId", "");
+            res.put("message", "This Certificate ID does not match any certificate issued by Aditya University.");
+            return res;
+        }
+
         Optional<Certificate> opt = certificateRepository.findByCertificateId(certificateId.trim());
         if (opt.isEmpty()) {
-            return Map.of(
-                    "status", "INVALID",
-                    "certificateId", certificateId,
-                    "message", "No valid academic record exists for Certificate ID: " + certificateId,
-                    "isValid", false
-            );
+            Map<String, Object> res = new HashMap<>();
+            res.put("status", "INVALID");
+            res.put("isValid", false);
+            res.put("certificateId", certificateId.trim());
+            res.put("message", "This Certificate ID does not match any certificate issued by Aditya University.");
+            return res;
         }
 
         Certificate c = opt.get();
         boolean isValid = "VALID".equalsIgnoreCase(c.getStatus());
+        boolean isRevoked = "REVOKED".equalsIgnoreCase(c.getStatus());
 
         Map<String, Object> res = new HashMap<>();
         res.put("certificateId", c.getCertificateId());
         res.put("status", c.getStatus());
         res.put("isValid", isValid);
-        res.put("studentName", c.getStudentName());
-        res.put("eventName", c.getEventName());
-        res.put("position", c.getPosition() != null ? c.getPosition() : c.getCertificateType());
-        res.put("certificateType", c.getCertificateType());
-        res.put("collegeName", c.getCollegeName());
-        res.put("issueDate", c.getIssueDate() != null ? c.getIssueDate().toString() : "");
-        res.put("verificationStatus", isValid ? "VALID OFFICIAL ACCREDITED CERTIFICATE" : "CERTIFICATE REVOKED / CANCELLED");
 
-        if (!isValid) {
-            res.put("revocationReason", c.getRevocationReason() != null ? c.getRevocationReason() : "Administrative update");
+        if (isRevoked || !isValid) {
+            res.put("isRevoked", true);
+            res.put("message", "This certificate is no longer valid.");
+            res.put("revocationReason", c.getRevocationReason() != null ? c.getRevocationReason() : "Administrative verification update");
             res.put("revokedAt", c.getRevokedAt() != null ? c.getRevokedAt().toString() : "");
             if (c.getReplacedByCertificateId() != null) {
                 res.put("replacedByCertificateId", c.getReplacedByCertificateId());
             }
+            return res;
+        }
+
+        // --- Only exposed when VALID ---
+        res.put("issuedBy", "ADITYA UNIVERSITY");
+        res.put("studentName", c.getStudentName());
+
+        String studentIdVal = "";
+        if (c.getStudent() != null) {
+            if (c.getStudent().getStudentId() != null && !c.getStudent().getStudentId().isEmpty()) {
+                studentIdVal = c.getStudent().getStudentId();
+            } else if (c.getStudent().getRollNumber() != null) {
+                studentIdVal = c.getStudent().getRollNumber();
+            }
+        }
+        res.put("studentId", studentIdVal);
+        res.put("eventName", c.getEventName());
+        res.put("position", c.getPosition() != null ? c.getPosition() : c.getCertificateType());
+        res.put("certificateType", c.getCertificateType());
+        res.put("collegeName", c.getCollegeName() != null ? c.getCollegeName() : "ADITYA UNIVERSITY");
+
+        String dept = c.getDepartmentName();
+        if ((dept == null || dept.isEmpty()) && c.getStudent() != null) {
+            dept = c.getStudent().getDepartment();
+        }
+        res.put("department", dept != null ? dept : "AI & ML");
+
+        res.put("issueDate", c.getIssueDate() != null ? c.getIssueDate().toString() : "");
+        res.put("verificationUrl", "/verify/certificate/" + c.getCertificateId());
+        res.put("downloadUrl", "/api/certificates/" + c.getCertificateId() + "/download");
+
+        if (c.getTemplate() != null) {
+            res.put("templateTitle", c.getTemplate().getTitle());
+            res.put("signatoryName", c.getTemplate().getSignatoryName());
+            res.put("signatoryTitle", c.getTemplate().getSignatoryTitle());
+            res.put("signatory2Name", c.getTemplate().getSignatory2Name());
+            res.put("signatory2Title", c.getTemplate().getSignatory2Title());
         }
 
         return res;

@@ -12,6 +12,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -55,6 +56,24 @@ public class StudentController {
     public ResponseEntity<List<AppDTO.AttendanceResponse>> getMyAttendance(@AuthenticationPrincipal UserDetails ud) {
         User u = getCurrentUser(ud);
         return ResponseEntity.ok(attendanceService.getStudentAttendanceHistory(u.getId()));
+    }
+
+    @GetMapping("/attendance/subject-wise")
+    public ResponseEntity<List<AppDTO.AttendanceSubjectSummaryDTO>> getMySubjectWiseAttendance(@AuthenticationPrincipal UserDetails ud) {
+        User u = getCurrentUser(ud);
+        return ResponseEntity.ok(attendanceService.getStudentSubjectWiseAttendance(u.getId()));
+    }
+
+    @GetMapping("/attendance/date-wise")
+    public ResponseEntity<List<AppDTO.AttendanceResponse>> getMyDateWiseAttendance(@AuthenticationPrincipal UserDetails ud,
+                                                                                   @RequestParam(required = false) String fromDate,
+                                                                                   @RequestParam(required = false) String toDate,
+                                                                                   @RequestParam(required = false) Long subjectId,
+                                                                                   @RequestParam(required = false) String status) {
+        User u = getCurrentUser(ud);
+        LocalDate from = (fromDate != null && !fromDate.isBlank()) ? LocalDate.parse(fromDate) : null;
+        LocalDate to = (toDate != null && !toDate.isBlank()) ? LocalDate.parse(toDate) : null;
+        return ResponseEntity.ok(attendanceService.getStudentDateWiseAttendance(u.getId(), from, to, subjectId, status));
     }
 
     @GetMapping("/attendance/summary")

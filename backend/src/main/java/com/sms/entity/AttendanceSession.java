@@ -29,10 +29,29 @@ public class AttendanceSession {
     @JoinColumn(name = "faculty_id", nullable = false)
     private User faculty;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id")
+    private Department department;
+
     @Column(nullable = false)
     private LocalDate date;
 
+    private Integer period; // 1, 2, 3, 4, etc.
+
+    @Column(name = "start_time")
+    private java.time.LocalTime startTime;
+
+    @Column(name = "end_time")
+    private java.time.LocalTime endTime;
+
+    private String room; // C-204, etc.
+
     private String section; // Section e.g. "A"
+
+    @Column(name = "academic_year")
+    private String academicYear; // e.g. "2025-2026"
+
+    private Integer semester;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

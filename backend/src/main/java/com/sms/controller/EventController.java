@@ -90,6 +90,17 @@ public class EventController {
         return ResponseEntity.ok(eventService.updateEvent(id, req));
     }
 
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN','FACULTY')")
+    public ResponseEntity<?> updateEventStatus(@PathVariable Long id,
+                                               @RequestParam String status,
+                                               @AuthenticationPrincipal UserDetails ud) {
+        User u = getUser(ud);
+        checkEventManagementPermission(id, u);
+        eventService.updateEventStatus(id, status);
+        return ResponseEntity.ok(new AppDTO.MessageResponse("Event status updated to " + status));
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteEvent(@PathVariable Long id,
@@ -203,5 +214,14 @@ public class EventController {
         checkEventManagementPermission(eventId, u);
         req.setEventId(eventId);
         return ResponseEntity.ok(certificateService.generateCertificate(req, u != null ? u.getId() : null));
+    }
+
+    @PostMapping("/{eventId}/certificates/batch")
+    public ResponseEntity<?> generateBatchCertificates(@PathVariable Long eventId,
+                                                       @RequestBody List<AppDTO.GenerateCertificateRequest> reqs,
+                                                       @AuthenticationPrincipal UserDetails ud) {
+        User u = getUser(ud);
+        checkEventManagementPermission(eventId, u);
+        return ResponseEntity.ok(certificateService.generateBatchCertificates(eventId, reqs, u != null ? u.getId() : null));
     }
 }
