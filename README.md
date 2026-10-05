@@ -166,36 +166,127 @@ The Attendance module tracks lecture attendance in accordance with university ac
 
 ## System Architecture
 
-The application is built on a standard three-tier client-server architecture:
+The Smart Student Information System follows a modern enterprise three-tier distributed architecture engineered for high availability, modularity, data integrity, and strict role-based access control across Aditya University.
 
-```text
-┌────────────────────────────────────────────────────────┐
-│                   React + Vite Frontend                │
-│             (User Interface, Tailwind CSS)             │
-└───────────────────────────┬────────────────────────────┘
-                            │ REST API Requests (HTTP / JSON)
-                            ▼
-┌────────────────────────────────────────────────────────┐
-│                 Spring Boot Backend                    │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │ Controller Layer (REST Endpoints & Validation)   │  │
-│  └────────────────────────┬─────────────────────────┘  │
-│                           ▼                            │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │ Service Layer (Business Logic & Workflows)       │  │
-│  └────────────────────────┬─────────────────────────┘  │
-│                           ▼                            │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │ Repository Layer (Spring Data JPA)               │  │
-│  └────────────────────────┬─────────────────────────┘  │
-└───────────────────────────┼────────────────────────────┘
-                            │ Hibernate ORM
-                            ▼
-┌────────────────────────────────────────────────────────┐
-│                   MySQL Database                       │
-│     (Users, Courses, Subjects, Attendance, Events)     │
-└────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    %% User Roles & Client Tier
+    subgraph ClientTier ["1. Presentation Tier (React 18 + Vite)"]
+        direction TB
+        subgraph UsersGroup ["Institutional Stakeholders"]
+            U1["🎓 Student Portal"]
+            U2["👨‍🏫 Faculty Portal"]
+            U3["🛡️ Admin Console"]
+            U4["🌐 Public Certificate Verifier"]
+        end
+        subgraph FrontendCore ["Frontend Core Architecture"]
+            UI["Responsive UI (Tailwind CSS + Lucide Icons)"]
+            ROUTER["Client-Side Routing (React Router v6)"]
+            STATE["Global Contexts (AuthContext, ThemeContext)"]
+            CLIENT["HTTP Layer (Axios Interceptors + Bearer JWT)"]
+            VIZ["Data Analytics (Recharts) & Client PDF Canvas"]
+        end
+        UsersGroup --> UI
+        UI --> ROUTER
+        ROUTER --> STATE
+        STATE --> CLIENT
+        UI --> VIZ
+    end
+
+    %% Network Connection
+    CLIENT ==>|"RESTful HTTP / JSON (CORS + JWT)"| SEC_GATEWAY
+
+    %% Backend Tier
+    subgraph ServerTier ["2. Application Tier (Spring Boot 3.2.0 + Java 17)"]
+        direction TB
+        
+        subgraph SecurityLayer ["Security and Authorization Filter Chain"]
+            SEC_GATEWAY["Spring Security 6 SecurityFilterChain"]
+            JWT_FILTER["JwtAuthFilter (Token Parsing and Claims Extraction)"]
+            RBAC["Role-Based Access Control (ADMIN, FACULTY, STUDENT)"]
+            SEC_GATEWAY --> JWT_FILTER
+            JWT_FILTER --> RBAC
+        end
+
+        subgraph ControllerLayer ["API Controller Layer (REST Endpoints)"]
+            C_AUTH["AuthController (/api/auth)"]
+            C_ADMIN["AdminController (/api/admin)"]
+            C_FACULTY["FacultyController (/api/faculty)"]
+            C_STUDENT["StudentController (/api/student)"]
+            C_ATT["AttendanceController (/api/attendance)"]
+            C_EVENT["EventController (/api/events)"]
+            C_CERT["CertificateController (/api/certificates)"]
+            C_PUB["PublicVerifyController (/api/public/verify)"]
+        end
+
+        RBAC --> ControllerLayer
+
+        subgraph ServiceLayer ["Service Tier (Business Logic and Workflows)"]
+            S_AUTH["AuthService (Authentication & Password Security)"]
+            S_ADMIN["AdminService (Departments, Courses, Accounts)"]
+            S_ATT["AttendanceService (Roster Attendance & 75% Shortage Engine)"]
+            S_TIMETABLE["TimetableService (4-Way Matrix Conflict Detector)"]
+            S_EVENT["EventService (Registrations, Results, Coordinators)"]
+            S_CERT["CertificateService (UUID Issuance & OpenPDF Rendering)"]
+            S_AUDIT["AuditLogService (System Activity Tracking)"]
+        end
+
+        ControllerLayer --> ServiceLayer
+
+        subgraph DataAccessLayer ["Persistence Layer (Spring Data JPA & Hibernate ORM)"]
+            R_USER["UserRepository"]
+            R_COURSE["CourseRepository & DepartmentRepository"]
+            R_ATT["AttendanceRepository"]
+            R_TIME["TimetableRepository"]
+            R_EVENT["EventRepository & ParticipantRepository"]
+            R_CERT["CertificateRepository & TemplateRepository"]
+            R_AUDIT["AuditLogRepository"]
+        end
+
+        ServiceLayer --> DataAccessLayer
+    end
+
+    %% Database Connection
+    DataAccessLayer ==>|"HikariCP Connection Pool (SQL Transactions)"| DB_TIER
+
+    %% Database Tier
+    subgraph DB_TIER ["3. Database Tier (MySQL 8.0 Relational Engine)"]
+        direction TB
+        DB_TABLES[("MySQL Relational Schema
+        ────────────────────────────────────────────────
+        • users (Admin, Faculty, Student records)
+        • departments, courses, and subjects
+        • timetables (Classroom and period schedule)
+        • attendance (Daily class-wise roster marks)
+        • events, event_coordinators, and participants
+        • certificate_templates and certificates
+        • activity_logs (Administrative audit records)")]
+    end
+
+    %% Styling
+    classDef clientStyle fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,color:#1e3a8a
+    classDef securityStyle fill:#fef2f2,stroke:#ef4444,stroke-width:2px,color:#991b1b
+    classDef controllerStyle fill:#f0fdf4,stroke:#22c55e,stroke-width:2px,color:#166534
+    classDef serviceStyle fill:#fefce8,stroke:#eab308,stroke-width:2px,color:#854d0e
+    classDef dbStyle fill:#faf5ff,stroke:#a855f7,stroke-width:2px,color:#6b21a8
+
+    class ClientTier,UsersGroup,FrontendCore clientStyle
+    class SecurityLayer securityStyle
+    class ControllerLayer,DataAccessLayer controllerStyle
+    class ServiceLayer serviceStyle
+    class DB_TIER dbStyle
 ```
+
+### Architectural Tier Breakdown
+
+| Layer | Component | Key Responsibilities |
+|---|---|---|
+| **Presentation Tier** | React 18, Vite, Tailwind CSS | Single Page Application (SPA), role-based dynamic dashboard routing, responsive Indian institution UI layout, Recharts analytics, client-side PDF preview canvas. |
+| **API & Security Gateway** | Spring Security 6, JWT Filter | Stateless token authentication, cryptographic HMAC signature verification, CORS validation, endpoint role filters (`hasRole('ADMIN')`, etc.). |
+| **REST Controller Layer** | Spring Web MVC | Request validation (`@Valid`), HTTP status code handling, DTO mapping, and REST endpoint exposure. |
+| **Business Service Layer** | Core Spring Services | Business logic execution, 4-way timetable collision prevention, roster attendance percentage calculations, certificate generation engine, and audit logging. |
+| **Persistence Layer** | Spring Data JPA, Hibernate 6 | Relational-to-object mapping, transactional integrity (`@Transactional`), automated schema maintenance, and optimized queries. |
+| **Database Tier** | MySQL 8.0, HikariCP | ACID-compliant relational data storage, foreign key constraints, indexing for fast student roll lookups, and connection pooling. |
 
 ---
 
