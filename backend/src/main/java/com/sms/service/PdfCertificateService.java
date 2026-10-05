@@ -23,6 +23,12 @@ public class PdfCertificateService {
     private static final Color SLATE_GRAY = new Color(71, 85, 105);
     private static final Color LIGHT_BG = new Color(254, 253, 250);
 
+    @org.springframework.beans.factory.annotation.Value("${app.base-url:${APP_BASE_URL:http://localhost:8080}}")
+    private String appBaseUrl;
+
+    @org.springframework.beans.factory.annotation.Value("${app.frontend-url:${APP_FRONTEND_URL:http://localhost:5173}}")
+    private String appFrontendUrl;
+
     public byte[] generateCertificatePdf(Certificate cert, CertificateTemplate template) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             // A4 Landscape: 842 x 595 pt

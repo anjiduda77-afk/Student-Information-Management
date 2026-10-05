@@ -1,7 +1,11 @@
 import axios from 'axios'
 
+// Centralized API configuration supporting custom backend domains and localhost
+const envBaseUrl = import.meta.env.VITE_API_BASE_URL
+export const API_BASE_URL = envBaseUrl ? envBaseUrl.replace(/\/+$/, '') : ''
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL ? (API_BASE_URL.endsWith('/api') ? API_BASE_URL : `${API_BASE_URL}/api`) : '/api',
   headers: { 'Content-Type': 'application/json' }
 })
 
@@ -228,7 +232,10 @@ export const certificateService = {
   // Admin — Certificate records
   getAll: () => api.get('/certificates'),
   getById: (certId) => api.get(`/certificates/${certId}`),
-  downloadPdfUrl: (certId) => `/api/certificates/${certId}/download`,
+  downloadPdfUrl: (certId) => {
+    const base = API_BASE_URL ? (API_BASE_URL.endsWith('/api') ? API_BASE_URL : `${API_BASE_URL}/api`) : '/api'
+    return `${base}/certificates/${certId}/download`
+  },
   downloadPdf: async (certId, fallbackCertData) => {
     try {
       const response = await api.get(`/certificates/${certId}/download`, {

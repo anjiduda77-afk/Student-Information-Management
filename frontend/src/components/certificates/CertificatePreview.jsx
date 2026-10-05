@@ -120,13 +120,22 @@ export default function CertificatePreview({
 
       {/* Certificate Header */}
       <div style={{ textAlign: 'center', zIndex: 1, marginTop: isMini ? 2 : 4 }}>
-        {/* Shield / Crest Icon */}
+        {/* Official Aditya University Crest Emblem */}
         <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: isMini ? 2 : 6 }}>
-          <svg width={isMini ? 18 : 34} height={isMini ? 22 : 40} viewBox="0 0 36 44" fill="none">
-            <path d="M18 2L3 8V20C3 31 18 42 18 42C18 42 33 31 33 20V8L18 2Z" fill={primaryColor || '#1e3a8a'} stroke={secondaryColor || '#d99b26'} strokeWidth="2" />
-            <path d="M18 7L8 12V20C8 28 18 36 18 36C18 36 28 28 28 20V12L18 7Z" fill={secondaryColor || '#d99b26'} opacity="0.3" />
-            <text x="18" y="24" fontSize="14" fontWeight="bold" fill="#fff" textAnchor="middle" fontFamily="serif">AU</text>
-          </svg>
+          <img
+            src="/aditya-crest.png"
+            alt="Aditya University"
+            style={{
+              width: isMini ? 20 : 44,
+              height: isMini ? 20 : 44,
+              objectFit: 'contain',
+              filter: 'drop-shadow(0 2px 8px rgba(184, 147, 76, 0.4))'
+            }}
+            onError={(e) => {
+              e.target.onerror = null
+              e.target.src = '/aditya-logo.png'
+            }}
+          />
         </div>
 
         <div style={{

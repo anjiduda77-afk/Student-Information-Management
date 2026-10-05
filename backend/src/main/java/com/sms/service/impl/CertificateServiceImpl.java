@@ -29,7 +29,22 @@ public class CertificateServiceImpl implements CertificateService {
     private final PdfCertificateService pdfCertificateService;
     private final ActivityLogService activityLogService;
 
+    @org.springframework.beans.factory.annotation.Value("${app.base-url:${APP_BASE_URL:http://localhost:8080}}")
+    private String appBaseUrl;
+
+    @org.springframework.beans.factory.annotation.Value("${app.frontend-url:${APP_FRONTEND_URL:http://localhost:5173}}")
+    private String appFrontendUrl;
+
     private static final String DEFAULT_COLLEGE = "ADITYA UNIVERSITY";
+
+    public String buildVerificationUrl(String certId) {
+        String base = (appFrontendUrl != null && !appFrontendUrl.isBlank()) ? appFrontendUrl : appBaseUrl;
+        return base.replaceAll("/+$", "") + "/verify/certificate/" + certId;
+    }
+
+    public String buildDownloadUrl(String certId) {
+        return appBaseUrl.replaceAll("/+$", "") + "/api/certificates/" + certId + "/download";
+    }
 
     private synchronized String generateCertificateId(int year) {
         long count = certificateRepository.count() + 1;
@@ -358,7 +373,7 @@ public class CertificateServiceImpl implements CertificateService {
                         .eventName(event.getTitle())
                         .collegeName(DEFAULT_COLLEGE)
                         .departmentName(student.getDepartment() != null ? student.getDepartment() : student.getBranch())
-                        .verificationUrl("/verify/certificate/" + newCertId)
+                        .verificationUrl(buildVerificationUrl(newCertId))
                         .status("VALID")
                         .build();
             } else {
@@ -390,7 +405,7 @@ public class CertificateServiceImpl implements CertificateService {
                     .eventName(event.getTitle())
                     .collegeName(DEFAULT_COLLEGE)
                     .departmentName(student.getDepartment() != null ? student.getDepartment() : student.getBranch())
-                    .verificationUrl("/verify/certificate/" + certId)
+                    .verificationUrl(buildVerificationUrl(certId))
                     .status("VALID")
                     .build();
         }
@@ -557,8 +572,8 @@ public class CertificateServiceImpl implements CertificateService {
         res.put("department", dept != null ? dept : "AI & ML");
 
         res.put("issueDate", c.getIssueDate() != null ? c.getIssueDate().toString() : "");
-        res.put("verificationUrl", "/verify/certificate/" + c.getCertificateId());
-        res.put("downloadUrl", "/api/certificates/" + c.getCertificateId() + "/download");
+        res.put("verificationUrl", buildVerificationUrl(c.getCertificateId()));
+        res.put("downloadUrl", buildDownloadUrl(c.getCertificateId()));
 
         if (c.getTemplate() != null) {
             res.put("templateTitle", c.getTemplate().getTitle());

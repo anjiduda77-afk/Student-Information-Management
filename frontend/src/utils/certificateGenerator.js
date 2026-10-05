@@ -63,7 +63,8 @@ export async function downloadCertificatePDF(cert = {}, template = {}) {
   const certId = cert.certificateId || 'AU-SIS-CERT-2026'
 
   // Generate QR Code data URL for verification
-  const verifyUrl = `${window.location.origin}/verify/${certId}`
+  const frontendBase = import.meta.env.VITE_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '')
+  const verifyUrl = `${frontendBase.replace(/\/+$/, '')}/verify/certificate/${certId}`
   let qrDataUrl = ''
   try {
     qrDataUrl = await QRCode.toDataURL(verifyUrl, {
@@ -103,22 +104,36 @@ export async function downloadCertificatePDF(cert = {}, template = {}) {
     doc.circle(x + 5, y + 5, 2.5, 'F')
   })
 
-  // --- Header ---
+  // --- Header: Official Aditya University Crest Logo ---
+  try {
+    const crestBlob = await fetch('/aditya-crest.png').then(r => r.blob())
+    const crestBase64 = await new Promise(resolve => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result)
+      reader.readAsDataURL(crestBlob)
+    })
+    if (crestBase64) {
+      doc.addImage(crestBase64, 'PNG', (width / 2) - 9, 16, 18, 18)
+    }
+  } catch {
+    // Continue gracefully if image fetch is unavailable
+  }
+
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(22)
+  doc.setFontSize(20)
   doc.setTextColor(primaryRgb[0], primaryRgb[1], primaryRgb[2])
-  doc.text(collegeName.toUpperCase(), width / 2, 33, { align: 'center' })
+  doc.text(collegeName.toUpperCase(), width / 2, 38.5, { align: 'center' })
 
   doc.setFont('helvetica', 'normal')
-  doc.setFontSize(9.5)
+  doc.setFontSize(9)
   doc.setTextColor(100, 116, 139)
-  doc.text('Accredited by NAAC with Grade A+ | Approved by AICTE & UGC', width / 2, 40, { align: 'center' })
-  doc.text('Surampalem, Kakinada District, Andhra Pradesh 533437', width / 2, 45, { align: 'center' })
+  doc.text('Accredited by NAAC with Grade A+ | Approved by AICTE & UGC', width / 2, 44, { align: 'center' })
+  doc.text('Surampalem, Kakinada District, Andhra Pradesh 533437', width / 2, 48.5, { align: 'center' })
 
   // Decorative divider
   doc.setDrawColor(secondaryRgb[0], secondaryRgb[1], secondaryRgb[2])
   doc.setLineWidth(0.8)
-  doc.line(60, 50, width - 60, 50)
+  doc.line(60, 52.5, width - 60, 52.5)
 
   // --- Certificate Title ---
   doc.setFont('helvetica', 'bold')

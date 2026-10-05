@@ -23,7 +23,7 @@ import {
   X
 } from 'lucide-react'
 
-const AU_LOGO_URL = 'https://www.aec.edu.in/adityanew/images/au_2.png'
+const AU_LOGO_URL = '/aditya-crest.png'
 
 export default function CertificateVerificationPage() {
   const { certificateId: routeCertId } = useParams()
@@ -48,7 +48,8 @@ export default function CertificateVerificationPage() {
   // Generate QR code whenever a valid certificate is loaded
   useEffect(() => {
     if (cert && cert.status === 'VALID' && cert.certificateId) {
-      const publicVerifyUrl = `${window.location.origin}/verify/certificate/${cert.certificateId}`
+      const frontendBase = import.meta.env.VITE_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '')
+      const publicVerifyUrl = `${frontendBase.replace(/\/+$/, '')}/verify/certificate/${cert.certificateId}`
       QRCode.toDataURL(publicVerifyUrl, {
         margin: 1,
         width: 160,

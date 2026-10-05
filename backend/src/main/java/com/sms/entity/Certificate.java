@@ -45,7 +45,7 @@ public class Certificate {
 
     @Column(name = "college_name")
     @Builder.Default
-    private String collegeName = "APEX INSTITUTE OF TECHNOLOGY & SCIENCE";
+    private String collegeName = "ADITYA UNIVERSITY";
 
     @Column(name = "department_name")
     private String departmentName;

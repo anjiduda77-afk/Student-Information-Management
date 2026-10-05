@@ -10,7 +10,7 @@ import CertificateVerificationPage from './pages/CertificateVerificationPage'
 import { Spinner } from './components/Loading'
 
 // ✅ Official Aditya University Logo URL
-const AU_LOGO = 'https://www.aec.edu.in/adityanew/images/au_2.png'
+const AU_LOGO = '/aditya-crest.png'
 
 // Protected route: requires auth, optional role check
 function ProtectedRoute({ children, roles }) {

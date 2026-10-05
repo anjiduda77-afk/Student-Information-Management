@@ -1,16 +1,18 @@
 /**
  * AuLogo — Aditya University Official Logo
- * Uses the official Aditya University logo from aec.edu.in
+ * Uses the official Aditya University crest and logo
  */
-const AU_LOGO_URL = 'https://www.aec.edu.in/adityanew/images/au_2.png'
+const AU_CREST_URL = '/aditya-crest.png'
+const AU_LOGO_URL = '/aditya-logo.png'
 
-export default function AuLogo({ size = 52, className = '' }) {
+export default function AuLogo({ size = 52, className = '', variant = 'crest' }) {
+  const imgSrc = variant === 'full' ? AU_LOGO_URL : AU_CREST_URL
   return (
     <div
       className={`au-logo-badge ${className}`}
       style={{
-        width: 80,
-        height: 80,
+        width: size,
+        height: size,
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -19,7 +21,7 @@ export default function AuLogo({ size = 52, className = '' }) {
       }}
     >
       <img
-        src={AU_LOGO_URL}
+        src={imgSrc}
         alt="Aditya University"
         width={size}
         height={size}
@@ -27,11 +29,10 @@ export default function AuLogo({ size = 52, className = '' }) {
           width: size,
           height: size,
           objectFit: 'contain',
-          filter: 'drop-shadow(0 4px 16px rgba(217, 155, 38, 0.5))',
-          transition: 'filter 0.3s ease'
+          filter: 'drop-shadow(0 2px 10px rgba(184, 147, 76, 0.45))',
+          transition: 'transform 0.2s ease, filter 0.2s ease'
         }}
         onError={(e) => {
-          // Fallback to local copy if CDN fails
           e.target.onerror = null
           e.target.src = '/aditya-logo.png'
         }}
