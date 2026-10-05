@@ -7,8 +7,8 @@ import { Modal } from '../../../components/Modal'
 import { formatDate } from '../../../utils/helpers'
 import {
   Calendar, Clock, MapPin, Users, Award, Edit, ArrowRight,
-  CheckCircle, XCircle, FileText, Download, UserCheck, ShieldCheck,
-  Building, ChevronRight, UserPlus, Trash2, ArrowLeft
+  CheckCircle, XCircle, Download, UserCheck,
+  Building, ChevronRight, UserPlus
 } from 'lucide-react'
 
 export default function EventDetailsPage() {

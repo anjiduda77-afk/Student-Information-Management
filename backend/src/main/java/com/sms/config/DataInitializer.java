@@ -41,8 +41,8 @@ public class DataInitializer implements CommandLineRunner {
         Department deptCSE = createDept("CSE", "Computer Science & Engineering", "Dr. Priya Sharma");
         Department deptAIML = createDept("AIML", "Artificial Intelligence & Machine Learning", "Dr. Rajan Mehta");
         Department deptECE = createDept("ECE", "Electronics & Communication Engineering", "Prof. Kavitha Nair");
-        Department deptEEE = createDept("EEE", "Electrical & Electronics Engineering", "Dr. Santhosh Kumar");
-        Department deptMECH = createDept("MECH", "Mechanical Engineering", "Prof. Arjun Reddy");
+        createDept("EEE", "Electrical & Electronics Engineering", "Dr. Santhosh Kumar");
+        createDept("MECH", "Mechanical Engineering", "Prof. Arjun Reddy");
 
         // =================== ADMIN ===================
         User admin = userRepository.save(User.builder()
@@ -140,35 +140,35 @@ public class DataInitializer implements CommandLineRunner {
                 .build());
 
         // =================== SUBJECTS ===================
-        Subject dsa = subjectRepository.save(Subject.builder()
+        subjectRepository.save(Subject.builder()
                 .code("CS301").name("Data Structures & Algorithms")
                 .course(btech).semester(3).credits(4).faculty(fPriya).status("ACTIVE").build());
 
-        Subject dbms = subjectRepository.save(Subject.builder()
+        subjectRepository.save(Subject.builder()
                 .code("CS302").name("Database Management Systems")
                 .course(btech).semester(4).credits(4).faculty(fPriya).status("ACTIVE").build());
 
-        Subject os = subjectRepository.save(Subject.builder()
+        subjectRepository.save(Subject.builder()
                 .code("CS303").name("Operating Systems")
                 .course(btech).semester(4).credits(3).faculty(fPriya).status("ACTIVE").build());
 
-        Subject ml = subjectRepository.save(Subject.builder()
+        subjectRepository.save(Subject.builder()
                 .code("AI301").name("Machine Learning Fundamentals")
                 .course(btechAIML).semester(5).credits(4).faculty(fRajan).status("ACTIVE").build());
 
-        Subject networks = subjectRepository.save(Subject.builder()
+        subjectRepository.save(Subject.builder()
                 .code("EC301").name("Digital Signal Processing")
                 .course(bece).semester(5).credits(4).faculty(fKavitha).status("ACTIVE").build());
 
         // =================== STUDENTS ===================
-        User s1 = createStudent("Rahul Gupta", "rahul.gupta@student.apex.edu.in", "STU-2023-001", "CSE2023001", "Computer Science & Engineering", 4, "A", 2023, btech, fPriya);
-        User s2 = createStudent("Ananya Krishnan", "ananya.k@student.apex.edu.in", "STU-2023-002", "CSE2023002", "Computer Science & Engineering", 4, "A", 2023, btech, fPriya);
-        User s3 = createStudent("Vikram Patel", "vikram.patel@student.apex.edu.in", "STU-2023-003", "AIML2023001", "Artificial Intelligence & Machine Learning", 3, "B", 2023, btechAIML, fRajan);
-        User s4 = createStudent("Meera Reddy", "meera.reddy@student.apex.edu.in", "STU-2023-004", "CSE2023003", "Computer Science & Engineering", 2, "A", 2024, btech, fPriya);
-        User s5 = createStudent("Arjun Sharma", "arjun.sharma@student.apex.edu.in", "STU-2023-005", "ECE2023001", "Electronics & Communication Engineering", 5, "A", 2022, bece, fKavitha);
+        createStudent("Rahul Gupta", "rahul.gupta@student.apex.edu.in", "STU-2023-001", "CSE2023001", "Computer Science & Engineering", 4, "A", 2023, btech, fPriya);
+        createStudent("Ananya Krishnan", "ananya.k@student.apex.edu.in", "STU-2023-002", "CSE2023002", "Computer Science & Engineering", 4, "A", 2023, btech, fPriya);
+        createStudent("Vikram Patel", "vikram.patel@student.apex.edu.in", "STU-2023-003", "AIML2023001", "Artificial Intelligence & Machine Learning", 3, "B", 2023, btechAIML, fRajan);
+        createStudent("Meera Reddy", "meera.reddy@student.apex.edu.in", "STU-2023-004", "CSE2023003", "Computer Science & Engineering", 2, "A", 2024, btech, fPriya);
+        createStudent("Arjun Sharma", "arjun.sharma@student.apex.edu.in", "STU-2023-005", "ECE2023001", "Electronics & Communication Engineering", 5, "A", 2022, bece, fKavitha);
 
         // =================== EVENTS ===================
-        Event techfest = eventRepository.save(Event.builder()
+        eventRepository.save(Event.builder()
                 .title("TechNova 2026 – National Techfest")
                 .description("APEX Institute's flagship annual National Technical Festival featuring Hackathon, Paper Presentation, Project Expo, Coding Marathon, Robotics Challenge, and Cultural Night. Open to all engineering students across India.")
                 .category("Technical")
@@ -184,7 +184,7 @@ public class DataInitializer implements CommandLineRunner {
                 .status(Event.Status.REGISTRATION_OPEN)
                 .build());
 
-        Event workshop = eventRepository.save(Event.builder()
+        eventRepository.save(Event.builder()
                 .title("AI & Deep Learning Workshop")
                 .description("Intensive 2-day hands-on workshop on Neural Networks, TensorFlow, PyTorch, and real-world AI deployment. Conducted by industry experts from leading tech companies.")
                 .category("Workshop")
@@ -200,7 +200,7 @@ public class DataInitializer implements CommandLineRunner {
                 .status(Event.Status.REGISTRATION_OPEN)
                 .build());
 
-        Event culturalFest = eventRepository.save(Event.builder()
+        eventRepository.save(Event.builder()
                 .title("Srijan 2026 – Annual Cultural Extravaganza")
                 .description("Annual inter-college cultural festival featuring Dance, Music, Theatre, Fine Arts, Fashion Show, and Literary events. Celebrate art, culture, and creativity.")
                 .category("Cultural")

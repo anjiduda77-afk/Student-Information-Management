@@ -7,8 +7,8 @@ import { TableSkeleton } from '../../../components/Loading'
 import { formatDate } from '../../../utils/helpers'
 import {
   Calendar, MapPin, Users, Award, Plus, Search, Filter,
-  MoreVertical, Edit, UserCheck, CheckSquare, FileText, Trash2,
-  ChevronDown, ExternalLink, X, Clock, GraduationCap
+  Edit, UserCheck, CheckSquare, FileText, Trash2,
+  ChevronDown, X, GraduationCap
 } from 'lucide-react'
 
 export default function AdminEventsList() {

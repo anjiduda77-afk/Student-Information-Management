@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import {
   ClipboardCheck, AlertTriangle, CheckCircle, Clock, Search,
-  Filter, Shield, Edit3, Download, RefreshCw, FileText,
-  Users, BookOpen, AlertCircle, ArrowUpRight, Check, X
+  Shield, Edit3, Download, RefreshCw, FileText,
+  Users, AlertCircle
 } from 'lucide-react'
 import { attendanceService, adminService } from '../../services/api'
 import { toast } from '../Toast'

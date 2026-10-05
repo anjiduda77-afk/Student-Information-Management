@@ -1,5 +1,3 @@
-import React from 'react'
-
 export default function CertificatePreview({
   template = {},
   sampleData = {},
@@ -17,13 +15,10 @@ export default function CertificatePreview({
     secondaryColor = '#d99b26',
     textColor = '#0f172a',
     backgroundColor = '#fdfbf7',
-    borderStyle = 'CLASSIC_GOLD',
     borderWidth = 4,
     fontFamily = 'Playfair Display, Georgia, serif',
     signatoryName = 'Dr. R. Srinivas',
     signatoryTitle = 'Dean, Student Affairs',
-    signatory2Name = 'Dr. M. Sreenivasa Rao',
-    signatory2Title = 'Principal, Technical Campus',
     templateType = 'WINNER'
   } = template
 

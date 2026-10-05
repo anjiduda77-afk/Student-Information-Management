@@ -7,8 +7,8 @@ import CertificatePreview from '../../../components/certificates/CertificatePrev
 import { downloadCertificatePDF } from '../../../utils/certificateGenerator'
 import {
   FileText, Layout, Type, Image as ImageIcon, PenTool,
-  Sliders, Eye, ArrowLeft, RotateCcw, RotateCw, Maximize2,
-  Download, Plus, X, Check, Save, Sparkles, Palette
+  Sliders, Eye, RotateCcw, RotateCw, Maximize2,
+  Download, Plus, X
 } from 'lucide-react'
 
 export default function CertificateTemplateEditor({ isNew = false }) {

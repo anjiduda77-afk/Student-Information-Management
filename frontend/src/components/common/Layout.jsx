@@ -3,9 +3,9 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { notificationService, authService } from '../../services/api'
 import {
-  Menu, X, Bell, LogOut, User as UserIcon,
-  Check, Shield, BookOpen, GraduationCap,
-  KeyRound, Lock, Eye, EyeOff, ChevronDown
+  Menu, X, Bell, LogOut,
+  Shield, BookOpen, GraduationCap,
+  KeyRound, Eye, EyeOff, ChevronDown
 } from 'lucide-react'
 import { formatDate } from '../../utils/helpers'
 import { Modal } from '../Modal'

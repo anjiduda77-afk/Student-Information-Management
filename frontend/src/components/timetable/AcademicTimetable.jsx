@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
-  Calendar, Clock, BookOpen, Users, MapPin, Printer,
-  Sparkles, CheckCircle2, ArrowRight, ClipboardCheck,
-  FileSpreadsheet, Filter, Search, Award, AlertCircle
+  Calendar, Clock, BookOpen, Printer,
+  ClipboardCheck, Search
 } from 'lucide-react'
 import { timetableService } from '../../services/api'
 import { toast } from '../Toast'

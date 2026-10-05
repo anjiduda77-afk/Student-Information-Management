@@ -7,9 +7,9 @@ import { Modal, ConfirmModal } from '../../../components/Modal'
 import { formatDate } from '../../../utils/helpers'
 import CertificatePreview from '../../../components/certificates/CertificatePreview'
 import {
-  FileText, Plus, Search, Filter, Eye, Edit2, MoreVertical,
-  Copy, Trash2, CheckCircle2, Clock, X, Download, Archive,
-  Award, ShieldCheck, ShieldAlert, AlertTriangle, ExternalLink
+  FileText, Plus, Search, Eye, Edit2, MoreVertical,
+  Copy, Trash2, CheckCircle2, X, Download, Archive,
+  Award, ShieldCheck, ShieldAlert, AlertTriangle
 } from 'lucide-react'
 
 export default function CertificateTemplatesList() {
@@ -22,7 +22,6 @@ export default function CertificateTemplatesList() {
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('ALL')
   const [statusFilter, setStatusFilter] = useState('ALL')
-  const [previewTemplate, setPreviewTemplate] = useState(null)
   const [activeMenuId, setActiveMenuId] = useState(null)
   const menuRef = useRef(null)
   const [deleteTarget, setDeleteTarget] = useState(null)

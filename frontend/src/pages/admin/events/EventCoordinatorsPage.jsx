@@ -6,9 +6,9 @@ import { TableSkeleton } from '../../../components/Loading'
 import { Modal, ConfirmModal } from '../../../components/Modal'
 import { formatDate } from '../../../utils/helpers'
 import {
-  ArrowLeft, Calendar, Clock, MapPin, Search, Filter,
-  UserPlus, MinusCircle, Eye, Info, MoreVertical, Building,
-  ShieldAlert, Mail, UserCheck
+  ArrowLeft, Calendar, Clock, MapPin, Search,
+  UserPlus, MinusCircle, Eye, Info, MoreVertical,
+  Mail, UserCheck
 } from 'lucide-react'
 
 export default function EventCoordinatorsPage() {
@@ -448,7 +448,7 @@ export default function EventCoordinatorsPage() {
         onConfirm={handleRemove}
         title="Remove Event Coordinator"
         message={`Are you sure you want to remove ${removeTarget?.facultyName} as coordinator for this event? They will no longer be able to manage results or issue certificates for this event.`}
-        confirmText="Remove Coordinator"
+        confirmText={removing ? 'Removing…' : 'Remove Coordinator'}
         danger
       />
     </div>

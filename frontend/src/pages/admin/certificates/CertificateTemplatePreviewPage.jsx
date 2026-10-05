@@ -7,7 +7,7 @@ import CertificatePreview from '../../../components/certificates/CertificatePrev
 import { downloadCertificatePDF } from '../../../utils/certificateGenerator'
 import {
   ArrowLeft, Edit2, Printer, Download, ZoomIn, ZoomOut,
-  Maximize2, RotateCcw, Award, CheckCircle2, Clock, Archive
+  RotateCcw, Award
 } from 'lucide-react'
 
 export default function CertificateTemplatePreviewPage() {
