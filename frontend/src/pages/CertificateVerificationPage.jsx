@@ -14,15 +14,13 @@ import {
   ShieldCheck,
   Copy,
   Check,
-  ExternalLink,
   Award,
   Calendar,
   User,
   Hash,
   Building,
   ArrowLeft,
-  X,
-  Printer
+  X
 } from 'lucide-react'
 
 const AU_LOGO_URL = 'https://www.aec.edu.in/adityanew/images/au_2.png'

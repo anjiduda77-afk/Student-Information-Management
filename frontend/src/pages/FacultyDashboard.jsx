@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react'
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import Layout from '../components/common/Layout'
 import {
-  courseService, attendanceService, marksService,
-  timetableService, eventService, certificateService, adminService
+  courseService, marksService,
+  eventService, certificateService, adminService
 } from '../services/api'
 import {
   LayoutDashboard, BookOpen, ClipboardCheck, BarChart2,
-  Calendar, Award, Plus, CheckCircle, XCircle, Clock,
-  Users, Check, X, AlertCircle, RefreshCw, Download,
-  ExternalLink, Eye, FileText, Sparkles, ShieldCheck,
+  Calendar, Award, CheckCircle, Clock,
+  Users, X, Download, Save,
+  ExternalLink, Eye, Sparkles,
   Trophy, Medal, AlertTriangle, Ban
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
