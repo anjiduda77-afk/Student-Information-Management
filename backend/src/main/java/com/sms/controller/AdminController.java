@@ -3,6 +3,8 @@ package com.sms.controller;
 import com.sms.dto.AppDTO;
 import com.sms.dto.AuthDTO;
 import com.sms.entity.User;
+import com.sms.repository.CertificateRepository;
+import com.sms.repository.EventRepository;
 import com.sms.repository.UserRepository;
 import com.sms.service.*;
 import jakarta.validation.Valid;
@@ -14,6 +16,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,27 +35,91 @@ public class AdminController {
     private final AnnouncementNotificationService announcementService;
     private final ActivityLogService activityLogService;
     private final UserRepository userRepository;
+    private final EventRepository eventRepository;
+    private final CertificateRepository certificateRepository;
     private final com.sms.service.AccountSecurityService accountSecurityService;
 
     // ==================== Dashboard ====================
 
-    @GetMapping("/dashboard")
+    @GetMapping({"/dashboard", "/dashboard/stats"})
     public ResponseEntity<?> getDashboard() {
-        long students = userRepository.findByRole(User.Role.STUDENT).size();
+        List<User> studentUsers = userRepository.findByRole(User.Role.STUDENT);
+        long students = studentUsers.size();
         long faculty = userRepository.findByRole(User.Role.FACULTY).size();
         long departments = departmentService.getAllDepartments().size();
         long courses = courseSubjectService.getAllCourses().size();
+        long totalEvents = eventRepository.count();
+        long certificatesIssued = certificateRepository.count();
         Map<String, Object> attendanceSummary = attendanceService.getInstitutionAttendanceSummary();
-        List<AppDTO.ActivityLogDTO> recentLogs = activityLogService.getRecentLogs();
 
-        return ResponseEntity.ok(Map.of(
-                "totalStudents", students,
-                "totalFaculty", faculty,
-                "totalDepartments", departments,
-                "totalCourses", courses,
-                "attendanceSummary", attendanceSummary,
-                "recentActivities", recentLogs.stream().limit(10).toList()
-        ));
+        // 1. Department Wise Student Distribution & Enrollment Overview
+        Map<String, Long> deptCounts = new LinkedHashMap<>();
+        for (User u : studentUsers) {
+            String dept = u.getDepartment();
+            if (dept == null || dept.isBlank()) {
+                dept = u.getBranch();
+            }
+            if (dept == null || dept.isBlank()) {
+                dept = "General";
+            }
+            deptCounts.put(dept, deptCounts.getOrDefault(dept, 0L) + 1L);
+        }
+
+        List<Map<String, Object>> studentEnrollment = deptCounts.entrySet().stream()
+                .map(e -> {
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    item.put("department", e.getKey());
+                    item.put("students", e.getValue());
+                    return item;
+                })
+                .toList();
+
+        List<Map<String, Object>> departmentWiseStudents = deptCounts.entrySet().stream()
+                .map(e -> {
+                    double pct = (students > 0) ? Math.round((e.getValue() * 100.0 / students) * 10.0) / 10.0 : 0.0;
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    item.put("name", e.getKey());
+                    item.put("value", e.getValue());
+                    item.put("percentage", pct);
+                    return item;
+                })
+                .toList();
+
+        // 2. Real Events & Activities from Database
+        List<Map<String, Object>> recentEvents = eventRepository.findAll().stream()
+                .sorted((a, b) -> {
+                    if (a.getEventDate() == null && b.getEventDate() == null) return 0;
+                    if (a.getEventDate() == null) return 1;
+                    if (b.getEventDate() == null) return -1;
+                    return b.getEventDate().compareTo(a.getEventDate());
+                })
+                .limit(5)
+                .map(e -> {
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    item.put("id", e.getId());
+                    item.put("title", e.getTitle() != null ? e.getTitle() : "Event");
+                    item.put("eventDate", e.getEventDate() != null ? e.getEventDate().toString() : "");
+                    item.put("venue", e.getVenue() != null ? e.getVenue() : "Campus");
+                    item.put("category", e.getCategory() != null ? e.getCategory() : "Academic");
+                    item.put("status", e.getStatus() != null ? e.getStatus().name() : "UPCOMING");
+                    return item;
+                })
+                .toList();
+
+        Map<String, Object> resp = new LinkedHashMap<>();
+        resp.put("totalStudents", students);
+        resp.put("totalFaculty", faculty);
+        resp.put("totalEvents", totalEvents);
+        resp.put("totalCertificates", certificatesIssued);
+        resp.put("certificatesIssued", certificatesIssued);
+        resp.put("totalDepartments", departments);
+        resp.put("totalCourses", courses);
+        resp.put("attendanceSummary", attendanceSummary);
+        resp.put("studentEnrollment", studentEnrollment);
+        resp.put("departmentWiseStudents", departmentWiseStudents);
+        resp.put("recentEvents", recentEvents);
+
+        return ResponseEntity.ok(resp);
     }
 
     // ==================== Students ====================

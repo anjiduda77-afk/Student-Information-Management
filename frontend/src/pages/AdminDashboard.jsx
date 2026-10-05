@@ -15,8 +15,11 @@ import {
   Calendar, Award, Bell, Shield, Plus,
   Trash2, Search,
   Clock, UserPlus, FileText,
-  KeyRound, ClipboardCheck
+  KeyRound, ClipboardCheck, AlertTriangle, RefreshCw
 } from 'lucide-react'
+import {
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid
+} from 'recharts'
 import AdminAttendanceSection from '../components/attendance/AdminAttendanceSection'
 import AcademicTimetable from '../components/timetable/AcademicTimetable'
 import { toast } from '../components/Toast'
@@ -28,36 +31,110 @@ import {
   validateCourseForm, validateTimetableForm
 } from '../utils/validators'
 
+const DEPT_COLORS = ['#2563eb', '#d97706', '#059669', '#7c3aed', '#db2777', '#0891b2', '#ea580c']
+
 // =========================================================================
-// 1. Dashboard Overview
+// 1. Dashboard Overview — Real Database Driven
 // =========================================================================
 function AdminHome() {
   const navigate = useNavigate()
-  const setTab = (tab) => navigate(`/admin/${tab}`)
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  useEffect(() => {
+  const loadDashboardData = () => {
+    setLoading(true)
+    setError(null)
     adminService.dashboard()
       .then(res => setData(res.data))
-      .catch(err => console.error(err))
+      .catch(err => {
+        console.error('Failed to load dashboard data:', err)
+        setError('Unable to load dashboard data. Please try again.')
+      })
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    loadDashboardData()
   }, [])
 
-  if (loading) return <TableSkeleton rows={4} cols={4} />
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div style={{ height: 140, background: '#f1f5f9', borderRadius: 20 }} />
+        <div className="grid-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} style={{ height: 96, background: '#f8fafc', borderRadius: 16, border: '1px solid #e2e8f0' }} />
+          ))}
+        </div>
+        <div style={{ height: 300, background: '#f8fafc', borderRadius: 16, border: '1px solid #e2e8f0' }} />
+      </div>
+    )
+  }
 
-  const stats = [
-    { label: 'Total Students on Roll', value: data?.totalStudents || 0, icon: GraduationCap, color: '#2563eb', bg: '#eff6ff', tab: 'students' },
-    { label: 'Faculty & Staff Roster', value: data?.totalFaculty || 0, icon: Users, color: '#0f766e', bg: '#f0fdf4', tab: 'faculty' },
-    { label: 'Academic Programmes', value: data?.totalCourses || 0, icon: BookOpen, color: '#7c3aed', bg: '#faf5ff', tab: 'academics' },
-    { label: 'Departments & Branches', value: data?.totalDepartments || 0, icon: Shield, color: '#d97706', bg: '#fffbeb', tab: 'academics' },
+  if (error) {
+    return (
+      <div className="card" style={{ textAlign: 'center', padding: '48px 24px', borderColor: '#fca5a5' }}>
+        <AlertTriangle size={42} color="#ef4444" style={{ margin: '0 auto 12px' }} />
+        <h3 style={{ fontSize: 18, fontWeight: 700, color: '#991b1b', margin: '0 0 8px' }}>
+          Unable to Load Dashboard
+        </h3>
+        <p style={{ fontSize: 14, color: '#64748b', margin: '0 0 20px' }}>
+          {error}
+        </p>
+        <button
+          onClick={loadDashboardData}
+          className="btn btn-primary"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, margin: '0 auto' }}
+        >
+          <RefreshCw size={15} /> Retry
+        </button>
+      </div>
+    )
+  }
+
+  const summaryCards = [
+    {
+      label: 'Total Students',
+      value: data?.totalStudents ?? 0,
+      icon: GraduationCap,
+      color: '#2563eb',
+      bg: '#eff6ff',
+      path: '/admin/students'
+    },
+    {
+      label: 'Total Faculty',
+      value: data?.totalFaculty ?? 0,
+      icon: Users,
+      color: '#0f766e',
+      bg: '#f0fdf4',
+      path: '/admin/faculty'
+    },
+    {
+      label: 'Total Events',
+      value: data?.totalEvents ?? 0,
+      icon: Calendar,
+      color: '#7c3aed',
+      bg: '#faf5ff',
+      path: '/admin/events'
+    },
+    {
+      label: 'Certificates Issued',
+      value: data?.certificatesIssued ?? data?.totalCertificates ?? 0,
+      icon: Award,
+      color: '#d97706',
+      bg: '#fffbeb',
+      path: '/admin/certificates'
+    }
   ]
 
-  const attSummary = data?.attendanceSummary || {}
+  const enrollmentData = data?.studentEnrollment || []
+  const deptWiseData = data?.departmentWiseStudents || []
+  const recentEvents = data?.recentEvents || []
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {/* Welcome Banner */}
+      {/* 1. Welcome Banner */}
       <div style={{
         background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
         borderRadius: 20, padding: '28px 32px', color: '#fff',
@@ -71,28 +148,36 @@ function AdminHome() {
             Institutional Administration Console
           </h2>
           <p style={{ fontSize: 14, opacity: 0.85, margin: 0, maxWidth: 640 }}>
-            Monitor university operations, student roll lists, faculty teaching allotments, class time table matrix, and statutory attendance compliance in real-time.
+            Real-time academic management oversight: monitor student roll lists, teaching allotments, university event registrations, and authentic credential issuance.
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={() => navigate('/admin/students')} className="btn" style={{ background: '#fff', color: '#1e3a8a', fontWeight: 700 }}>
+          <button
+            onClick={() => navigate('/admin/students')}
+            className="btn"
+            style={{ background: '#fff', color: '#1e3a8a', fontWeight: 700 }}
+          >
             <UserPlus size={16} /> Admit Student
           </button>
-          <button onClick={() => navigate('/admin/announcements')} className="btn" style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', fontWeight: 700 }}>
-            <Bell size={16} /> Issue Official Circular
+          <button
+            onClick={() => navigate('/admin/events')}
+            className="btn"
+            style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', fontWeight: 700 }}
+          >
+            <Calendar size={16} /> Manage Events
           </button>
         </div>
       </div>
 
-      {/* Metric Cards */}
+      {/* 2. Summary Cards */}
       <div className="grid-4">
-        {stats.map(s => {
+        {summaryCards.map(s => {
           const Icon = s.icon
           return (
             <div
               key={s.label}
               className="stat-card"
-              onClick={() => setTab(s.tab)}
+              onClick={() => navigate(s.path)}
               style={{ cursor: 'pointer' }}
             >
               <div className="stat-icon" style={{ background: s.bg, color: s.color }}>
@@ -107,68 +192,252 @@ function AdminHome() {
         })}
       </div>
 
-      {/* Attendance & Recent Activity row */}
+      {/* 3. Student Enrollment Overview */}
+      <div className="card">
+        <div className="section-header">
+          <div>
+            <h3 className="section-title">Student Enrollment Overview</h3>
+            <p style={{ fontSize: 13, color: '#64748b', margin: '2px 0 0' }}>
+              Real-time student headcount distribution across academic departments
+            </p>
+          </div>
+          <span className="badge badge-primary">Database Verified</span>
+        </div>
+
+        {enrollmentData.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8' }}>
+            <BookOpen size={36} style={{ margin: '0 auto 8px', opacity: 0.6 }} />
+            <p style={{ margin: 0, fontWeight: 600 }}>No enrollment data available</p>
+            <p style={{ fontSize: 12, margin: '4px 0 0' }}>Enrolled students will appear here grouped by department.</p>
+          </div>
+        ) : (
+          <div style={{ width: '100%', height: 280, marginTop: 16 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={enrollmentData} margin={{ top: 10, right: 20, left: -10, bottom: 25 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis
+                  dataKey="department"
+                  tick={{ fontSize: 11, fill: '#64748b' }}
+                  interval={0}
+                  tickFormatter={(dept) => {
+                    if (dept.length > 22) {
+                      return dept.split(' ').map(w => w[0]).join('')
+                    }
+                    return dept
+                  }}
+                />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                <Tooltip
+                  formatter={(val) => [`${val} Students`, 'Enrolled']}
+                  labelFormatter={(label) => `Department: ${label}`}
+                  contentStyle={{ background: '#0f172a', borderRadius: 8, color: '#fff', border: 'none', fontSize: 12 }}
+                />
+                <Bar dataKey="students" fill="#2563eb" radius={[6, 6, 0, 0]} maxBarSize={48} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+
+      {/* 4 & 5. Department Wise Students & Events & Activities */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 20 }}>
-        {/* Attendance Health */}
+        {/* Department Wise Students */}
         <div className="card">
           <div className="section-header">
-            <h3 className="section-title">Institutional Attendance Health</h3>
-            <span className="badge badge-primary">This Semester</span>
+            <div>
+              <h3 className="section-title">Department Wise Students</h3>
+              <p style={{ fontSize: 13, color: '#64748b', margin: '2px 0 0' }}>
+                Proportional breakdown computed from active student records
+              </p>
+            </div>
+            <span className="badge badge-neutral">Total: {data?.totalStudents ?? 0}</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 24, padding: '12px 0' }}>
-            <div style={{
-              width: 100, height: 100, borderRadius: '50%', border: '8px solid #2563eb',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0
-            }}>
-              <span style={{ fontSize: 22, fontWeight: 800, color: '#1e3a8a' }}>
-                {attSummary.overallPercentage || 82}%
-              </span>
-              <span style={{ fontSize: 9, color: '#64748b', fontWeight: 600 }}>AVERAGE</span>
+
+          {deptWiseData.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8' }}>
+              <p style={{ margin: 0, fontWeight: 600 }}>No department data available</p>
             </div>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                <span style={{ color: '#64748b' }}>Total Sessions Conducted:</span>
-                <strong>{attSummary.totalSessions || 48}</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                <span style={{ color: '#64748b' }}>Students At Risk (&lt;75%):</span>
-                <span className="badge badge-danger">{attSummary.lowAttendanceCount || 2} students</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                <span style={{ color: '#64748b' }}>Active Today:</span>
-                <span className="badge badge-success">Normal Operations</span>
-              </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 12 }}>
+              {deptWiseData.map((dept, idx) => (
+                <div key={dept.name}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 5 }}>
+                    <span style={{ fontWeight: 600, color: '#334155' }}>{dept.name}</span>
+                    <span style={{ color: '#64748b' }}>
+                      <strong>{dept.value}</strong> ({dept.percentage}%)
+                    </span>
+                  </div>
+                  <div style={{ height: 8, width: '100%', background: '#f1f5f9', borderRadius: 4, overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%',
+                      width: `${Math.min(100, Math.max(2, dept.percentage))}%`,
+                      background: DEPT_COLORS[idx % DEPT_COLORS.length],
+                      borderRadius: 4,
+                      transition: 'width 0.4s ease'
+                    }} />
+                  </div>
+                </div>
+              ))}
             </div>
+          )}
+        </div>
+
+        {/* Events & Activities */}
+        <div className="card">
+          <div className="section-header">
+            <div>
+              <h3 className="section-title">Events & Activities</h3>
+              <p style={{ fontSize: 13, color: '#64748b', margin: '2px 0 0' }}>
+                Active campus symposia, workshops, and technical competitions
+              </p>
+            </div>
+            <button onClick={() => navigate('/admin/events')} className="btn btn-ghost btn-sm">
+              View All
+            </button>
+          </div>
+
+          {recentEvents.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8' }}>
+              <Calendar size={36} style={{ margin: '0 auto 8px', opacity: 0.6 }} />
+              <p style={{ margin: 0, fontWeight: 600 }}>No events available</p>
+              <p style={{ fontSize: 12, margin: '4px 0 0' }}>Published university events will appear here.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
+              {recentEvents.map(evt => (
+                <div
+                  key={evt.id}
+                  onClick={() => navigate(`/admin/events/${evt.id}`)}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '10px 14px', borderRadius: 10,
+                    background: '#f8fafc', border: '1px solid #e2e8f0',
+                    cursor: 'pointer', transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#f1f5f9' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = '#f8fafc' }}
+                >
+                  <div style={{ minWidth: 0, flex: 1, paddingRight: 10 }}>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {evt.title}
+                    </p>
+                    <p style={{ margin: '2px 0 0', fontSize: 11, color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      📅 {formatDate(evt.eventDate)} • 📍 {evt.venue}
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <span className="badge badge-neutral" style={{ fontSize: 10 }}>{evt.category}</span>
+                    <span className={`badge ${evt.status === 'COMPLETED' ? 'badge-success' : 'badge-primary'}`} style={{ fontSize: 10 }}>
+                      {evt.status === 'REGISTRATION_OPEN' ? 'OPEN' : evt.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 6. Quick Actions */}
+      <div className="card">
+        <div className="section-header">
+          <div>
+            <h3 className="section-title">Quick Administrative Actions</h3>
+            <p style={{ fontSize: 13, color: '#64748b', margin: '2px 0 0' }}>
+              Direct shortcuts to primary institutional management modules
+            </p>
           </div>
         </div>
 
-        {/* Recent Audit Logs */}
-        <div className="card">
-          <div className="section-header">
-            <h3 className="section-title">Recent System Activities</h3>
-            <button onClick={() => navigate('/admin/audit_logs')} className="btn btn-ghost btn-sm">View All</button>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {(data?.recentActivities || []).slice(0, 5).map((log, idx) => (
-              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 13, borderBottom: '1px solid #f8fafc', paddingBottom: 8 }}>
-                <span className={`badge ${log.action === 'DELETE' ? 'badge-danger' : log.action === 'CREATE' ? 'badge-success' : 'badge-info'}`}>
-                  {log.action}
-                </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ margin: 0, fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {log.details}
-                  </p>
-                  <p style={{ margin: 0, fontSize: 11, color: '#94a3b8' }}>
-                    By {log.userName} • {formatDate(log.timestamp)}
-                  </p>
-                </div>
-              </div>
-            ))}
-            {(!data?.recentActivities || data.recentActivities.length === 0) && (
-              <p style={{ color: '#94a3b8', fontSize: 13, textAlign: 'center', padding: 20 }}>No activity records recorded yet.</p>
-            )}
-          </div>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: 12,
+          marginTop: 8
+        }}>
+          <button
+            onClick={() => navigate('/admin/students')}
+            className="btn"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '14px 16px', borderRadius: 12,
+              background: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe',
+              fontWeight: 700, fontSize: 13, justifyContent: 'flex-start'
+            }}
+          >
+            <UserPlus size={18} color="#2563eb" />
+            <span>Add Student</span>
+          </button>
+
+          <button
+            onClick={() => navigate('/admin/faculty')}
+            className="btn"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '14px 16px', borderRadius: 12,
+              background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0',
+              fontWeight: 700, fontSize: 13, justifyContent: 'flex-start'
+            }}
+          >
+            <Users size={18} color="#059669" />
+            <span>Add Faculty</span>
+          </button>
+
+          <button
+            onClick={() => navigate('/admin/events')}
+            className="btn"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '14px 16px', borderRadius: 12,
+              background: '#faf5ff', color: '#6b21a8', border: '1px solid #e9d5ff',
+              fontWeight: 700, fontSize: 13, justifyContent: 'flex-start'
+            }}
+          >
+            <Calendar size={18} color="#7c3aed" />
+            <span>Publish Event</span>
+          </button>
+
+          <button
+            onClick={() => navigate('/admin/certificates')}
+            className="btn"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '14px 16px', borderRadius: 12,
+              background: '#fffbeb', color: '#92400e', border: '1px solid #fde68a',
+              fontWeight: 700, fontSize: 13, justifyContent: 'flex-start'
+            }}
+          >
+            <Award size={18} color="#d97706" />
+            <span>Create Certificate</span>
+          </button>
+
+          <button
+            onClick={() => navigate('/admin/timetable')}
+            className="btn"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '14px 16px', borderRadius: 12,
+              background: '#f8fafc', color: '#334155', border: '1px solid #e2e8f0',
+              fontWeight: 700, fontSize: 13, justifyContent: 'flex-start'
+            }}
+          >
+            <Clock size={18} color="#475569" />
+            <span>Timetable Matrix</span>
+          </button>
+
+          <button
+            onClick={() => navigate('/admin/attendance')}
+            className="btn"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '14px 16px', borderRadius: 12,
+              background: '#f8fafc', color: '#334155', border: '1px solid #e2e8f0',
+              fontWeight: 700, fontSize: 13, justifyContent: 'flex-start'
+            }}
+          >
+            <ClipboardCheck size={18} color="#475569" />
+            <span>Attendance Oversight</span>
+          </button>
         </div>
       </div>
     </div>
