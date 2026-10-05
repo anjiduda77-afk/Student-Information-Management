@@ -182,13 +182,3 @@ Swagger UI is accessible at: **`http://localhost:8080/swagger-ui.html`**
 | `WS` | `/ws` | STOMP WebSocket communication | Authenticated |
 
 ---
-
-## 🤝 Contributing
-
-Contributions are always welcome! Please check out [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on branch naming, code style, and submitting pull requests.
-
----
-
-## 📄 License
-
-This project is licensed under the [MIT License](LICENSE).
