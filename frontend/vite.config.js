@@ -16,8 +16,12 @@ export default defineConfig({
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           // UI icons
           'vendor-icons': ['lucide-react'],
-          // PDF/canvas utilities
-          'vendor-pdf': ['html2canvas', 'dompurify'],
+          // PDF & QR generation
+          'vendor-pdf': ['jspdf', 'qrcode'],
+          // Analytics & Charts
+          'vendor-charts': ['recharts'],
+          // Network & WebSockets
+          'vendor-network': ['axios', '@stomp/stompjs', 'sockjs-client'],
         },
       },
     },
