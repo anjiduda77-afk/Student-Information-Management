@@ -1,181 +1,508 @@
-# 🎓 Student Management System
+# 🎓 Smart Student Information System
 
-[![Build Status](https://github.com/malubhai13/-Student-Management-System-/actions/workflows/ci.yml/badge.svg)](https://github.com/malubhai13/-Student-Management-System-/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.0-brightgreen.svg)](https://spring.io/projects/spring-boot)
-[![React](https://img.shields.io/badge/React-18.2.0-61dafb.svg)](https://react.dev)
-[![Vite](https://img.shields.io/badge/Vite-5.0-646cff.svg)](https://vitejs.dev)
-[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.3-38b2ac.svg)](https://tailwindcss.com)
-[![MySQL](https://img.shields.io/badge/MySQL-8.0-orange.svg)](https://www.mysql.com/)
+<p align="center">
 
-A modern, production-ready full-stack web application designed for academic institutions. Built with **React**, **Spring Boot 3**, **MySQL 8**, and **JWT authentication** featuring comprehensive Role-Based Access Control (RBAC).
+  <img src="https://img.shields.io/badge/Aditya%20University-Smart%20Student%20Information%20System-0B1F3A?style=for-the-badge" alt="Aditya University">
 
----
+  <img src="https://img.shields.io/badge/Java-Spring%20Boot-orange?style=for-the-badge&logo=springboot" alt="Spring Boot">
 
-## 🌟 Features
+  <img src="https://img.shields.io/badge/React-Vite-61DAFB?style=for-the-badge&logo=react" alt="React">
 
-- 🔐 **JWT Authentication & RBAC**: Endpoint and UI-level access control for **Admin**, **Faculty**, and **Student** roles.
-- 👨‍💼 **Admin Portal**: Manage student rosters, faculty appointments, course offerings, and student course enrollments.
-- 👩‍🏫 **Faculty Portal**: Record attendance, upload examination grades, and manage assigned curriculum courses.
-- 🧑‍🎓 **Student Portal**: Real-time view of enrolled courses, attendance summaries, semester GPA/grades, and progress.
-- ⚡ **Real-time WebSockets**: Instant STOMP over SockJS notifications for grade uploads and announcements.
-- 📖 **Interactive API Documentation**: Embedded Swagger UI / OpenAPI 3 specification.
-- 🐳 **Full Containerization**: One-command local and production deployment via Docker Compose.
+  <img src="https://img.shields.io/badge/MySQL-Database-4479A1?style=for-the-badge&logo=mysql" alt="MySQL">
 
----
+</p>
 
-## 🛠️ Tech Stack
+<p align="center">
+  <strong>A professional university management platform for Students, Faculty and Administration.</strong>
+</p>
 
-| Layer | Technologies |
-|:---|:---|
-| **Frontend** | React 18, React Router v6, Axios, TailwindCSS, Lucide Icons, Recharts |
-| **Backend** | Spring Boot 3.2, Spring Security 6, Spring Data JPA, Hibernate |
-| **Authentication** | Stateless JWT (JSON Web Tokens) with BCrypt password hashing |
-| **Database** | MySQL 8.0 with HikariCP connection pooling |
-| **Real-time** | Spring WebSocket, STOMP protocol, SockJS client |
-| **Build & Tooling** | Maven Wrapper (`mvnw`), Vite 5, PostCSS, Docker & Docker Compose |
+<p align="center">
+  <a href="https://github.com/anjiduda77-afk/Student-Information-Management">
+    View Repository
+  </a>
+</p>
 
 ---
 
-## 📂 Project Structure
+## 📌 Project Overview
 
-```
-student-management-system/
-├── .github/
-│   ├── workflows/ci.yml       # Automated CI/CD pipeline (backend & frontend)
-│   └── ISSUE_TEMPLATE/        # Standardized GitHub issue templates
-├── backend/                   # Spring Boot 3 application
-│   ├── .mvn/wrapper/          # Maven wrapper configuration
-│   ├── mvnw / mvnw.cmd        # Cross-platform Maven wrapper scripts
-│   ├── pom.xml                # Maven dependencies & build plugins
-│   ├
-│   └── src/main/java/com/sms/
-│       ├── config/            # Security, WebSocket, CORS & seed data
-│       ├── controller/        # REST controllers
-│       ├── dto/               # Strongly-typed request/response DTOs
-│       ├── entity/            # JPA entities (User, Course, Attendance, Marks)
-│       ├── repository/        # Spring Data JPA repositories
-│       ├── security/          # JWT filter, provider & UserDetailsService
-│       └── service/           # Business logic layer
-├── frontend/                  # React + Vite application
-│   ├── src/
-│   │   ├── components/        # Reusable UI & common layout components
-│   │   ├── context/           # AuthContext & state providers
-│   │   ├── hooks/             # Custom hooks (WebSocket STOMP listener)
-│   │   ├── pages/             # Admin, Faculty, Student & Login views
-│   │   └── services/          # Axios HTTP client with auth interceptor
-│             
-│   ├── nginx.conf             # Production reverse proxy config
-│   └── vite.config.js         # Dev server & reverse proxy configuration
-├── docker-compose.yml         # Multi-container orchestration (MySQL + App)
-├
-└── README.md                  # Project overview & documentation
-```
+**Smart Student Information System (SIS)** is a web-based university information management application developed for **Aditya University**.
+
+The system provides a centralised platform for managing student information, faculty activities, academic records, attendance, marks, timetable, events, registrations, certificates and other university-related operations.
+
+The application follows a **role-based access model**, providing different functionality for:
+
+- 👨‍💼 Admin
+- 👨‍🏫 Faculty
+- 🎓 Student
+
+The main objective is to provide a structured, secure and user-friendly platform for university administration and academic activities.
 
 ---
 
-## 🚀 Quick Start
+## 🎯 Objectives
 
-### Prerequisites
+The major objectives of the Smart Student Information System are:
 
-- **Java**: JDK 17 or higher
-- **Node.js**: v18 or higher (with npm)
-- **MySQL**: 8.0+ (or use Docker)
-
----
-
-### Option 1: Local Development
-
-#### 1. Clone the Repository
-```bash
-git clone https://github.com/malubhai13/-Student-Management-System-.git
-cd -Student-Management-System-
-```
-
-#### 2. Configure Database
-Ensure MySQL is running, then create the database:
-```sql
-CREATE DATABASE student information system;
-```
-
-Update your database credentials in `backend/src/main/resources/application.properties` or set environment variables:
-```bash
-export SPRING_DATASOURCE_USERNAME=root
-export SPRING_DATASOURCE_PASSWORD=your_password
-```
-
-#### 3. Run Backend
-Using the included Maven wrapper:
-
-**Linux / macOS:**
-```bash
-cd backend
-./mvnw spring-boot:run
-```
-
-**Windows (PowerShell / Command Prompt):**
-```powershell
-cd backend
-.\mvnw.cmd spring-boot:run
-```
-> The backend server starts at **`http://localhost:8080`**. Database tables and default accounts are seeded automatically on first boot.
-
-#### 4. Run Frontend
-```bash
-cd ../frontend
-npm install
-npm run dev
-```
-> The frontend application starts at **`http://localhost:5173`**.
+- Centralise student and faculty information.
+- Manage academic information in an organised manner.
+- Provide role-based access to different users.
+- Maintain student attendance records.
+- Manage marks and academic performance.
+- Provide timetable information.
+- Manage university events and registrations.
+- Manage event results and certificates.
+- Provide students with access to their academic information.
+- Reduce manual administrative work.
+- Provide a professional and responsive university management interface.
 
 ---
 
-### Option 2: Docker Compose (Recommended)
+## ✨ Key Features
 
-Run the entire full-stack application and MySQL with a single command:
+### 🔐 Authentication & Role-Based Access
 
+- Secure user authentication.
+- Role-based access for Admin, Faculty and Student.
+- Protected application routes.
+- Separate dashboards based on user role.
+- Role-based access control for academic and administrative operations.
 
-- **Frontend**: `http://localhost:3000`
-- **Backend API**: `http://localhost:8080`
-- **Swagger Documentation**: `http://localhost:8080/swagger-ui.html`
+### 👨‍💼 Admin Management
 
-To stop all containers:
-```bash
-docker-compose down
-```
+The Admin module provides institution-level management capabilities including:
+
+- Student management
+- Faculty management
+- Academic management
+- Attendance monitoring
+- Marks and grades management
+- Timetable management
+- Event management
+- Faculty event coordinator assignment
+- Certificate management
+- Notifications and announcements
+- Reports and administrative controls
+- Profile management
+- System settings
+
+### 👨‍🏫 Faculty Management
+
+Faculty members can access the academic and event operations assigned to them.
+
+Features include:
+
+- Faculty profile
+- Assigned subjects
+- Timetable
+- Attendance management
+- Marks and grades
+- Assigned event management
+- Event participant management
+- Event result management
+- Certificate generation for assigned events
+- Notifications
+- Reports
+
+### 🎓 Student Portal
+
+Students can access their own academic and university information.
+
+Features include:
+
+- Student dashboard
+- Student profile
+- Attendance overview
+- Subject-wise attendance
+- Date-wise attendance
+- Attendance history
+- Marks and grades
+- Timetable
+- University events
+- Event registration
+- Event details
+- My Certificates
+- Certificate viewing
+- Certificate downloading
+- Notifications
 
 ---
 
-## 🔑 Default Login Credentials
+# 🧩 Main Modules
 
-Initial accounts are automatically populated on startup by `DataInitializer`:
-
-| Role | Email | Password | Access Capabilities |
-|:---|:---|:---|:---|
-| **Admin** | `admin@sms.com` | `admin123` | System overview, Student & Faculty directory, Course catalog |
-| **Faculty** | `faculty@sms.com` | `faculty123` | Take attendance, Input student grades, View teaching load |
-| **Student** | `student@sms.com` | `student123` | View enrolled courses, Track attendance %, View semester grades |
-
----
-
-## 📡 REST API Reference
-
-Swagger UI is accessible at: **`http://localhost:8080/swagger-ui.html`**
-
-| Method | Endpoint | Description | Role Required |
-|:---|:---|:---|:---|
-| `POST` | `/api/auth/login` | Authenticate user & issue JWT | Public |
-| `POST` | `/api/auth/register` | Register new user account | Admin |
-| `GET` | `/api/admin/dashboard` | Aggregated institutional metrics | Admin |
-| `GET` | `/api/admin/students` | Retrieve all student profiles | Admin |
-| `POST` | `/api/admin/enroll` | Enroll a student into a course | Admin |
-| `DELETE` | `/api/admin/students/{id}` | Delete a student profile | Admin |
-| `GET` | `/api/courses` | List all academic courses | Authenticated |
-| `POST` | `/api/courses` | Create a new course entry | Admin |
-| `POST` | `/api/attendance` | Record course attendance | Faculty |
-| `GET` | `/api/attendance/student/{id}` | Fetch student attendance history | Faculty, Student |
-| `POST` | `/api/marks` | Upload course examination grades | Faculty |
-| `GET` | `/api/marks/student/{id}` | Fetch student grade report | Faculty, Student |
-| `WS` | `/ws` | STOMP WebSocket communication | Authenticated |
+| Module | Description |
+|---|---|
+| 🔐 Authentication | Secure login and role-based access |
+| 👨‍🎓 Student Management | Manage student information and academic details |
+| 👨‍🏫 Faculty Management | Manage faculty information and assigned academic activities |
+| 📚 Academic Management | Manage departments, programmes, subjects and academic information |
+| 📝 Attendance | Record and monitor student attendance |
+| 📊 Marks & Grades | Manage and view academic performance |
+| 🗓️ Timetable | Manage and display academic schedules |
+| 🎉 Event Management | Create, manage and publish university events |
+| 🏆 Event Results | Manage event outcomes and participant results |
+| 📜 Certificate Management | Generate and manage event certificates |
+| 🔔 Notifications | Display relevant university notifications |
+| 📈 Reports | Provide academic and administrative information |
+| 👤 Profile Management | Manage student, faculty and admin profiles |
 
 ---
+
+# 🎉 Event Management
+
+The Event Management module provides a complete workflow for university events.
+
+### Admin Workflow
+
+```text
+Admin Login
+     ↓
+Create Event
+     ↓
+Add Event Details
+     ↓
+Upload Event Poster
+     ↓
+Add Rules & Eligibility
+     ↓
+Set Date / Time / Venue
+     ↓
+Publish Event
+     ↓
+Assign Faculty Coordinator
+
+## 🏗️ System Architecture
+
+The Smart Student Information System follows a layered architecture that
+connects the React + Vite frontend with the Spring Boot backend and MySQL
+database. The system provides separate access and functionality for Admin,
+Faculty and Student users, along with public certificate verification.
+
+```mermaid
+flowchart TB
+
+    %% =========================
+    %% USERS
+    %% =========================
+
+    ADMIN["👨‍💼 ADMIN"]
+    FACULTY["👨‍🏫 FACULTY"]
+    STUDENT["🎓 STUDENT"]
+    PUBLIC["🌐 PUBLIC USER<br/>Certificate Verification"]
+
+    %% =========================
+    %% FRONTEND
+    %% =========================
+
+    subgraph FRONTEND["💻 PRESENTATION LAYER — REACT + VITE"]
+
+        LOGIN["🔐 Login & Authentication"]
+
+        ADMIN_UI["🛠️ Admin Portal"]
+        FACULTY_UI["👨‍🏫 Faculty Portal"]
+        STUDENT_UI["🎓 Student Portal"]
+
+        PROFILE_UI["👤 Profile Management"]
+        DASHBOARD["📊 Dashboards"]
+
+        STUDENT_MODULES["🎓 Student Features<br/>
+        • Profile<br/>
+        • Attendance<br/>
+        • Marks & Grades<br/>
+        • Timetable<br/>
+        • Events<br/>
+        • Certificates<br/>
+        • Notifications"]
+
+        FACULTY_MODULES["👨‍🏫 Faculty Features<br/>
+        • Profile<br/>
+        • Classes<br/>
+        • Attendance<br/>
+        • Marks & Grades<br/>
+        • Timetable<br/>
+        • Events<br/>
+        • Participants<br/>
+        • Certificates"]
+
+        ADMIN_MODULES["🛠️ Admin Features<br/>
+        • Users<br/>
+        • Students<br/>
+        • Faculty<br/>
+        • Departments<br/>
+        • Courses<br/>
+        • Subjects<br/>
+        • Attendance<br/>
+        • Timetable<br/>
+        • Events<br/>
+        • Certificates<br/>
+        • Notifications<br/>
+        • Reports<br/>
+        • Settings<br/>
+        • Activity Logs"]
+
+        PUBLIC_VERIFY["📜 Public Certificate<br/>Verification Page"]
+
+        STUDENT_UI --> STUDENT_MODULES
+        FACULTY_UI --> FACULTY_MODULES
+        ADMIN_UI --> ADMIN_MODULES
+    end
+
+    ADMIN --> LOGIN
+    FACULTY --> LOGIN
+    STUDENT --> LOGIN
+    PUBLIC --> PUBLIC_VERIFY
+
+    LOGIN --> DASHBOARD
+    LOGIN --> PROFILE_UI
+
+    %% =========================
+    %% API / SECURITY
+    %% =========================
+
+    subgraph API_LAYER["🌐 APPLICATION & API LAYER — SPRING BOOT"]
+
+        API["REST API<br/>Spring Boot Controllers"]
+
+        AUTH["🔐 Authentication & Authorization<br/>
+        JWT • BCrypt • RBAC"]
+
+        VALIDATION["✅ Validation Layer<br/>
+        Request Validation"]
+
+        EXCEPTION["⚠️ Global Exception Handling"]
+
+        AOP["🔎 AOP / Audit Logging"]
+
+        API --> AUTH
+        AUTH --> VALIDATION
+        VALIDATION --> EXCEPTION
+        EXCEPTION --> AOP
+    end
+
+    FRONTEND -->|"HTTP / REST + JSON"| API
+    PUBLIC_VERIFY -->|"Public Verification Request"| API
+
+    %% =========================
+    %% SERVICE LAYER
+    %% =========================
+
+    subgraph SERVICE_LAYER["⚙️ BUSINESS LOGIC LAYER — SERVICE LAYER"]
+
+        USER_SERVICE["👥 User & Role Service"]
+        STUDENT_SERVICE["🎓 Student Service"]
+        FACULTY_SERVICE["👨‍🏫 Faculty Service"]
+
+        ACADEMIC_SERVICE["🏫 Academic Management Service"]
+
+        ATTENDANCE_SERVICE["📋 Attendance Service"]
+        MARKS_SERVICE["📝 Marks & Grades Service"]
+        TIMETABLE_SERVICE["🗓️ Timetable Service"]
+
+        EVENT_SERVICE["🎪 Event Management Service"]
+        CERT_SERVICE["🏆 Certificate Service"]
+
+        NOTIFICATION_SERVICE["🔔 Notification Service"]
+        REPORT_SERVICE["📊 Reports Service"]
+
+        PROFILE_SERVICE["👤 Profile Service"]
+        SETTINGS_SERVICE["⚙️ System Settings Service"]
+
+        VERIFICATION_SERVICE["🔎 Certificate Verification Service"]
+    end
+
+    AOP --> USER_SERVICE
+    AOP --> STUDENT_SERVICE
+    AOP --> FACULTY_SERVICE
+    AOP --> ACADEMIC_SERVICE
+    AOP --> ATTENDANCE_SERVICE
+    AOP --> MARKS_SERVICE
+    AOP --> TIMETABLE_SERVICE
+    AOP --> EVENT_SERVICE
+    AOP --> CERT_SERVICE
+    AOP --> NOTIFICATION_SERVICE
+    AOP --> REPORT_SERVICE
+    AOP --> PROFILE_SERVICE
+    AOP --> SETTINGS_SERVICE
+    AOP --> VERIFICATION_SERVICE
+
+    %% =========================
+    %% REPOSITORY LAYER
+    %% =========================
+
+    subgraph REPOSITORY_LAYER["🗄️ DATA ACCESS LAYER — SPRING DATA JPA"]
+
+        USER_REPO["UserRepository"]
+        STUDENT_REPO["StudentRepository"]
+        FACULTY_REPO["FacultyRepository"]
+
+        DEPARTMENT_REPO["DepartmentRepository"]
+        COURSE_REPO["CourseRepository"]
+        SUBJECT_REPO["SubjectRepository"]
+
+        ATTENDANCE_REPO["AttendanceRepository"]
+        MARKS_REPO["MarksRepository"]
+        TIMETABLE_REPO["TimetableRepository"]
+
+        EVENT_REPO["EventRepository"]
+        PARTICIPANT_REPO["ParticipantRepository"]
+
+        CERT_REPO["CertificateRepository"]
+        TEMPLATE_REPO["CertificateTemplateRepository"]
+
+        NOTIFICATION_REPO["NotificationRepository"]
+        REPORT_REPO["ReportRepository"]
+
+        AUDIT_REPO["AuditLogRepository"]
+    end
+
+    USER_SERVICE --> USER_REPO
+    STUDENT_SERVICE --> STUDENT_REPO
+    FACULTY_SERVICE --> FACULTY_REPO
+
+    ACADEMIC_SERVICE --> DEPARTMENT_REPO
+    ACADEMIC_SERVICE --> COURSE_REPO
+    ACADEMIC_SERVICE --> SUBJECT_REPO
+
+    ATTENDANCE_SERVICE --> ATTENDANCE_REPO
+    MARKS_SERVICE --> MARKS_REPO
+    TIMETABLE_SERVICE --> TIMETABLE_REPO
+
+    EVENT_SERVICE --> EVENT_REPO
+    EVENT_SERVICE --> PARTICIPANT_REPO
+
+    CERT_SERVICE --> CERT_REPO
+    CERT_SERVICE --> TEMPLATE_REPO
+
+    NOTIFICATION_SERVICE --> NOTIFICATION_REPO
+    REPORT_SERVICE --> REPORT_REPO
+
+    AOP --> AUDIT_REPO
+    VERIFICATION_SERVICE --> CERT_REPO
+
+    %% =========================
+    %% MYSQL DATABASE
+    %% =========================
+
+    subgraph DATABASE["🐬 MYSQL DATABASE — student_information_system"]
+
+        DB_USERS[("users")]
+        DB_STUDENTS[("students")]
+        DB_FACULTY[("faculty")]
+
+        DB_DEPARTMENTS[("departments")]
+        DB_COURSES[("courses")]
+        DB_SUBJECTS[("subjects")]
+
+        DB_ATTENDANCE[("attendance_sessions<br/>attendance_records")]
+        DB_MARKS[("marks / grades")]
+        DB_TIMETABLE[("timetable")]
+
+        DB_EVENTS[("events")]
+        DB_PARTICIPANTS[("event_participants")]
+
+        DB_CERTIFICATES[("certificates")]
+        DB_TEMPLATES[("certificate_templates")]
+        DB_VERSIONS[("template_versions")]
+
+        DB_NOTIFICATIONS[("notifications")]
+        DB_REPORTS[("reports")]
+
+        DB_AUDIT[("audit_logs")]
+        DB_SETTINGS[("system_settings")]
+    end
+
+    USER_REPO --> DB_USERS
+    STUDENT_REPO --> DB_STUDENTS
+    FACULTY_REPO --> DB_FACULTY
+
+    DEPARTMENT_REPO --> DB_DEPARTMENTS
+    COURSE_REPO --> DB_COURSES
+    SUBJECT_REPO --> DB_SUBJECTS
+
+    ATTENDANCE_REPO --> DB_ATTENDANCE
+    MARKS_REPO --> DB_MARKS
+    TIMETABLE_REPO --> DB_TIMETABLE
+
+    EVENT_REPO --> DB_EVENTS
+    PARTICIPANT_REPO --> DB_PARTICIPANTS
+
+    CERT_REPO --> DB_CERTIFICATES
+    TEMPLATE_REPO --> DB_TEMPLATES
+
+    CERT_SERVICE --> DB_VERSIONS
+
+    NOTIFICATION_REPO --> DB_NOTIFICATIONS
+    REPORT_REPO --> DB_REPORTS
+    AUDIT_REPO --> DB_AUDIT
+
+    SETTINGS_SERVICE --> DB_SETTINGS
+
+    %% =========================
+    %% ACADEMIC RELATIONSHIPS
+    %% =========================
+
+    DB_DEPARTMENTS --> DB_COURSES
+    DB_COURSES --> DB_SUBJECTS
+    DB_SUBJECTS --> DB_TIMETABLE
+    DB_TIMETABLE --> DB_ATTENDANCE
+    DB_SUBJECTS --> DB_MARKS
+
+    %% =========================
+    %% ATTENDANCE
+    %% =========================
+
+    ATTENDANCE_SERVICE -.->|"Subject → Faculty → Section → Students"| DB_ATTENDANCE
+
+    %% =========================
+    %% EVENTS & CERTIFICATES
+    %% =========================
+
+    EVENT_SERVICE -.->|"Event → Participants → Results"| CERT_SERVICE
+
+    CERT_SERVICE -.->|"Generate Unique Certificate ID"| DB_CERTIFICATES
+    CERT_SERVICE -.->|"Published Template"| DB_TEMPLATES
+    CERT_SERVICE -.->|"Versioned Template"| DB_VERSIONS
+
+    %% =========================
+    %% PUBLIC VERIFICATION
+    %% =========================
+
+    VERIFICATION_SERVICE -->|"Read-only verification"| DB_CERTIFICATES
+
+    VERIFICATION_SERVICE -->|"VALID / INVALID / REVOKED"| PUBLIC_VERIFY
+
+    %% =========================
+    %% NOTIFICATIONS
+    %% =========================
+
+    ATTENDANCE_SERVICE -.-> NOTIFICATION_SERVICE
+    EVENT_SERVICE -.-> NOTIFICATION_SERVICE
+    CERT_SERVICE -.-> NOTIFICATION_SERVICE
+    MARKS_SERVICE -.-> NOTIFICATION_SERVICE
+
+    %% =========================
+    %% REPORTING
+    %% =========================
+
+    ATTENDANCE_SERVICE -.-> REPORT_SERVICE
+    MARKS_SERVICE -.-> REPORT_SERVICE
+    EVENT_SERVICE -.-> REPORT_SERVICE
+    CERT_SERVICE -.-> REPORT_SERVICE
+
+    %% =========================
+    %% STYLING
+    %% =========================
+
+    classDef user fill:#fff3cd,stroke:#b8860b,color:#111,stroke-width:2px;
+    classDef frontend fill:#e8f4ff,stroke:#1565c0,color:#111,stroke-width:2px;
+    classDef backend fill:#e8f5e9,stroke:#2e7d32,color:#111,stroke-width:2px;
+    classDef service fill:#f3e5f5,stroke:#7b1fa2,color:#111,stroke-width:2px;
+    classDef repo fill:#fff8e1,stroke:#f57f17,color:#111,stroke-width:2px;
+    classDef database fill:#e0f2f1,stroke:#00695c,color:#111,stroke-width:2px;
+
+    class ADMIN,FACULTY,STUDENT,PUBLIC user;
+    class LOGIN,ADMIN_UI,FACULTY_UI,STUDENT_UI,PROFILE_UI,DASHBOARD,STUDENT_MODULES,FACULTY_MODULES,ADMIN_MODULES,PUBLIC_VERIFY frontend;
+    class API,AUTH,VALIDATION,EXCEPTION,AOP backend;
+    class USER_SERVICE,STUDENT_SERVICE,FACULTY_SERVICE,ACADEMIC_SERVICE,ATTENDANCE_SERVICE,MARKS_SERVICE,TIMETABLE_SERVICE,EVENT_SERVICE,CERT_SERVICE,NOTIFICATION_SERVICE,REPORT_SERVICE,PROFILE_SERVICE,SETTINGS_SERVICE,VERIFICATION_SERVICE service;
+    class USER_REPO,STUDENT_REPO,FACULTY_REPO,DEPARTMENT_REPO,COURSE_REPO,SUBJECT_REPO,ATTENDANCE_REPO,MARKS_REPO,TIMETABLE_REPO,EVENT_REPO,PARTICIPANT_REPO,CERT_REPO,TEMPLATE_REPO,NOTIFICATION_REPO,REPORT_REPO,AUDIT_REPO repo;
+    class DB_USERS,DB_STUDENTS,DB_FACULTY,DB_DEPARTMENTS,DB_COURSES,DB_SUBJECTS,DB_ATTENDANCE,DB_MARKS,DB_TIMETABLE,DB_EVENTS,DB_PARTICIPANTS,DB_CERTIFICATES,DB_TEMPLATES,DB_VERSIONS,DB_NOTIFICATIONS,DB_REPORTS,DB_AUDIT,DB_SETTINGS database;
