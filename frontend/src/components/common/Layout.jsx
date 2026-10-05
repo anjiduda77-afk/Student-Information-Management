@@ -45,7 +45,7 @@ export default function Layout({ children, navItems, role, basePath, pageTitle }
         const data = res.data || []
         setNotifications(data)
         setUnreadCount(data.filter(n => !n.read).length)
-      } catch (e) {
+      } catch {
         // silent fail
       }
     }
@@ -59,7 +59,7 @@ export default function Layout({ children, navItems, role, basePath, pageTitle }
       await notificationService.markAllAsRead()
       setNotifications(prev => prev.map(n => ({ ...n, read: true })))
       setUnreadCount(0)
-    } catch (e) {
+    } catch {
       // silent
     }
   }
@@ -69,7 +69,7 @@ export default function Layout({ children, navItems, role, basePath, pageTitle }
       await notificationService.markAsRead(id)
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
       setUnreadCount(prev => Math.max(0, prev - 1))
-    } catch (e) {
+    } catch {
       // silent
     }
   }

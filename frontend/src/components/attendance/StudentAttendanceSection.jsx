@@ -11,7 +11,7 @@ import { TableSkeleton, Spinner } from '../Loading'
 import { formatDate } from '../../utils/helpers'
 import { isFutureDate } from '../../utils/validators'
 
-export default function StudentAttendanceSection({ user, initialTab }) {
+export default function StudentAttendanceSection({ initialTab }) {
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -48,9 +48,9 @@ export default function StudentAttendanceSection({ user, initialTab }) {
 
   // Date-wise filters
   const [datePreset, setDatePreset] = useState('all') // 'today' | 'week' | 'month' | 'all' | 'custom'
-  const [fromDate, setFromDate] = useState('')
-  const [toDate, setToDate] = useState('')
-  const [selectedSubjectId, setSelectedSubjectId] = useState('')
+  const fromDate = ''
+  const toDate = ''
+  const selectedSubjectId = ''
   const [statusFilter, setStatusFilter] = useState('ALL')
 
   // Correction Request Modal state

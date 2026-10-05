@@ -26,14 +26,14 @@ export function TableSkeleton({ rows = 5, cols = 5 }) {
     <div className="table-container">
       <table className="data-table">
         <thead>
-          <tr>{Array.from({ length: cols }).map((_, i) => (
+          <tr>{[...Array(cols).keys()].map(i => (
             <th key={i}><SkeletonBlock width="80px" height={12} /></th>
           ))}</tr>
         </thead>
         <tbody>
-          {Array.from({ length: rows }).map((_, r) => (
+          {[...Array(rows).keys()].map(r => (
             <tr key={r}>
-              {Array.from({ length: cols }).map((_, c) => (
+              {[...Array(cols).keys()].map(c => (
                 <td key={c}><SkeletonBlock height={14} width={c === 0 ? '150px' : '90px'} /></td>
               ))}
             </tr>
@@ -47,7 +47,7 @@ export function TableSkeleton({ rows = 5, cols = 5 }) {
 export function CardSkeleton({ count = 4 }) {
   return (
     <div className="grid-4">
-      {Array.from({ length: count }).map((_, i) => (
+      {[...Array(count).keys()].map(i => (
         <div key={i} className="stat-card">
           <SkeletonBlock width={52} height={52} radius={14} />
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>

@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
-  Calendar, Clock, CheckCircle, XCircle, AlertCircle,
-  Users, Check, X, RefreshCw, BookOpen, MapPin, ChevronRight,
-  ShieldCheck, Filter, Search, ArrowLeft, Save,
-  FileSpreadsheet, ListFilter, AlertTriangle
+  Clock, CheckCircle, XCircle, AlertCircle,
+  Users, Check, X, RefreshCw, ChevronRight,
+  ShieldCheck, Search, ArrowLeft, Save,
+  FileSpreadsheet
 } from 'lucide-react'
 import { attendanceService } from '../../services/api'
 import { toast } from '../Toast'
 import { TableSkeleton, Spinner } from '../Loading'
 import { formatDate } from '../../utils/helpers'
 
-export default function FacultyAttendanceSection({ courses = [], onCorrectionUpdate, initialTab }) {
+export default function FacultyAttendanceSection({ onCorrectionUpdate, initialTab }) {
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -71,7 +71,6 @@ export default function FacultyAttendanceSection({ courses = [], onCorrectionUpd
   // History & Corrections state
   const [history, setHistory] = useState([])
   const [loadingHistory, setLoadingHistory] = useState(false)
-  const [subjectSummaries, setSubjectSummaries] = useState([])
   const [corrections, setCorrections] = useState([])
   const [reviewingId, setReviewingId] = useState(null)
 
@@ -296,7 +295,7 @@ export default function FacultyAttendanceSection({ courses = [], onCorrectionUpd
       await attendanceService.reviewCorrection(correctionId, approve, remarks)
       toast.success(approve ? 'Correction approved and updated.' : 'Correction request rejected.')
       loadCorrections()
-    } catch (err) {
+    } catch {
       toast.error('Failed to process correction review.')
     } finally {
       setReviewingId(null)
