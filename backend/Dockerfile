@@ -9,13 +9,11 @@ WORKDIR /app
 
 # Cache dependencies
 COPY pom.xml .
-COPY .mvn .mvn
-COPY mvnw .
-RUN ./mvnw dependency:go-offline -B
+RUN mvn dependency:go-offline -B
 
 # Copy sources and build production package
 COPY src src
-RUN ./mvnw clean package -DskipTests
+RUN mvn clean package -DskipTests
 
 # Stage 2: Minimal Production JRE Runtime
 FROM eclipse-temurin:17-jre-alpine
