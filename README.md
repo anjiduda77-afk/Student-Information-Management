@@ -1,464 +1,470 @@
-# Smart Student Information System
+# 🎓 Smart Student Information System
 
-### Aditya University
+<p align="center">
+  <img src="https://img.shields.io/badge/Aditya%20University-Smart%20Student%20Information%20System-0B1F3A?style=for-the-badge" alt="Aditya University">
+  <img src="https://img.shields.io/badge/Java-Spring%20Boot-orange?style=for-the-badge&logo=springboot" alt="Spring Boot">
+  <img src="https://img.shields.io/badge/React-Vite-61DAFB?style=for-the-badge&logo=react" alt="React">
+  <img src="https://img.shields.io/badge/MySQL-Database-4479A1?style=for-the-badge&logo=mysql" alt="MySQL">
+  <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker" alt="Docker Ready">
+</p>
 
-[![Institution: Aditya University](https://img.shields.io/badge/Institution-Aditya%20University-blue.svg)](#university)
-[![Developer: Vijay](https://img.shields.io/badge/Developer-Vijay-green.svg)](#author)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.0-brightgreen.svg)](https://spring.io/projects/spring-boot)
-[![React](https://img.shields.io/badge/React-18.2.0-61dafb.svg)](https://react.dev)
-[![Vite](https://img.shields.io/badge/Vite-5.0-646cff.svg)](https://vitejs.dev)
-[![MySQL](https://img.shields.io/badge/MySQL-8.0-orange.svg)](https://www.mysql.com/)
+<p align="center">
+  <strong>A professional university management platform for Students, Faculty and Administration.</strong>
+</p>
 
-A professional university information management system developed for **Aditya University** by **Vijay** to manage academic, student, faculty, attendance, events, certificates, and related institutional activities through a centralised web application.
-
----
-
-## Overview
-
-The Smart Student Information System is a web-based management application developed for Aditya University. The system simplifies day-to-day academic operations by connecting students, faculty members, and college administrators into a single portal. 
-
-It provides structured record management for academic programmes, student profiles, faculty teaching assignments, class timetables, daily attendance tracking, examination marks, university events, and student certificates. The platform reduces manual paperwork and improves accessibility of academic data across university departments.
-
----
-
-## Objectives
-
-- Centralise student information and academic records in a secure database.
-- Manage student enrollment, departmental allocations, and faculty assignments.
-- Maintain accurate class attendance records with percentage tracking.
-- Organise university events, student registrations, and coordinator assignments.
-- Issue and manage authentic student achievement and participation certificates.
-- Provide secure role-based access control for students, faculty, and administrators.
-- Improve communication of circulars, announcements, and examination results.
-- Provide a clean, structured university management interface for academic workflows.
+<p align="center">
+  <a href="https://github.com/anjiduda77-afk/Student-Information-Management">
+    View Repository
+  </a>
+</p>
 
 ---
 
-## Key Features
+## 📌 Project Overview
 
-- **Role-Based Access**: Dedicated portals for Administrators, Faculty, and Students with tailored permissions.
-- **Student Profile Management**: Complete student records including roll numbers, departments, semesters, sections, and contact details.
-- **Faculty Directory**: Faculty profiles with designations, departments, assigned subjects, and teaching schedules.
-- **Department & Course Management**: Structure for university engineering departments (CSE, AIML, ECE, EEE, MECH) and course curricula.
-- **Timetable Scheduling**: Weekly class schedule matrix mapping subjects, faculty, classrooms, and daily periods.
-- **Class Attendance System**: Faculty attendance marking with automated percentage calculations and attendance shortage warnings (<75%).
-- **Marks & Examination System**: Faculty marks entry for internal assessments and semester evaluations with student scorecards.
-- **Event Management**: University events publishing, student registrations, and coordinator management.
-- **Certificate Issuance**: Digital certificate generation for event winners and participants with verifiable certificate numbers.
+**Smart Student Information System (SIS)** is a web-based university information management application developed for **Aditya University** by **Vijay**.
+
+The system provides a centralised platform for managing student information, faculty activities, academic records, attendance, marks, timetable, events, registrations, certificates, and institutional operations.
+
+The application follows a **role-based access model (RBAC)**, providing distinct interfaces and functionality for:
+
+- 👨‍💼 **Admin** (Institutional Administration)
+- 👨‍🏫 **Faculty** (Teaching, Grading, Attendance & Event Coordination)
+- 🎓 **Student** (Academics, Attendance Records, Marks & Certificates)
+- 🌐 **Public** (Read-only Instant Certificate Verification)
+
+The main objective is to provide a structured, secure, and user-friendly platform for university administration and academic activities.
+
+---
+
+## 🎯 Objectives
+
+The major objectives of the Smart Student Information System are:
+
+- Centralise student and faculty information in a secure, unified database.
+- Manage academic programs, departments, courses, and syllabus allocations.
+- Provide secure role-based access to students, faculty, and administrative staff.
+- Maintain accurate, session-wise student attendance records with percentage tracking.
+- Manage internal assessment marks, semester grades, and academic performance.
+- Provide weekly class schedules and timetable management.
+- Manage university events, student registrations, and coordinator assignments.
+- Issue authentic digital merit and participation certificates with unique IDs.
+- Enable instant public verification of university-issued certificates.
+- Eliminate manual paperwork and reduce operational overhead.
+- Provide a responsive, high-performance web portal for academic workflows.
+
+---
+
+## ✨ Key Features
+
+### 🔐 Authentication & Role-Based Access
+
+- Secure stateless authentication using JSON Web Tokens (JWT) and BCrypt password encryption.
+- Role-based access control protecting administrative, faculty, and student endpoints.
+- Protected application routes with client-side and server-side authorization guards.
+- Dedicated dashboards tailored to user privileges.
+
+### 👨‍💼 Admin Management
+
+The Admin module provides institution-level management capabilities:
+
+- **Student Management**: Add, update, view, and manage student enrollments across departments.
+- **Faculty Management**: Faculty onboarding, department assignment, and teaching designations.
+- **Academic Management**: Department structures (CSE, AIML, ECE, EEE, MECH) and course curricula.
+- **Attendance Monitoring**: University-wide attendance tracking and shortage reports (<75%).
+- **Marks & Examination**: Centralised marks review, grading scales, and report generation.
+- **Timetable Scheduling**: Room allocation, period scheduling, and weekly matrix management.
+- **Event Management**: Event creation, poster uploads, rules, eligibility, and faculty coordinator assignment.
+- **Certificate Templates**: Dynamic certificate template designer with customizable badges and signatures.
 - **Announcements**: Campus-wide notices and departmental circulars.
+- **Reports & System Settings**: System parameters, institution branding, and audit logging.
+
+### 👨‍🏫 Faculty Management
+
+Faculty members can access academic and event operations assigned to them:
+
+- **Faculty Profile**: Personal details, department, and teaching assignments.
+- **Assigned Subjects**: Overview of courses handled across semesters and sections.
+- **Timetable**: Personal weekly teaching schedule.
+- **Attendance Management**: Class roster attendance marking with present/absent toggling.
+- **Marks & Grades**: Internal assessment and semester marks entry with instant GPA calculation.
+- **Assigned Events**: Event coordinator workspace to manage registrations, verify attendees, record winners, and issue certificates.
+
+### 🎓 Student Portal
+
+Students can access their academic records and university activities:
+
+- **Student Dashboard**: Real-time summary of attendance percentage, upcoming classes, and notices.
+- **Attendance Records**: Subject-wise and date-wise attendance logs with shortage alerts (<75%).
+- **Examination Marks**: Semester grade reports and subject score breakdowns.
+- **Class Timetable**: Dynamic daily and weekly class schedules.
+- **University Events**: Event exploration, one-click event registrations, and event details.
+- **My Certificates**: View, verify, and download high-resolution PDF achievement and participation certificates.
 
 ---
 
-## User Roles
+## 🧩 Main Modules
 
-### Admin
-The Administrator manages institutional configurations and university records:
-- Manage student profiles, registrations, and course enrollments.
-- Manage faculty onboarding, department allocations, and designations.
-- Configure departments, degree programmes, semesters, and subjects.
-- Set up and publish weekly academic timetables.
-- Monitor university-wide attendance statistics and review attendance shortage reports.
-- Review and approve official attendance adjustments with audit reasons.
-- Create university events and assign faculty coordinators.
-- Configure certificate templates and oversee certificate issuance.
-
-### Faculty
-Faculty members manage academic activities for their assigned classes:
-- View assigned teaching subjects, timetable periods, and student rosters.
-- Take daily attendance for scheduled lecture classes by section and subject.
-- Mark student attendance status (Present, Absent, Late, Excused) and save records.
-- View subject-wise attendance analytics, class averages, and student attendance counts.
-- Upload and manage student marks for internal tests, assignments, and semester examinations.
-- Coordinate assigned university events, review participant lists, and submit event results.
-- Trigger certificate generation for eligible student event participants.
-
-### Student
-Students access their individual academic records and campus activities:
-- View student profile information, enrolled course, current semester, and section.
-- View real-time attendance overview, subject-wise attendance percentages, and shortage indicators.
-- View date-wise attendance history with date filters.
-- View weekly academic class timetable with room allocations and subject faculty.
-- View examination results, internal assessment scores, and subject marks.
-- Browse campus events, read guidelines, and submit event registrations.
-- View and download issued achievement and participation certificates from the My Certificates section.
-
----
-
-## Main Modules
-
-| Module | Description | Access Level |
+| Module | Description | Access |
 | :--- | :--- | :--- |
-| **Authentication** | Secure login, session validation, and password management | All Users |
-| **Student Management** | Student admissions, profiles, roll numbers, and semester allocations | Admin |
-| **Faculty Management** | Faculty profiles, designations, department tags, and contact details | Admin |
-| **Academic Management** | Department setups, degree courses, curriculum subjects, and credits | Admin |
-| **Timetable Module** | Weekly period scheduling (Periods 1 to 6), day mapping, and classrooms | Admin, Faculty, Student |
-| **Attendance Management** | Daily class attendance marking, subject percentages, and shortage reports | Admin, Faculty, Student |
-| **Marks & Grades** | Internal assessments, examination grade entry, and student marksheets | Admin, Faculty, Student |
-| **Event Management** | Campus fests, technical events, registrations, and coordinator assignments | Admin, Faculty, Student |
-| **Certificate Management** | Digital certificate generation, student certificate repository, and validation | Admin, Faculty, Student |
-| **Announcements** | Departmental circulars, general notices, and campus updates | Admin, Faculty, Student |
+| 🔐 **Authentication** | Secure login, JWT issuance, password hashing, and session management | All Users |
+| 👨‍🎓 **Student Management** | Complete student profiles, roll numbers, sections, and contact records | Admin |
+| 👨‍🏫 **Faculty Management** | Faculty directory, teaching designations, and departmental allocations | Admin |
+| 📚 **Academic Management** | Department management, course curricula, and semester subject mapping | Admin |
+| 📝 **Attendance Tracking** | Session-wise attendance recording, percentages, and shortage identification | Admin, Faculty, Student |
+| 📊 **Marks & Grades** | Examination marks entry, grade cards, and academic evaluations | Admin, Faculty, Student |
+| 🗓️ **Timetable** | Daily schedule matrix mapping subjects, faculty, classrooms, and periods | Admin, Faculty, Student |
+| 🎉 **Event Management** | Event publication, banner posters, rules, dates, and coordinator workflows | Admin, Faculty, Student |
+| 🏆 **Event Results** | Participant evaluation, winner declaration, and result records | Admin, Faculty |
+| 📜 **Certificate Management** | Template creation, PDF certificate generation, and credential issuance | Admin, Faculty, Student |
+| 🔍 **Certificate Verification** | Read-only public verification portal for validating certificate authenticity | Public |
+| 📢 **Notifications** | Broadcast circulars, notices, and departmental alerts | All Users |
+| 📈 **Reports & Audit** | Institutional analytics, activity logs, and administrative controls | Admin |
+| 👤 **Profile Management** | User profile viewing, password management, and personal details | All Users |
 
 ---
 
-## Event Management
+## 🏛️ System Architecture
 
-The Event Management module coordinates co-curricular activities, technical symposiums, and cultural events:
-
-1. **Admin Workflow**:
-   - Create an event with title, description, category (Technical, Cultural, Sports, Workshop), date, time, and venue.
-   - Set maximum participant limits and registration deadlines.
-   - Assign faculty members as event coordinators.
-
-2. **Faculty Coordinator Workflow**:
-   - Access assigned events from the Faculty portal.
-   - Review registered student participants.
-   - Evaluate event submissions and declare results (Winner, Runner-up, Participant, or No Certificate).
-   - Authorise certificate generation based on declared results.
-
-3. **Student Workflow**:
-   - Browse upcoming university events on the student dashboard.
-   - Review event details, rules, and schedules.
-   - Register for events with single-click verification.
-   - View event results once announced.
-
----
-
-## Certificate Management
-
-The Certificate module provides structured digital certificate issuance for event achievements:
-
-- **Template Design**: Administrators set up standardized certificate formats including institution header, signatory designations, borders, and event titles.
-- **Result-Linked Generation**: Faculty coordinators select student outcomes for an event:
-  - Winner
-  - Runner-up
-  - Participant
-  - No Certificate
-- **Issuance**: Once results are saved, certificates are generated with a unique Certificate Identification Number.
-- **Student Access**: Issued certificates appear directly in the student's **My Certificates** tab.
-- **View & Download**: Students can preview their certificate in high resolution and download a PDF copy.
-- **Verification**: Each certificate includes a verifiable Certificate ID and verification link to validate authenticity.
-
----
-
-## Attendance Management
-
-The Attendance module tracks lecture attendance in accordance with university academic regulations:
-
-- **Faculty Attendance Marking**:
-  - Faculty selects the scheduled class from the daily timetable or selects the Department, Course, Section, and Subject.
-  - The system loads the enrolled student roster for that section.
-  - Faculty marks each student's status: **Present**, **Absent**, **Late**, or **Excused**.
-  - Faculty submits the attendance sheet to update the central database.
-
-- **Student Attendance Tracking**:
-  - **Overview**: Displays total classes conducted, total classes attended, and aggregate attendance percentage.
-  - **Subject-Wise Attendance**: Detailed breakdown of every enrolled subject showing attended vs total lectures and percentage.
-  - **Attendance Shortage Alert**: Automatically highlights subjects where attendance falls below the mandatory 75% threshold.
-  - **Date-Wise History**: Displays historical attendance records with date-range filtering.
-
-- **Administrative Oversight**:
-  - Administrators view college-wide attendance summaries.
-  - Generate shortage lists for students below 75% attendance for institutional review.
-  - Perform authorized attendance adjustments (e.g. for official On-Duty leave or medical leave) with mandatory remarks.
-
----
-
-## System Architecture
-
-The Smart Student Information System follows a modern enterprise three-tier distributed architecture engineered for high availability, modularity, data integrity, and strict role-based access control across Aditya University.
+The Smart Student Information System follows an enterprise-grade 3-tier layered architecture that connects the **React + Vite frontend** with the **Spring Boot 3 backend** and **MySQL 8 database**.
 
 ```mermaid
-graph TD
-    %% User Roles & Client Tier
-    subgraph ClientTier ["1. Presentation Tier (React 18 + Vite)"]
-        direction TB
-        subgraph UsersGroup ["Institutional Stakeholders"]
-            U1["🎓 Student Portal"]
-            U2["👨‍🏫 Faculty Portal"]
-            U3["🛡️ Admin Console"]
-            U4["🌐 Public Certificate Verifier"]
-        end
-        subgraph FrontendCore ["Frontend Core Architecture"]
-            UI["Responsive UI (Tailwind CSS + Lucide Icons)"]
-            ROUTER["Client-Side Routing (React Router v6)"]
-            STATE["Global Contexts (AuthContext, ThemeContext)"]
-            CLIENT["HTTP Layer (Axios Interceptors + Bearer JWT)"]
-            VIZ["Data Analytics (Recharts) & Client PDF Canvas"]
-        end
-        UsersGroup --> UI
-        UI --> ROUTER
-        ROUTER --> STATE
-        STATE --> CLIENT
-        UI --> VIZ
+flowchart TB
+
+    %% =========================
+    %% USERS
+    %% =========================
+
+    ADMIN["👨‍💼 ADMIN"]
+    FACULTY["👨‍🏫 FACULTY"]
+    STUDENT["🎓 STUDENT"]
+    PUBLIC["🌐 PUBLIC USER<br/>Certificate Verification"]
+
+    %% =========================
+    %% FRONTEND
+    %% =========================
+
+    subgraph FRONTEND["💻 PRESENTATION LAYER — REACT + VITE"]
+
+        LOGIN["🔐 Login & Authentication"]
+
+        ADMIN_UI["🛠️ Admin Portal"]
+        FACULTY_UI["👨‍🏫 Faculty Portal"]
+        STUDENT_UI["🎓 Student Portal"]
+
+        PROFILE_UI["👤 Profile Management"]
+        DASHBOARD["📊 Dashboards"]
+
+        STUDENT_MODULES["🎓 Student Features<br/>• Profile<br/>• Attendance<br/>• Marks & Grades<br/>• Timetable<br/>• Events<br/>• Certificates<br/>• Notifications"]
+
+        FACULTY_MODULES["👨‍🏫 Faculty Features<br/>• Profile<br/>• Classes<br/>• Attendance<br/>• Marks & Grades<br/>• Timetable<br/>• Events<br/>• Participants<br/>• Certificates"]
+
+        ADMIN_MODULES["🛠️ Admin Features<br/>• Users<br/>• Students<br/>• Faculty<br/>• Departments<br/>• Courses<br/>• Subjects<br/>• Attendance<br/>• Timetable<br/>• Events<br/>• Certificates<br/>• Notifications<br/>• Reports<br/>• Settings<br/>• Activity Logs"]
+
+        PUBLIC_VERIFY["📜 Public Certificate<br/>Verification Page"]
+
+        STUDENT_UI --> STUDENT_MODULES
+        FACULTY_UI --> FACULTY_MODULES
+        ADMIN_UI --> ADMIN_MODULES
     end
 
-    %% Network Connection
-    CLIENT ==>|"RESTful HTTP / JSON (CORS + JWT)"| SEC_GATEWAY
+    ADMIN --> LOGIN
+    FACULTY --> LOGIN
+    STUDENT --> LOGIN
+    PUBLIC --> PUBLIC_VERIFY
 
-    %% Backend Tier
-    subgraph ServerTier ["2. Application Tier (Spring Boot 3.2.0 + Java 17)"]
-        direction TB
-        
-        subgraph SecurityLayer ["Security and Authorization Filter Chain"]
-            SEC_GATEWAY["Spring Security 6 SecurityFilterChain"]
-            JWT_FILTER["JwtAuthFilter (Token Parsing and Claims Extraction)"]
-            RBAC["Role-Based Access Control (ADMIN, FACULTY, STUDENT)"]
-            SEC_GATEWAY --> JWT_FILTER
-            JWT_FILTER --> RBAC
-        end
+    LOGIN --> DASHBOARD
+    LOGIN --> PROFILE_UI
 
-        subgraph ControllerLayer ["API Controller Layer (REST Endpoints)"]
-            C_AUTH["AuthController (/api/auth)"]
-            C_ADMIN["AdminController (/api/admin)"]
-            C_FACULTY["FacultyController (/api/faculty)"]
-            C_STUDENT["StudentController (/api/student)"]
-            C_ATT["AttendanceController (/api/attendance)"]
-            C_EVENT["EventController (/api/events)"]
-            C_CERT["CertificateController (/api/certificates)"]
-            C_PUB["PublicVerifyController (/api/public/verify)"]
-        end
+    %% =========================
+    %% API / SECURITY
+    %% =========================
 
-        RBAC --> ControllerLayer
+    subgraph API_LAYER["🌐 APPLICATION & API LAYER — SPRING BOOT"]
 
-        subgraph ServiceLayer ["Service Tier (Business Logic and Workflows)"]
-            S_AUTH["AuthService (Authentication & Password Security)"]
-            S_ADMIN["AdminService (Departments, Courses, Accounts)"]
-            S_ATT["AttendanceService (Roster Attendance & 75% Shortage Engine)"]
-            S_TIMETABLE["TimetableService (4-Way Matrix Conflict Detector)"]
-            S_EVENT["EventService (Registrations, Results, Coordinators)"]
-            S_CERT["CertificateService (UUID Issuance & OpenPDF Rendering)"]
-            S_AUDIT["AuditLogService (System Activity Tracking)"]
-        end
+        API["REST API<br/>Spring Boot Controllers"]
 
-        ControllerLayer --> ServiceLayer
+        AUTH["🔐 Authentication & Authorization<br/>JWT • BCrypt • RBAC"]
 
-        subgraph DataAccessLayer ["Persistence Layer (Spring Data JPA & Hibernate ORM)"]
-            R_USER["UserRepository"]
-            R_COURSE["CourseRepository & DepartmentRepository"]
-            R_ATT["AttendanceRepository"]
-            R_TIME["TimetableRepository"]
-            R_EVENT["EventRepository & ParticipantRepository"]
-            R_CERT["CertificateRepository & TemplateRepository"]
-            R_AUDIT["AuditLogRepository"]
-        end
+        VALIDATION["✅ Validation Layer<br/>Jakarta Bean Validation"]
 
-        ServiceLayer --> DataAccessLayer
+        EXCEPTION["⚠️ Global Exception Handling"]
+
+        AOP["🔍 AOP / Audit Logging"]
+
+        API --> AUTH
+        AUTH --> VALIDATION
+        VALIDATION --> EXCEPTION
+        EXCEPTION --> AOP
     end
 
-    %% Database Connection
-    DataAccessLayer ==>|"HikariCP Connection Pool (SQL Transactions)"| DB_TIER
+    FRONTEND -->|"HTTP / REST + JSON"| API
+    PUBLIC_VERIFY -->|"Public Verification Request"| API
 
-    %% Database Tier
-    subgraph DB_TIER ["3. Database Tier (MySQL 8.0 Relational Engine)"]
-        direction TB
-        DB_TABLES[("MySQL Relational Schema
-        ────────────────────────────────────────────────
-        • users (Admin, Faculty, Student records)
-        • departments, courses, and subjects
-        • timetables (Classroom and period schedule)
-        • attendance (Daily class-wise roster marks)
-        • events, event_coordinators, and participants
-        • certificate_templates and certificates
-        • activity_logs (Administrative audit records)")]
+    %% =========================
+    %% SERVICE LAYER
+    %% =========================
+
+    subgraph SERVICE_LAYER["⚙️ BUSINESS LOGIC LAYER — SERVICE LAYER"]
+
+        USER_SERVICE["👥 User & Role Service"]
+        STUDENT_SERVICE["🎓 Student Service"]
+        FACULTY_SERVICE["👨‍🏫 Faculty Service"]
+
+        ACADEMIC_SERVICE["🏫 Academic Management Service"]
+
+        ATTENDANCE_SERVICE["📋 Attendance Service"]
+        MARKS_SERVICE["📝 Marks & Grades Service"]
+        TIMETABLE_SERVICE["🗓️ Timetable Service"]
+
+        EVENT_SERVICE["🎭 Event Management Service"]
+        CERT_SERVICE["🏆 Certificate Service"]
+
+        NOTIFICATION_SERVICE["📢 Notification Service"]
+        REPORT_SERVICE["📊 Reports Service"]
+
+        PROFILE_SERVICE["👤 Profile Service"]
+        SETTINGS_SERVICE["⚙️ System Settings Service"]
+
+        VERIFICATION_SERVICE["🔍 Certificate Verification Service"]
     end
 
-    %% Styling
-    classDef clientStyle fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,color:#1e3a8a
-    classDef securityStyle fill:#fef2f2,stroke:#ef4444,stroke-width:2px,color:#991b1b
-    classDef controllerStyle fill:#f0fdf4,stroke:#22c55e,stroke-width:2px,color:#166534
-    classDef serviceStyle fill:#fefce8,stroke:#eab308,stroke-width:2px,color:#854d0e
-    classDef dbStyle fill:#faf5ff,stroke:#a855f7,stroke-width:2px,color:#6b21a8
+    AOP --> USER_SERVICE
+    AOP --> STUDENT_SERVICE
+    AOP --> FACULTY_SERVICE
+    AOP --> ACADEMIC_SERVICE
+    AOP --> ATTENDANCE_SERVICE
+    AOP --> MARKS_SERVICE
+    AOP --> TIMETABLE_SERVICE
+    AOP --> EVENT_SERVICE
+    AOP --> CERT_SERVICE
+    AOP --> NOTIFICATION_SERVICE
+    AOP --> REPORT_SERVICE
+    AOP --> PROFILE_SERVICE
+    AOP --> SETTINGS_SERVICE
+    AOP --> VERIFICATION_SERVICE
 
-    class ClientTier,UsersGroup,FrontendCore clientStyle
-    class SecurityLayer securityStyle
-    class ControllerLayer,DataAccessLayer controllerStyle
-    class ServiceLayer serviceStyle
-    class DB_TIER dbStyle
+    %% =========================
+    %% REPOSITORY LAYER
+    %% =========================
+
+    subgraph REPOSITORY_LAYER["🗄️ DATA ACCESS LAYER — SPRING DATA JPA"]
+
+        USER_REPO["UserRepository"]
+        STUDENT_REPO["StudentRepository"]
+        FACULTY_REPO["FacultyRepository"]
+
+        DEPARTMENT_REPO["DepartmentRepository"]
+        COURSE_REPO["CourseRepository"]
+        SUBJECT_REPO["SubjectRepository"]
+
+        ATTENDANCE_REPO["AttendanceRepository"]
+        MARKS_REPO["MarksRepository"]
+        TIMETABLE_REPO["TimetableRepository"]
+
+        EVENT_REPO["EventRepository"]
+        PARTICIPANT_REPO["ParticipantRepository"]
+
+        CERT_REPO["CertificateRepository"]
+        TEMPLATE_REPO["CertificateTemplateRepository"]
+
+        NOTIFICATION_REPO["NotificationRepository"]
+        REPORT_REPO["ReportRepository"]
+
+        AUDIT_REPO["AuditLogRepository"]
+    end
+
+    USER_SERVICE --> USER_REPO
+    STUDENT_SERVICE --> STUDENT_REPO
+    FACULTY_SERVICE --> FACULTY_REPO
+
+    ACADEMIC_SERVICE --> DEPARTMENT_REPO
+    ACADEMIC_SERVICE --> COURSE_REPO
+    ACADEMIC_SERVICE --> SUBJECT_REPO
+
+    ATTENDANCE_SERVICE --> ATTENDANCE_REPO
+    MARKS_SERVICE --> MARKS_REPO
+    TIMETABLE_SERVICE --> TIMETABLE_REPO
+
+    EVENT_SERVICE --> EVENT_REPO
+    EVENT_SERVICE --> PARTICIPANT_REPO
+
+    CERT_SERVICE --> CERT_REPO
+    CERT_SERVICE --> TEMPLATE_REPO
+
+    NOTIFICATION_SERVICE --> NOTIFICATION_REPO
+    REPORT_SERVICE --> REPORT_REPO
+
+    AOP --> AUDIT_REPO
+    VERIFICATION_SERVICE --> CERT_REPO
+
+    %% =========================
+    %% MYSQL DATABASE
+    %% =========================
+
+    subgraph DATABASE["🐬 MYSQL DATABASE — student_information_system"]
+
+        DB_USERS[("users")]
+        DB_STUDENTS[("students")]
+        DB_FACULTY[("faculty")]
+
+        DB_DEPARTMENTS[("departments")]
+        DB_COURSES[("courses")]
+        DB_SUBJECTS[("subjects")]
+
+        DB_ATTENDANCE[("attendance_sessions<br/>attendance_records")]
+        DB_MARKS[("marks / grades")]
+        DB_TIMETABLE[("timetable")]
+
+        DB_EVENTS[("events")]
+        DB_PARTICIPANTS[("event_participants")]
+
+        DB_CERTIFICATES[("certificates")]
+        DB_TEMPLATES[("certificate_templates")]
+        DB_VERSIONS[("template_versions")]
+
+        DB_NOTIFICATIONS[("notifications")]
+        DB_REPORTS[("reports")]
+
+        DB_AUDIT[("audit_logs")]
+        DB_SETTINGS[("system_settings")]
+    end
+
+    USER_REPO --> DB_USERS
+    STUDENT_REPO --> DB_STUDENTS
+    FACULTY_REPO --> DB_FACULTY
+
+    DEPARTMENT_REPO --> DB_DEPARTMENTS
+    COURSE_REPO --> DB_COURSES
+    SUBJECT_REPO --> DB_SUBJECTS
+
+    ATTENDANCE_REPO --> DB_ATTENDANCE
+    MARKS_REPO --> DB_MARKS
+    TIMETABLE_REPO --> DB_TIMETABLE
+
+    EVENT_REPO --> DB_EVENTS
+    PARTICIPANT_REPO --> DB_PARTICIPANTS
+
+    CERT_REPO --> DB_CERTIFICATES
+    TEMPLATE_REPO --> DB_TEMPLATES
+
+    CERT_SERVICE --> DB_VERSIONS
+
+    NOTIFICATION_REPO --> DB_NOTIFICATIONS
+    REPORT_REPO --> DB_REPORTS
+    AUDIT_REPO --> DB_AUDIT
+
+    SETTINGS_SERVICE --> DB_SETTINGS
+
+    %% =========================
+    %% ACADEMIC RELATIONSHIPS
+    %% =========================
+
+    DB_DEPARTMENTS --> DB_COURSES
+    DB_COURSES --> DB_SUBJECTS
+    DB_SUBJECTS --> DB_TIMETABLE
+    DB_TIMETABLE --> DB_ATTENDANCE
+    DB_SUBJECTS --> DB_MARKS
+
+    %% =========================
+    %% ATTENDANCE
+    %% =========================
+
+    ATTENDANCE_SERVICE -.->|"Subject → Faculty → Section → Students"| DB_ATTENDANCE
+
+    %% =========================
+    %% EVENTS & CERTIFICATES
+    %% =========================
+
+    EVENT_SERVICE -.->|"Event → Participants → Results"| CERT_SERVICE
+
+    CERT_SERVICE -.->|"Generate Unique Certificate ID"| DB_CERTIFICATES
+    CERT_SERVICE -.->|"Published Template"| DB_TEMPLATES
+    CERT_SERVICE -.->|"Versioned Template"| DB_VERSIONS
+
+    %% =========================
+    %% PUBLIC VERIFICATION
+    %% =========================
+
+    VERIFICATION_SERVICE -->|"Read-only verification"| DB_CERTIFICATES
+    VERIFICATION_SERVICE -->|"VALID / INVALID / REVOKED"| PUBLIC_VERIFY
+
+    %% =========================
+    %% NOTIFICATIONS & REPORTING
+    %% =========================
+
+    ATTENDANCE_SERVICE -.-> NOTIFICATION_SERVICE
+    EVENT_SERVICE -.-> NOTIFICATION_SERVICE
+    CERT_SERVICE -.-> NOTIFICATION_SERVICE
+    MARKS_SERVICE -.-> NOTIFICATION_SERVICE
+
+    ATTENDANCE_SERVICE -.-> REPORT_SERVICE
+    MARKS_SERVICE -.-> REPORT_SERVICE
+    EVENT_SERVICE -.-> REPORT_SERVICE
+    CERT_SERVICE -.-> REPORT_SERVICE
+
+    %% =========================
+    %% STYLING
+    %% =========================
+
+    classDef user fill:#fff3cd,stroke:#b8860b,color:#111,stroke-width:2px;
+    classDef frontend fill:#e8f4ff,stroke:#1565c0,color:#111,stroke-width:2px;
+    classDef backend fill:#e8f5e9,stroke:#2e7d32,color:#111,stroke-width:2px;
+    classDef service fill:#f3e5f5,stroke:#7b1fa2,color:#111,stroke-width:2px;
+    classDef repo fill:#fff8e1,stroke:#f57f17,color:#111,stroke-width:2px;
+    classDef database fill:#e0f2f1,stroke:#00695c,color:#111,stroke-width:2px;
+
+    class ADMIN,FACULTY,STUDENT,PUBLIC user;
+    class LOGIN,ADMIN_UI,FACULTY_UI,STUDENT_UI,PROFILE_UI,DASHBOARD,STUDENT_MODULES,FACULTY_MODULES,ADMIN_MODULES,PUBLIC_VERIFY frontend;
+    class API,AUTH,VALIDATION,EXCEPTION,AOP backend;
+    class USER_SERVICE,STUDENT_SERVICE,FACULTY_SERVICE,ACADEMIC_SERVICE,ATTENDANCE_SERVICE,MARKS_SERVICE,TIMETABLE_SERVICE,EVENT_SERVICE,CERT_SERVICE,NOTIFICATION_SERVICE,REPORT_SERVICE,PROFILE_SERVICE,SETTINGS_SERVICE,VERIFICATION_SERVICE service;
+    class USER_REPO,STUDENT_REPO,FACULTY_REPO,DEPARTMENT_REPO,COURSE_REPO,SUBJECT_REPO,ATTENDANCE_REPO,MARKS_REPO,TIMETABLE_REPO,EVENT_REPO,PARTICIPANT_REPO,CERT_REPO,TEMPLATE_REPO,NOTIFICATION_REPO,REPORT_REPO,AUDIT_REPO repo;
+    class DB_USERS,DB_STUDENTS,DB_FACULTY,DB_DEPARTMENTS,DB_COURSES,DB_SUBJECTS,DB_ATTENDANCE,DB_MARKS,DB_TIMETABLE,DB_EVENTS,DB_PARTICIPANTS,DB_CERTIFICATES,DB_TEMPLATES,DB_VERSIONS,DB_NOTIFICATIONS,DB_REPORTS,DB_AUDIT,DB_SETTINGS database;
 ```
 
-### Architectural Tier Breakdown
+---
 
-| Layer | Component | Key Responsibilities |
-|---|---|---|
-| **Presentation Tier** | React 18, Vite, Tailwind CSS | Single Page Application (SPA), role-based dynamic dashboard routing, responsive Indian institution UI layout, Recharts analytics, client-side PDF preview canvas. |
-| **API & Security Gateway** | Spring Security 6, JWT Filter | Stateless token authentication, cryptographic HMAC signature verification, CORS validation, endpoint role filters (`hasRole('ADMIN')`, etc.). |
-| **REST Controller Layer** | Spring Web MVC | Request validation (`@Valid`), HTTP status code handling, DTO mapping, and REST endpoint exposure. |
-| **Business Service Layer** | Core Spring Services | Business logic execution, 4-way timetable collision prevention, roster attendance percentage calculations, certificate generation engine, and audit logging. |
-| **Persistence Layer** | Spring Data JPA, Hibernate 6 | Relational-to-object mapping, transactional integrity (`@Transactional`), automated schema maintenance, and optimized queries. |
-| **Database Tier** | MySQL 8.0, HikariCP | ACID-compliant relational data storage, foreign key constraints, indexing for fast student roll lookups, and connection pooling. |
+## 🛠️ Technology Stack
+
+| Layer | Technology | Version | Purpose |
+| :--- | :--- | :--- | :--- |
+| **Frontend Framework** | React | 18.2 | Component-based interactive UI |
+| **Build Tool** | Vite | 5.4 | High-performance bundling and HMR |
+| **CSS & Design** | Tailwind CSS | 3.3 | Responsive utility styling and typography |
+| **Icons & Charts** | Lucide React / Recharts | 0.294 / 2.10 | Vector icons and academic analytics graphs |
+| **Backend Framework** | Spring Boot | 3.2.0 | Java enterprise REST API backend |
+| **Language Runtime** | Java (JDK) | 17 LTS | Backend execution environment |
+| **Security** | Spring Security + JJWT | 0.11.5 | Stateless JWT authentication and RBAC |
+| **Data Access** | Spring Data JPA / Hibernate | 6.3 | ORM and persistent data mapping |
+| **Database** | MySQL | 8.0+ | Relational ACID database |
+| **Containerization** | Docker & Docker Compose | 3.8 | Multi-container production deployment |
+| **Web Server** | Nginx Alpine | 1.25+ | High-performance reverse proxy & static SPA server |
 
 ---
 
-## Technology Stack
+## 🚀 Production Deployment Guide
 
-### Frontend
-- **Framework**: React 18
-- **Build Tool**: Vite
-- **Language**: JavaScript (ES6+)
-- **Styling**: Tailwind CSS & Custom CSS
-- **Routing**: React Router DOM (v6)
-- **Icons**: Lucide React
-- **Data Visualization**: Recharts
-- **HTTP Client**: Axios
-- **Document Utilities**: jsPDF, html2canvas
+The Smart Student Information System is fully production-ready with two supported deployment methods:
 
-### Backend
-- **Framework**: Spring Boot 3.2.0
-- **Language**: Java 17
-- **Security**: Spring Security 6
-- **Authentication**: Stateless JSON Web Tokens (JWT)
-- **Data Access**: Spring Data JPA, Hibernate ORM
-- **PDF Generation**: OpenPDF
-- **API Documentation**: Springdoc OpenAPI / Swagger UI
-- **Build Tool**: Apache Maven (`mvnw`)
+### Option 1: Docker Compose (Recommended)
 
-### Database
-- **Database Engine**: MySQL 8.0
-- **Connection Pool**: HikariCP
-
----
-
-## Project Structure
-
-```text
-Smart-Student-Information-System/
-├── backend/
-│   ├── .mvn/wrapper/                  # Maven wrapper files
-│   ├── mvnw                           # Maven wrapper script (Linux/macOS)
-│   ├── mvnw.cmd                       # Maven wrapper script (Windows)
-│   ├── pom.xml                        # Maven project configuration & dependencies
-│   ├── Dockerfile                     # Multi-stage production Docker build
-│   └── src/
-│       └── main/
-│           ├── java/com/sms/
-│           │   ├── config/            # Security, CORS, and Data Initializers
-│           │   ├── controller/        # REST Controllers (Auth, Admin, Faculty, Student, Event, Certificate)
-│           │   ├── dto/               # Request and Response Data Transfer Objects
-│           │   ├── entity/            # JPA Domain Entities
-│           │   ├── exception/         # Exception handlers
-│           │   ├── repository/        # Spring Data JPA Repositories
-│           │   ├── security/          # JWT Filters and UserDetailsService
-│           │   └── service/           # Service Interfaces and Business Logic Implementations
-│           └── resources/
-│               └── application.properties # Server and Database Configuration
-├── frontend/
-│   ├── public/                        # Static assets, institutional logos, and icons
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── attendance/            # Student, Faculty, and Admin attendance components
-│   │   │   ├── certificates/          # Certificate preview components
-│   │   │   ├── common/                # Layout, Header, Sidebar, and Logo
-│   │   │   └── timetable/             # Timetable schedule grid
-│   │   ├── context/                   # AuthContext state management
-│   │   ├── pages/
-│   │   │   ├── AdminDashboard.jsx     # Administrator portal
-│   │   │   ├── FacultyDashboard.jsx   # Faculty portal
-│   │   │   ├── StudentDashboard.jsx   # Student portal
-│   │   │   ├── LoginPage.jsx          # Login view
-│   │   │   ├── CertificateVerificationPage.jsx # Certificate verification view
-│   │   │   └── admin/                 # Admin event and certificate sub-pages
-│   │   ├── services/
-│   │   │   └── api.js                 # Axios API service configuration
-│   │   ├── utils/                     # PDF generation and validation helpers
-│   │   ├── App.jsx                    # Application root and route definitions
-│   │   ├── index.css                  # Global styles
-│   │   └── main.jsx                   # React application entry point
-│   ├── package.json                   # Frontend dependencies and scripts
-│   ├── tailwind.config.js             # Tailwind CSS configuration
-│   ├── vite.config.js                 # Vite dev server and proxy setup
-│   ├── Dockerfile                     # Multi-stage production Nginx container build
-│   └── nginx.conf                     # Nginx SPA routing & API reverse proxy
-├── docker-compose.yml                 # One-command containerized production orchestration
-├── .env.example                       # Production environment configuration template
-├── .gitignore                         # Git exclusion rules
-└── README.md                          # Project documentation
-```
-
----
-
-## Installation and Setup
-
-### Prerequisites
-- **Java**: JDK 17 or higher
-- **Node.js**: v18.x or higher (with npm)
-- **MySQL**: Version 8.0 or higher
-- **Git**: Installed on your operating system
-
----
-
-## Database Configuration
-
-1. Start your local MySQL service.
-2. Open your MySQL client and create the project database:
-   ```sql
-   CREATE DATABASE student_information_system;
-   ```
-3. Open `backend/src/main/resources/application.properties` and verify your database credentials:
-   ```properties
-   spring.datasource.url=jdbc:mysql://localhost:3306/student_information_system?useSSL=false&serverTimezone=Asia/Kolkata&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
-   spring.datasource.username=root
-   spring.datasource.password=root
-   ```
-
----
-
-## Running the Application
-
-### 1. Run the Backend Server
-Open a terminal in the project root:
-
-**Windows (PowerShell):**
-```powershell
-cd backend
-.\mvnw.cmd spring-boot:run
-```
-
-**Linux / macOS:**
-```bash
-cd backend
-chmod +x mvnw
-./mvnw spring-boot:run
-```
-
-The Spring Boot backend will start at: `http://localhost:8080`
-
-### 2. Run the Frontend Application
-Open a second terminal window:
-
-```powershell
-cd frontend
-npm install
-npm run dev
-```
-
-The React frontend development server will start at: `http://localhost:5173` (or `http://localhost:5174`)
-
----
-
-## Production Deployment Guide
-
-The Smart Student Information System provides full production containerization and standalone deployment support.
-
-### Option 1: Docker Container Deployment (Recommended)
-
-Ensure Docker and Docker Compose are installed on your server, then launch the full multi-tier stack with:
+Run the entire application stack (MySQL 8, Spring Boot Backend, and Nginx-powered React Frontend) with a single command:
 
 ```bash
 docker compose up --build -d
 ```
 
-This single command automatically:
-1. Provisions a dedicated **MySQL 8.0** container with persistent storage volumes and healthchecks.
-2. Builds and starts the **Spring Boot backend** container running on lightweight Eclipse Temurin JDK 17 Alpine.
-3. Builds and serves the **React + Vite frontend** bundle using high-performance Nginx Alpine with built-in API reverse proxying.
+This automated deployment:
+1. Provisions a **MySQL 8.0 database** with isolated network and persistent volume storage.
+2. Compiles and packages the **Spring Boot backend** using Eclipse Temurin JDK 17 in a hardened non-root container.
+3. Builds the **React + Vite frontend** bundle and serves it via **Nginx Alpine** with built-in SPA routing, gzip compression, and API reverse proxying.
 
-Access the services:
-- **Web Application Portal**: `http://localhost` (or your production server domain on port 80)
+#### Access the Services:
+- **Web Application Portal**: `http://localhost` (or your server IP / domain on Port 80)
 - **Backend REST API**: `http://localhost:8080/api`
 - **Swagger Documentation**: `http://localhost:8080/swagger-ui.html`
 
-To inspect running containers or stop the application:
+#### Stop or Inspect Containers:
 ```bash
 docker compose ps
 docker compose down
@@ -468,93 +474,48 @@ docker compose down
 
 ### Option 2: Standalone Production Deployment
 
-#### Step 1: Package & Run Spring Boot Backend
+#### Step 1: Backend Setup & Packaging
+Ensure Java 17 and MySQL 8 are installed on your host system:
 ```bash
 cd backend
 ./mvnw clean package -DskipTests
 java -jar target/student-management-system-1.0.0.jar --server.port=8080
 ```
 
-#### Step 2: Build & Host React Frontend
+#### Step 2: Frontend Production Build
 ```bash
 cd frontend
 npm ci
 npm run build
-# The production-optimized bundle is generated in the frontend/dist directory
-# Serve via Nginx, Apache HTTP Server, or Cloudflare Pages
 ```
+The optimized bundle will be generated in `frontend/dist/`. Serve the directory using Nginx, Apache HTTP Server, or cloud hosting (e.g., Cloudflare Pages, Vercel, AWS S3 + CloudFront).
 
 ---
 
-## API Overview
+## 🔑 Default Demonstration Accounts
 
-Interactive Swagger documentation is available when the backend server is running:
-- **Swagger UI**: `http://localhost:8080/swagger-ui.html`
-
-### Key Endpoints
-
-| Method | Endpoint | Description | Role |
+| Role | Username / Identifier | Password | Access Level |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/auth/login` | Authenticate user and issue JWT | Public |
-| `GET` | `/api/student/profile` | Get logged-in student profile | Student |
-| `GET` | `/api/student/attendance/subject-wise` | View subject attendance percentages | Student |
-| `GET` | `/api/student/attendance/date-wise` | View date-wise attendance records | Student |
-| `GET` | `/api/student/timetable` | View student weekly timetable | Student |
-| `GET` | `/api/student/marks` | View examination marks and grades | Student |
-| `GET` | `/api/faculty/attendance/today-classes` | View today's scheduled classes | Faculty |
-| `POST` | `/api/faculty/attendance/session/{id}/manual` | Submit class attendance roster | Faculty |
-| `GET` | `/api/faculty/attendance/subject-summary` | View subject attendance averages | Faculty |
-| `POST` | `/api/faculty/marks` | Upload student examination marks | Faculty |
-| `GET` | `/api/admin/dashboard` | Get university dashboard statistics | Admin |
-| `GET` | `/api/admin/students` | Get all student profiles | Admin |
-| `POST` | `/api/admin/students` | Register new student profile | Admin |
-| `GET` | `/api/admin/faculty` | Get all faculty records | Admin |
-| `POST` | `/api/admin/faculty` | Add new faculty profile | Admin |
-| `GET` | `/api/admin/attendance/overview` | Institutional attendance overview | Admin |
-| `GET` | `/api/admin/attendance/shortage-report` | Attendance shortage report (<75%) | Admin |
-| `POST` | `/api/admin/attendance/{id}/correct` | Record attendance adjustment | Admin |
-| `GET` | `/api/events` | List all university events | Authenticated |
-| `POST` | `/api/events/{id}/register` | Register student for event | Student |
-| `GET` | `/api/certificates/my` | View student issued certificates | Student |
-| `GET` | `/api/public/verify/{certificateNumber}` | Verify certificate authenticity | Public |
+| **Administrator** | `admin@apex.edu.in` | `admin123` | Complete university administrative privileges |
+| **Faculty Member** | `ramesh.kumar@adityauniversity.in` | `password123` | Attendance, Marks, Timetable, Event Coordination |
+| **Faculty Member** | `1122@adityauniversity.in` | `password123` | Assigned classes, grading, and event duties |
+| **Student** | `rahul.gupta@student.apex.edu.in` | `password123` | Student dashboard, attendance, grades, certificates |
 
 ---
 
-## Security
+## 🛡️ Security & Reliability
 
-- **Authentication**: Stateless JSON Web Token (JWT) issued upon successful login and validated on every request.
-- **Password Protection**: Passwords hashed using BCrypt before storing in the database.
-- **Authorization**: Role-based access control protecting administrative, faculty, and student endpoints.
-- **Data Protection**: CORS policy restricts API access to authorized frontend origins.
-- **Audit Trails**: Critical administrative adjustments record the action and reason.
-
----
-
-## Responsive Design
-
-The frontend user interface is built using responsive layouts:
-- Optimized for desktop monitors, laptops, tablets, and mobile devices.
-- Collapsible navigation sidebar and adaptive data tables for mobile screens.
-- Clean typography and standardized color hierarchy suited for educational institutional portals.
+- **Stateless Authentication**: High-entropy JWT tokens with configurable expiration and automatic rejection of invalid signatures.
+- **BCrypt Encryption**: Passwords salted and hashed with BCrypt prior to database persistence.
+- **Role-Based Guards**: Method-level security annotations (`@PreAuthorize`) enforcing strict RBAC.
+- **SQL Injection Prevention**: All queries managed through JPA Criteria and parameterised Hibernate statements.
+- **Optimized Bundle Splitting**: Frontend assets code-split into distinct vendor chunks (`vendor-react`, `vendor-charts`, `vendor-pdf`, `vendor-network`) under 420 kB for rapid first-contentful paint.
 
 ---
 
-## Future Enhancements
+## 👤 Project Information
 
-- **SMS & Email Alerts**: Automated notifications to students and parents when attendance drops below 75%.
-- **Hostel & Transport Modules**: Facility management for student hostel allocations and bus route tracking.
-- **Fee Payment Gateway**: Online tuition and examination fee payments with digital receipts.
-- **Student Feedback System**: End-of-semester faculty and course feedback collection.
-
----
-
-## Author
-
-- **Developer**: Vijay
 - **Project**: Smart Student Information System
-
----
-
-## University
-
 - **Institution**: Aditya University
+- **Developer**: Vijay
+- **Repository**: [https://github.com/anjiduda77-afk/Student-Information-Management](https://github.com/anjiduda77-afk/Student-Information-Management)
