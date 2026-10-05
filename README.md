@@ -8,7 +8,6 @@
 [![React](https://img.shields.io/badge/React-18.2.0-61dafb.svg)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-5.0-646cff.svg)](https://vitejs.dev)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-orange.svg)](https://www.mysql.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 
 A professional university information management system developed for **Aditya University** by **Vijay** to manage academic, student, faculty, attendance, events, certificates, and related institutional activities through a centralised web application.
 
@@ -277,7 +276,6 @@ Smart-Student-Information-System/
 │   ├── tailwind.config.js             # Tailwind CSS configuration
 │   └── vite.config.js                 # Vite dev server and proxy setup
 ├── .gitignore                         # Git exclusion rules
-├── CONTRIBUTING.md                    # Project guidelines
 └── README.md                          # Project documentation
 ```
 
