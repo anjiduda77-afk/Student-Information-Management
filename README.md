@@ -328,6 +328,7 @@ Smart-Student-Information-System/
 │   ├── mvnw                           # Maven wrapper script (Linux/macOS)
 │   ├── mvnw.cmd                       # Maven wrapper script (Windows)
 │   ├── pom.xml                        # Maven project configuration & dependencies
+│   ├── Dockerfile                     # Multi-stage production Docker build
 │   └── src/
 │       └── main/
 │           ├── java/com/sms/
@@ -342,7 +343,7 @@ Smart-Student-Information-System/
 │           └── resources/
 │               └── application.properties # Server and Database Configuration
 ├── frontend/
-│   ├── public/                        # Static assets and icons
+│   ├── public/                        # Static assets, institutional logos, and icons
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── attendance/            # Student, Faculty, and Admin attendance components
@@ -365,7 +366,11 @@ Smart-Student-Information-System/
 │   │   └── main.jsx                   # React application entry point
 │   ├── package.json                   # Frontend dependencies and scripts
 │   ├── tailwind.config.js             # Tailwind CSS configuration
-│   └── vite.config.js                 # Vite dev server and proxy setup
+│   ├── vite.config.js                 # Vite dev server and proxy setup
+│   ├── Dockerfile                     # Multi-stage production Nginx container build
+│   └── nginx.conf                     # Nginx SPA routing & API reverse proxy
+├── docker-compose.yml                 # One-command containerized production orchestration
+├── .env.example                       # Production environment configuration template
 ├── .gitignore                         # Git exclusion rules
 └── README.md                          # Project documentation
 ```
@@ -428,6 +433,56 @@ npm run dev
 ```
 
 The React frontend development server will start at: `http://localhost:5173` (or `http://localhost:5174`)
+
+---
+
+## Production Deployment Guide
+
+The Smart Student Information System provides full production containerization and standalone deployment support.
+
+### Option 1: Docker Container Deployment (Recommended)
+
+Ensure Docker and Docker Compose are installed on your server, then launch the full multi-tier stack with:
+
+```bash
+docker compose up --build -d
+```
+
+This single command automatically:
+1. Provisions a dedicated **MySQL 8.0** container with persistent storage volumes and healthchecks.
+2. Builds and starts the **Spring Boot backend** container running on lightweight Eclipse Temurin JDK 17 Alpine.
+3. Builds and serves the **React + Vite frontend** bundle using high-performance Nginx Alpine with built-in API reverse proxying.
+
+Access the services:
+- **Web Application Portal**: `http://localhost` (or your production server domain on port 80)
+- **Backend REST API**: `http://localhost:8080/api`
+- **Swagger Documentation**: `http://localhost:8080/swagger-ui.html`
+
+To inspect running containers or stop the application:
+```bash
+docker compose ps
+docker compose down
+```
+
+---
+
+### Option 2: Standalone Production Deployment
+
+#### Step 1: Package & Run Spring Boot Backend
+```bash
+cd backend
+./mvnw clean package -DskipTests
+java -jar target/student-management-system-1.0.0.jar --server.port=8080
+```
+
+#### Step 2: Build & Host React Frontend
+```bash
+cd frontend
+npm ci
+npm run build
+# The production-optimized bundle is generated in the frontend/dist directory
+# Serve via Nginx, Apache HTTP Server, or Cloudflare Pages
+```
 
 ---
 
