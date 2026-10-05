@@ -170,7 +170,7 @@ Set Date / Time / Venue
 Publish Event
      ↓
 Assign Faculty Coordinator
-
+```
 ## 🏗️ System Architecture
 
 The Smart Student Information System follows a layered architecture that
