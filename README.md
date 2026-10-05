@@ -48,7 +48,7 @@ student-management-system/
 │   ├── .mvn/wrapper/          # Maven wrapper configuration
 │   ├── mvnw / mvnw.cmd        # Cross-platform Maven wrapper scripts
 │   ├── pom.xml                # Maven dependencies & build plugins
-│   ├── Dockerfile             # Multi-stage container build
+│   ├
 │   └── src/main/java/com/sms/
 │       ├── config/            # Security, WebSocket, CORS & seed data
 │       ├── controller/        # REST controllers
@@ -64,11 +64,11 @@ student-management-system/
 │   │   ├── hooks/             # Custom hooks (WebSocket STOMP listener)
 │   │   ├── pages/             # Admin, Faculty, Student & Login views
 │   │   └── services/          # Axios HTTP client with auth interceptor
-│   ├── Dockerfile             # Nginx-based multi-stage container
+│             
 │   ├── nginx.conf             # Production reverse proxy config
 │   └── vite.config.js         # Dev server & reverse proxy configuration
 ├── docker-compose.yml         # Multi-container orchestration (MySQL + App)
-├── CONTRIBUTING.md            # Contribution & development guide
+├
 └── README.md                  # Project overview & documentation
 ```
 
@@ -95,7 +95,7 @@ cd -Student-Management-System-
 #### 2. Configure Database
 Ensure MySQL is running, then create the database:
 ```sql
-CREATE DATABASE sms_db;
+CREATE DATABASE student information system;
 ```
 
 Update your database credentials in `backend/src/main/resources/application.properties` or set environment variables:
@@ -134,9 +134,6 @@ npm run dev
 
 Run the entire full-stack application and MySQL with a single command:
 
-```bash
-docker-compose up --build
-```
 
 - **Frontend**: `http://localhost:3000`
 - **Backend API**: `http://localhost:8080`
