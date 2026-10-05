@@ -6,7 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/verify")
+@RequestMapping({"/api/verify", "/api/public/verify"})
 @RequiredArgsConstructor
 public class PublicVerifyController {
 

@@ -38,7 +38,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
 
                 // Public certificate verification (no login needed — employers, recruiters, etc.)
-                .requestMatchers("/api/certificates/verify/**", "/api/certificates/verify", "/api/verify/**").permitAll()
+                .requestMatchers("/api/certificates/verify/**", "/api/certificates/verify", "/api/verify/**", "/api/public/**").permitAll()
 
                 // Public certificate PDF download (anyone with a certificate ID can download)
                 .requestMatchers("/api/certificates/*/download").permitAll()
