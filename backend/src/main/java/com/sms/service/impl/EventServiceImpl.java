@@ -135,9 +135,26 @@ public class EventServiceImpl implements EventService {
         return toDTO(e, currentUserId);
     }
 
+    private void validateEvent(AppDTO.EventDTO req) {
+        if (req.getTitle() == null || req.getTitle().trim().isEmpty()) {
+            throw new IllegalArgumentException("Event title is required.");
+        }
+        if (req.getEventDate() == null) {
+            throw new IllegalArgumentException("Event date is required.");
+        }
+        if (req.getStartTime() != null && req.getEndTime() != null && !req.getStartTime().isBefore(req.getEndTime())) {
+            throw new IllegalArgumentException("Event end time must be after the start time.");
+        }
+    }
+
     @Override
     @Transactional
     public AppDTO.EventDTO createEvent(AppDTO.EventDTO req, Long creatorId) {
+        validateEvent(req);
+        if (eventRepository.existsByTitleAndEventDate(req.getTitle().trim(), req.getEventDate())) {
+            throw new ConflictException("An event titled '" + req.getTitle().trim() + "' on " + req.getEventDate() + " already exists.");
+        }
+
         User creator = creatorId != null ? userRepository.findById(creatorId).orElse(null) : null;
 
         Event.Status status = Event.Status.REGISTRATION_OPEN;
@@ -182,6 +199,12 @@ public class EventServiceImpl implements EventService {
     public AppDTO.EventDTO updateEvent(Long eventId, AppDTO.EventDTO req) {
         Event e = eventRepository.findById(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Event not found with ID: " + eventId));
+
+        java.time.LocalTime newStart = req.getStartTime() != null ? req.getStartTime() : e.getStartTime();
+        java.time.LocalTime newEnd = req.getEndTime() != null ? req.getEndTime() : e.getEndTime();
+        if (newStart != null && newEnd != null && !newStart.isBefore(newEnd)) {
+            throw new IllegalArgumentException("Event end time must be after the start time.");
+        }
 
         if (req.getTitle() != null) e.setTitle(req.getTitle());
         if (req.getDescription() != null) e.setDescription(req.getDescription());

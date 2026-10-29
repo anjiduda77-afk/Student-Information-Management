@@ -94,6 +94,7 @@ public class StudentServiceImpl implements StudentService {
         User student = getStudentEntity(id);
 
         if (request.getName() != null) student.setName(request.getName());
+        if (request.getRollNumber() != null) student.setRollNumber(request.getRollNumber());
         if (request.getBranch() != null) student.setBranch(request.getBranch());
         if (request.getDepartment() != null) student.setDepartment(request.getDepartment());
         if (request.getSemester() != null) student.setSemester(request.getSemester());

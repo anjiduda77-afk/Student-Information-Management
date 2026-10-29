@@ -8,14 +8,16 @@ import CertificateTemplatesList from './admin/certificates/CertificateTemplatesL
 import CertificateTemplateEditor from './admin/certificates/CertificateTemplateEditor'
 import CertificateTemplatePreviewPage from './admin/certificates/CertificateTemplatePreviewPage'
 import {
-  adminService, courseService, timetableService
+  adminService, courseService, timetableService, academicCalendarService
 } from '../services/api'
+import AcademicCalendar from '../components/calendar/AcademicCalendar'
+import StudentFeesHub from '../components/fees/StudentFeesHub'
 import {
   LayoutDashboard, GraduationCap, Users, BookOpen,
-  Calendar, Award, Bell, Shield, Plus,
+  Calendar, CalendarDays, Award, Bell, Plus,
   Trash2, Search,
   Clock, UserPlus, FileText,
-  KeyRound, ClipboardCheck, AlertTriangle, RefreshCw
+  KeyRound, ClipboardCheck, AlertTriangle, RefreshCw, CreditCard
 } from 'lucide-react'
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid
@@ -137,8 +139,9 @@ function AdminHome() {
       {/* 1. Welcome Banner */}
       <div style={{
         background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
-        borderRadius: 20, padding: '28px 32px', color: '#fff',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16
+        borderRadius: 18, padding: '24px 28px', color: '#fff',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14,
+        minWidth: 0, overflow: 'hidden'
       }}>
         <div>
           <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', opacity: 0.85 }}>
@@ -338,108 +341,6 @@ function AdminHome() {
         </div>
       </div>
 
-      {/* 6. Quick Actions */}
-      <div className="card">
-        <div className="section-header">
-          <div>
-            <h3 className="section-title">Quick Administrative Actions</h3>
-            <p style={{ fontSize: 13, color: '#64748b', margin: '2px 0 0' }}>
-              Direct shortcuts to primary institutional management modules
-            </p>
-          </div>
-        </div>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-          gap: 12,
-          marginTop: 8
-        }}>
-          <button
-            onClick={() => navigate('/admin/students')}
-            className="btn"
-            style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '14px 16px', borderRadius: 12,
-              background: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe',
-              fontWeight: 700, fontSize: 13, justifyContent: 'flex-start'
-            }}
-          >
-            <UserPlus size={18} color="#2563eb" />
-            <span>Add Student</span>
-          </button>
-
-          <button
-            onClick={() => navigate('/admin/faculty')}
-            className="btn"
-            style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '14px 16px', borderRadius: 12,
-              background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0',
-              fontWeight: 700, fontSize: 13, justifyContent: 'flex-start'
-            }}
-          >
-            <Users size={18} color="#059669" />
-            <span>Add Faculty</span>
-          </button>
-
-          <button
-            onClick={() => navigate('/admin/events')}
-            className="btn"
-            style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '14px 16px', borderRadius: 12,
-              background: '#faf5ff', color: '#6b21a8', border: '1px solid #e9d5ff',
-              fontWeight: 700, fontSize: 13, justifyContent: 'flex-start'
-            }}
-          >
-            <Calendar size={18} color="#7c3aed" />
-            <span>Publish Event</span>
-          </button>
-
-          <button
-            onClick={() => navigate('/admin/certificates')}
-            className="btn"
-            style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '14px 16px', borderRadius: 12,
-              background: '#fffbeb', color: '#92400e', border: '1px solid #fde68a',
-              fontWeight: 700, fontSize: 13, justifyContent: 'flex-start'
-            }}
-          >
-            <Award size={18} color="#d97706" />
-            <span>Create Certificate</span>
-          </button>
-
-          <button
-            onClick={() => navigate('/admin/timetable')}
-            className="btn"
-            style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '14px 16px', borderRadius: 12,
-              background: '#f8fafc', color: '#334155', border: '1px solid #e2e8f0',
-              fontWeight: 700, fontSize: 13, justifyContent: 'flex-start'
-            }}
-          >
-            <Clock size={18} color="#475569" />
-            <span>Timetable Matrix</span>
-          </button>
-
-          <button
-            onClick={() => navigate('/admin/attendance')}
-            className="btn"
-            style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '14px 16px', borderRadius: 12,
-              background: '#f8fafc', color: '#334155', border: '1px solid #e2e8f0',
-              fontWeight: 700, fontSize: 13, justifyContent: 'flex-start'
-            }}
-          >
-            <ClipboardCheck size={18} color="#475569" />
-            <span>Attendance Oversight</span>
-          </button>
-        </div>
-      </div>
     </div>
   )
 }
@@ -808,6 +709,7 @@ function FacultyPanel() {
   const [resetPasswordVal, setResetPasswordVal] = useState('faculty123')
   const [forceChange, setForceChange] = useState(true)
   const [resetting, setResetting] = useState(false)
+  const [deleteFacultyTarget, setDeleteFacultyTarget] = useState(null)
   const [form, setForm] = useState({
     name: '', email: '', password: 'faculty123', department: 'Computer Science & Engineering',
     designation: 'Assistant Professor', facultyId: '', mobileNumber: ''
@@ -877,6 +779,18 @@ function FacultyPanel() {
     }
   }
 
+  const handleDeleteFaculty = async () => {
+    if (!deleteFacultyTarget) return
+    try {
+      await adminService.deleteFaculty(deleteFacultyTarget.id)
+      toast.success(`Faculty member ${deleteFacultyTarget.name} deleted successfully.`)
+      setDeleteFacultyTarget(null)
+      loadFaculty()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete faculty member.')
+    }
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div className="section-header">
@@ -927,13 +841,22 @@ function FacultyPanel() {
                     </button>
                   </td>
                   <td style={{ textAlign: 'right' }}>
-                    <button
-                      onClick={() => { setResetTarget(f); setResetPasswordVal('faculty123'); }}
-                      style={{ background: 'none', border: 'none', color: '#d97706', cursor: 'pointer', padding: 6 }}
-                      title="Reset faculty password"
-                    >
-                      <KeyRound size={16} />
-                    </button>
+                    <div style={{ display: 'inline-flex', gap: 4 }}>
+                      <button
+                        onClick={() => { setResetTarget(f); setResetPasswordVal('faculty123'); }}
+                        style={{ background: 'none', border: 'none', color: '#d97706', cursor: 'pointer', padding: 6 }}
+                        title="Reset faculty password"
+                      >
+                        <KeyRound size={16} />
+                      </button>
+                      <button
+                        onClick={() => setDeleteFacultyTarget(f)}
+                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: 6 }}
+                        title="Delete faculty member"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -1042,6 +965,14 @@ function FacultyPanel() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmModal
+        isOpen={Boolean(deleteFacultyTarget)}
+        onClose={() => setDeleteFacultyTarget(null)}
+        onConfirm={handleDeleteFaculty}
+        title="Delete Faculty Member"
+        message={`Are you sure you want to permanently delete ${deleteFacultyTarget?.name} (${deleteFacultyTarget?.facultyId || deleteFacultyTarget?.email})? This action cannot be undone.`}
+      />
     </div>
   )
 }
@@ -1580,74 +1511,6 @@ function AnnouncementsPanel() {
 }
 
 // =========================================================================
-// 8. Audit Logs Panel
-// =========================================================================
-function AuditLogsPanel() {
-  const [logs, setLogs] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    adminService.getActivityLogs()
-      .then(res => setLogs(res.data || []))
-      .catch(() => toast.error('Failed to load logs'))
-      .finally(() => setLoading(false))
-  }, [])
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div className="section-header">
-        <div>
-          <h2 className="section-title">System Audit & Activity Trail</h2>
-          <p style={{ fontSize: 13, color: '#64748b' }}>Immutable record of critical administrative actions</p>
-        </div>
-      </div>
-
-      {loading ? (
-        <TableSkeleton rows={8} cols={5} />
-      ) : (
-        <div className="table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Timestamp</th>
-                <th>Operator</th>
-                <th>Role</th>
-                <th>Action</th>
-                <th>Entity</th>
-                <th>Details</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.map(l => (
-                <tr key={l.id}>
-                  <td style={{ fontSize: 11, color: '#64748b' }}>{formatDate(l.timestamp)}</td>
-                  <td><strong>{l.userName || l.userEmail}</strong></td>
-                  <td><span className="badge badge-neutral">{l.role}</span></td>
-                  <td>
-                    <span className={`badge ${l.action === 'DELETE' ? 'badge-danger' : l.action === 'CREATE' ? 'badge-success' : 'badge-info'}`}>
-                      {l.action}
-                    </span>
-                  </td>
-                  <td>{l.entityName}</td>
-                  <td style={{ fontSize: 12, color: '#334155' }}>{l.details}</td>
-                </tr>
-              ))}
-              {logs.length === 0 && (
-                <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: 32, color: '#94a3b8' }}>
-                    No audit records recorded yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// =========================================================================
 // Main Admin Dashboard Component
 // =========================================================================
 const ADMIN_NAV = [
@@ -1658,9 +1521,10 @@ const ADMIN_NAV = [
   { path: 'timetable', label: 'Academic Class Time Table', icon: Calendar },
   { path: 'attendance', label: 'Attendance Central Oversight', icon: ClipboardCheck },
   { path: 'events', label: 'Campus Events & Symposia', icon: Award },
+  { path: 'calendar', label: 'Academic Calendar', icon: CalendarDays },
+  { path: 'fees', label: 'Institutional Fee Accounts', icon: CreditCard },
   { path: 'certificates', label: 'Academic Certificates', icon: FileText },
   { path: 'announcements', label: 'Official Circulars & Notices', icon: Bell },
-  { path: 'audit_logs', label: 'Institutional Audit Logs', icon: Shield },
 ]
 
 export default function AdminDashboard() {
@@ -1677,12 +1541,13 @@ export default function AdminDashboard() {
         <Route path="events" element={<AdminEventsList />} />
         <Route path="events/:eventId" element={<EventDetailsPage />} />
         <Route path="events/:eventId/coordinators" element={<EventCoordinatorsPage />} />
+        <Route path="calendar" element={<AcademicCalendar role="ADMIN" />} />
+        <Route path="fees" element={<StudentFeesHub />} />
         <Route path="certificates" element={<CertificateTemplatesList />} />
         <Route path="certificates/templates/new" element={<CertificateTemplateEditor isNew />} />
         <Route path="certificates/templates/:templateId/edit" element={<CertificateTemplateEditor />} />
         <Route path="certificates/templates/:templateId/preview" element={<CertificateTemplatePreviewPage />} />
         <Route path="announcements" element={<AnnouncementsPanel />} />
-        <Route path="audit_logs" element={<AuditLogsPanel />} />
         <Route path="*" element={<Navigate to="dashboard" replace />} />
       </Routes>
     </Layout>

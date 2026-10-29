@@ -33,15 +33,23 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
     boolean existsByStudentIdAndSubjectIdAndDateAndPeriod(Long studentId, Long subjectId, LocalDate date, Integer period);
     boolean existsByStudentIdAndDateAndPeriod(Long studentId, LocalDate date, Integer period);
 
-    @Query("SELECT COUNT(a) FROM Attendance a WHERE a.student.id = :studentId AND a.course.id = :courseId AND a.status = 'PRESENT'")
-    Long countPresentByStudentAndCourse(@Param("studentId") Long studentId, @Param("courseId") Long courseId);
+    long countByStatus(Attendance.Status status);
+    long countByStudentIdAndCourseIdAndStatus(Long studentId, Long courseId, Attendance.Status status);
+    long countByStudentIdAndCourseId(Long studentId, Long courseId);
 
-    @Query("SELECT COUNT(a) FROM Attendance a WHERE a.student.id = :studentId AND a.course.id = :courseId")
-    Long countTotalByStudentAndCourse(@Param("studentId") Long studentId, @Param("courseId") Long courseId);
+    default Long countPresentByStudentAndCourse(Long studentId, Long courseId) {
+        return countByStudentIdAndCourseIdAndStatus(studentId, courseId, Attendance.Status.PRESENT);
+    }
 
-    @Query("SELECT COUNT(a) FROM Attendance a WHERE a.status = 'PRESENT'")
-    Long countAllPresent();
+    default Long countTotalByStudentAndCourse(Long studentId, Long courseId) {
+        return countByStudentIdAndCourseId(studentId, courseId);
+    }
 
-    @Query("SELECT COUNT(a) FROM Attendance a")
-    Long countAllAttendance();
+    default Long countAllPresent() {
+        return countByStatus(Attendance.Status.PRESENT);
+    }
+
+    default Long countAllAttendance() {
+        return count();
+    }
 }

@@ -48,9 +48,9 @@ export default function StudentAttendanceSection({ initialTab }) {
 
   // Date-wise filters
   const [datePreset, setDatePreset] = useState('all') // 'today' | 'week' | 'month' | 'all' | 'custom'
-  const fromDate = ''
-  const toDate = ''
-  const selectedSubjectId = ''
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
+  const [selectedSubjectId, setSelectedSubjectId] = useState('')
   const [statusFilter, setStatusFilter] = useState('ALL')
 
   // Correction Request Modal state

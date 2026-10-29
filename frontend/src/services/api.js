@@ -63,6 +63,7 @@ export const adminService = {
   getFacultyById: (id) => api.get(`/admin/faculty/${id}`),
   addFaculty: (data) => api.post('/admin/faculty', data),
   updateFaculty: (id, data) => api.put(`/admin/faculty/${id}`, data),
+  deleteFaculty: (id) => api.delete(`/admin/faculty/${id}`),
   toggleFacultyStatus: (id) => api.patch(`/admin/faculty/${id}/toggle-status`),
 
   getDepartments: () => api.get('/admin/departments'),
@@ -149,7 +150,14 @@ export const attendanceService = {
 
   // Admin
   getAdminOverview: (params) => api.get('/admin/attendance/overview', { params }),
-  getAdminShortageReport: (params) => api.get('/admin/attendance/shortage-report', { params }),
+  getAdminShortageReport: (params) => {
+    const config = typeof params === 'object' && params !== null
+      ? { params }
+      : { params: { thresholdPct: params ?? 75 } }
+    return api.get('/admin/attendance/shortage-report', config)
+  },
+  getStudentDateWiseAttendance: (studentId, status = 'ALL') =>
+    api.get(`/admin/attendance/student/${studentId}`, { params: status && status !== 'ALL' ? { status } : {} }),
   adminCorrectAttendance: (id, newStatus, reason) =>
     api.post(`/admin/attendance/${id}/correct`, null, { params: { newStatus, reason } }),
 }
@@ -323,4 +331,24 @@ export const notificationService = {
     const base = role === 'FACULTY' || role === 'ADMIN' ? '/faculty' : '/student'
     return api.get(`${base}/announcements`)
   },
+}
+
+// ---- Academic Calendar ----
+export const academicCalendarService = {
+  getAll: (params) => api.get('/academic-calendar', { params }),
+  getById: (id) => api.get(`/academic-calendar/${id}`),
+  create: (data) => api.post('/academic-calendar', data),
+  update: (id, data) => api.put(`/academic-calendar/${id}`, data),
+  delete: (id) => api.delete(`/academic-calendar/${id}`),
+}
+
+// ---- Fees & Payments ----
+export const feeService = {
+  getStructures: () => api.get('/fees/structures'),
+  createStructure: (data) => api.post('/fees/structures', data),
+  getMyRecords: () => api.get('/fees/my-records'),
+  getStudentRecords: (studentId) => api.get(`/fees/student/${studentId}`),
+  payFee: (data) => api.post('/fees/pay', data),
+  getReceipt: (receiptNumber) => api.get(`/fees/receipt/${receiptNumber}`),
+  getOverview: () => api.get('/fees/overview'),
 }

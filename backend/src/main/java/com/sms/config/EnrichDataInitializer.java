@@ -48,10 +48,16 @@ public class EnrichDataInitializer implements CommandLineRunner {
             jdbcTemplate.execute("CREATE INDEX idx_att_course_fk ON attendance (course_id)");
         } catch (Exception ignored) {}
         try {
-            jdbcTemplate.execute("ALTER TABLE attendance DROP INDEX UK3mjvpj1ab0m02i68nvmeduamb");
-            log.info("Successfully dropped obsolete unique constraint UK3mjvpj1ab0m02i68nvmeduamb!");
+            Integer idxCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(1) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'attendance' AND index_name = 'UK3mjvpj1ab0m02i68nvmeduamb'",
+                Integer.class
+            );
+            if (idxCount != null && idxCount > 0) {
+                jdbcTemplate.execute("ALTER TABLE attendance DROP INDEX UK3mjvpj1ab0m02i68nvmeduamb");
+                log.info("Successfully dropped obsolete unique constraint UK3mjvpj1ab0m02i68nvmeduamb!");
+            }
         } catch (Exception e) {
-            log.warn("Index drop UK3mjvpj1ab0m02i68nvmeduamb: {}", e.getMessage());
+            log.debug("Index check/drop UK3mjvpj1ab0m02i68nvmeduamb: {}", e.getMessage());
         }
 
         User student = userRepository.findByEmail("rahul.gupta@student.apex.edu.in").orElse(null);

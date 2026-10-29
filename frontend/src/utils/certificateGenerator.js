@@ -60,7 +60,7 @@ export async function downloadCertificatePDF(cert = {}, template = {}) {
   const eventName = cert.eventName || 'University Technical Symposium'
   const position = cert.position || (isWinner ? 'First Position' : 'Participant')
   const dateStr = cert.issueDate || cert.date || new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-  const certId = cert.certificateId || 'AU-SIS-CERT-2026'
+  const certId = cert.certificateId || 'AUS543444'
 
   // Generate QR Code data URL for verification
   const frontendBase = import.meta.env.VITE_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '')

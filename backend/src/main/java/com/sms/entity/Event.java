@@ -27,7 +27,7 @@ public class Event {
     @Column(nullable = false)
     private String category; // Technical, Cultural, Sports, Workshop, Seminar, Hackathon
 
-    @Column(name = "poster_url", length = 1000)
+    @Column(name = "poster_url", columnDefinition = "LONGTEXT")
     private String posterUrl;
 
     @Column(name = "event_date", nullable = false)

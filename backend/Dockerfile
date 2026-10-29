@@ -1,6 +1,6 @@
 # ============================================================
 # Smart Student Information System — Backend Dockerfile
-# Aditya University | Developer: Vijay
+# Aditya University | Developer: Duda Anjibabu
 # ============================================================
 
 # Stage 1: Build JAR with Maven & Eclipse Temurin JDK 17

@@ -3,12 +3,12 @@ import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import Layout from '../components/common/Layout'
 import {
   courseService, attendanceService, marksService,
-  eventService, certificateService
+  eventService, certificateService, academicCalendarService
 } from '../services/api'
 import {
-  LayoutDashboard, ClipboardCheck, BarChart2, Calendar,
+  LayoutDashboard, ClipboardCheck, BarChart2, Calendar, CalendarDays,
   Award, Download, AlertTriangle,
-  BookOpen, Eye,
+  BookOpen, Eye, CreditCard, Bus, GraduationCap,
   Search, X
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -22,6 +22,12 @@ import {
 } from 'recharts'
 import StudentAttendanceSection from '../components/attendance/StudentAttendanceSection'
 import AcademicTimetable from '../components/timetable/AcademicTimetable'
+import AcademicCalendar from '../components/calendar/AcademicCalendar'
+import EventPosterCard from '../components/events/EventPosterCard'
+import EventDetailsPage from './admin/events/EventDetailsPage'
+import StudentFeesHub from '../components/fees/StudentFeesHub'
+import StudentTransportHub from '../components/transport/StudentTransportHub'
+import StudentExamHub from '../components/exams/StudentExamHub'
 
 const BASE = '/student'
 
@@ -29,8 +35,12 @@ const NAV_ITEMS = [
   { path: 'dashboard', label: 'Student Dashboard', icon: LayoutDashboard },
   { path: 'attendance', label: 'Attendance Summary', icon: ClipboardCheck },
   { path: 'marks', label: 'Marks Memo & Grade Card', icon: BarChart2 },
+  { path: 'exams', label: 'Examinations & Hall Ticket', icon: GraduationCap },
   { path: 'timetable', label: 'Academic Class Time Table', icon: Calendar },
-  { path: 'events', label: 'Campus Events & Symposia', icon: Calendar },
+  { path: 'fees', label: 'Fee Payments & Dues', icon: CreditCard },
+  { path: 'transport', label: 'Campus Bus & Transit Pass', icon: Bus },
+  { path: 'events', label: 'Campus Events & Symposia', icon: Award },
+  { path: 'calendar', label: 'Academic Calendar', icon: CalendarDays },
   { path: 'certificates', label: 'My Certificates', icon: Award },
 ]
 
@@ -288,6 +298,10 @@ function StudentEvents() {
   const [myRegistrations, setMyRegistrations] = useState([])
   const [myCertificates, setMyCertificates] = useState([])
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('ALL')
+  const [tabFilter, setTabFilter] = useState('ALL') // 'ALL' | 'REGISTERED'
+  const [actionLoadingId, setActionLoadingId] = useState(null)
 
   const loadData = () => {
     setLoading(true)
@@ -305,90 +319,173 @@ function StudentEvents() {
   useEffect(() => { loadData() }, [])
 
   const handleRegister = async (eventId) => {
+    setActionLoadingId(eventId)
     try {
       await eventService.register(eventId)
-      toast.success('Registered for event successfully.')
+      toast.success('Successfully registered for this event!')
       loadData()
     } catch (err) {
       toast.error(err.response?.data?.message || 'Registration failed. Please try again.')
+    } finally {
+      setActionLoadingId(null)
     }
   }
 
   const handleCancel = async (eventId) => {
+    if (!window.confirm('Are you sure you want to cancel your event registration?')) return
+    setActionLoadingId(eventId)
     try {
       await eventService.cancelRegistration(eventId)
       toast.info('Registration cancelled.')
       loadData()
     } catch {
       toast.error('Could not cancel registration.')
+    } finally {
+      setActionLoadingId(null)
     }
   }
 
   const registeredEventIds = new Set(myRegistrations.map(r => r.eventId))
   const certMap = new Map(myCertificates.map(c => [c.eventId, c]))
 
+  const filteredEvents = events.filter(ev => {
+    const isReg = registeredEventIds.has(ev.id)
+    if (tabFilter === 'REGISTERED' && !isReg) return false
+    if (categoryFilter !== 'ALL' && ev.category?.toUpperCase() !== categoryFilter.toUpperCase()) return false
+    if (search) {
+      const q = search.toLowerCase()
+      const matchTitle = ev.title?.toLowerCase().includes(q)
+      const matchDesc = ev.description?.toLowerCase().includes(q)
+      const matchVenue = ev.venue?.toLowerCase().includes(q)
+      if (!matchTitle && !matchDesc && !matchVenue) return false
+    }
+    return true
+  })
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div className="section-header">
+      {/* Header & Controls */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
         <div>
-          <h2 className="section-title">Campus Events & Symposia</h2>
-          <p style={{ fontSize: 13, color: '#64748b' }}>Register for hackathons, paper presentations, workshops, and college fests</p>
+          <h2 className="section-title" style={{ margin: 0 }}>Campus Events & Symposia</h2>
+          <p style={{ fontSize: 13, color: '#64748b', margin: '4px 0 0' }}>
+            Register for university hackathons, technical symposia, paper presentations, workshops, and sports meets.
+          </p>
+        </div>
+
+        {/* View Toggle Tabs */}
+        <div style={{ display: 'flex', gap: 6, background: 'var(--surface-secondary)', padding: 4, borderRadius: 10 }}>
+          <button
+            onClick={() => setTabFilter('ALL')}
+            className={`btn btn-sm ${tabFilter === 'ALL' ? 'btn-primary' : 'btn-ghost'}`}
+            style={{ fontSize: 12, borderRadius: 8, padding: '6px 14px' }}
+          >
+            All Events ({events.length})
+          </button>
+          <button
+            onClick={() => setTabFilter('REGISTERED')}
+            className={`btn btn-sm ${tabFilter === 'REGISTERED' ? 'btn-primary' : 'btn-ghost'}`}
+            style={{ fontSize: 12, borderRadius: 8, padding: '6px 14px' }}
+          >
+            My Registrations ({myRegistrations.length})
+          </button>
         </div>
       </div>
 
+      {/* Search & Category Filter Pills */}
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ position: 'relative', width: 260 }}>
+          <input
+            type="text"
+            className="form-input"
+            style={{ height: 38, paddingLeft: 34, fontSize: 13, borderRadius: 10 }}
+            placeholder="Search events, venues…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          <Search size={15} style={{ position: 'absolute', left: 11, top: 12, color: 'var(--text-light)' }} />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              style={{ position: 'absolute', right: 8, top: 10, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-light)' }}
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+          {['ALL', 'Technical', 'Cultural', 'Sports', 'Workshop'].map(cat => (
+            <button
+              key={cat}
+              onClick={() => setCategoryFilter(cat)}
+              style={{
+                border: '1px solid var(--border)',
+                borderRadius: 20,
+                padding: '6px 14px',
+                fontSize: 12,
+                fontWeight: categoryFilter === cat ? 800 : 600,
+                cursor: 'pointer',
+                background: categoryFilter === cat ? '#0f766e' : 'var(--surface)',
+                color: categoryFilter === cat ? '#fff' : 'var(--text-muted)',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              {cat === 'ALL' ? 'All Categories' : cat}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Events Poster Grid */}
       {loading ? (
         <TableSkeleton rows={3} cols={3} />
-      ) : events.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: 48 }}>
+      ) : filteredEvents.length === 0 ? (
+        <div className="card" style={{ textAlign: 'center', padding: 50, borderRadius: 16 }}>
           <Award size={48} style={{ margin: '0 auto 12px', color: '#cbd5e1' }} />
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>No Upcoming Events</h3>
-          <p style={{ fontSize: 13, color: '#64748b' }}>Check back later for upcoming campus events.</p>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
+            {tabFilter === 'REGISTERED' ? 'You have not registered for any events yet' : 'No Events Found'}
+          </h3>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+            {tabFilter === 'REGISTERED'
+              ? 'Browse the campus events list and register to participate in upcoming events.'
+              : 'Try adjusting your search criteria or category filter.'}
+          </p>
+          {tabFilter === 'REGISTERED' && (
+            <button
+              onClick={() => setTabFilter('ALL')}
+              className="btn btn-primary btn-sm"
+              style={{ marginTop: 12, background: '#0f766e', borderColor: '#0f766e' }}
+            >
+              Browse All Events
+            </button>
+          )}
         </div>
       ) : (
-        <div className="grid-3">
-          {events.map(ev => {
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+          gap: 20
+        }}>
+          {filteredEvents.map(ev => {
             const isRegistered = registeredEventIds.has(ev.id)
             const earnedCert = certMap.get(ev.id)
+            const enrichedEvent = {
+              ...ev,
+              registered: isRegistered,
+              hasCertificate: Boolean(earnedCert)
+            }
 
             return (
-              <div key={ev.id} className="card card-hover" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span className="badge badge-purple">{ev.category}</span>
-                  {earnedCert ? (
-                    <span className="badge badge-success" style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a' }}>
-                      🏆 CERTIFICATE ISSUED
-                    </span>
-                  ) : isRegistered ? (
-                    <span className="badge badge-success">REGISTERED</span>
-                  ) : null}
-                </div>
-                <h4 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>{ev.title}</h4>
-                <p style={{ fontSize: 12, color: '#64748b', margin: 0, lineHeight: 1.5, flex: 1 }}>{ev.description}</p>
-                <div style={{ fontSize: 12, color: '#94a3b8', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <span>📅 {formatDate(ev.eventDate)} ({ev.startTime || '09:30'})</span>
-                  <span>📍 {ev.venue || 'Main Auditorium'}</span>
-                </div>
-
-                <div style={{ paddingTop: 12, borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {earnedCert ? (
-                    <button
-                      onClick={() => navigate(`${BASE}/certificates`)}
-                      className="btn btn-sm"
-                      style={{ background: '#d97706', color: '#fff', fontWeight: 700, justifyContent: 'center', gap: 6 }}
-                    >
-                      <Award size={14} /> View Earned Certificate
-                    </button>
-                  ) : isRegistered ? (
-                    <button onClick={() => handleCancel(ev.id)} className="btn btn-ghost btn-sm" style={{ width: '100%', color: '#dc2626' }}>
-                      Cancel Registration
-                    </button>
-                  ) : (
-                    <button onClick={() => handleRegister(ev.id)} className="btn btn-primary btn-sm" style={{ width: '100%' }}>
-                      Register
-                    </button>
-                  )}
-                </div>
-              </div>
+              <EventPosterCard
+                key={ev.id}
+                event={enrichedEvent}
+                role="STUDENT"
+                basePath="/student"
+                onRegister={handleRegister}
+                onCancelRegistration={handleCancel}
+                isRegistering={actionLoadingId === ev.id}
+              />
             )
           })}
         </div>
@@ -707,8 +804,13 @@ export default function StudentDashboard() {
         <Route path="attendance" element={<StudentAttendanceSection user={user} initialTab="subject-wise" />} />
         <Route path="attendance/*" element={<StudentAttendanceSection user={user} />} />
         <Route path="marks" element={<StudentMarksView />} />
+        <Route path="exams" element={<StudentExamHub user={user} />} />
         <Route path="timetable" element={<AcademicTimetable role="STUDENT" user={user} />} />
+        <Route path="fees" element={<StudentFeesHub user={user} />} />
+        <Route path="transport" element={<StudentTransportHub user={user} />} />
         <Route path="events" element={<StudentEvents />} />
+        <Route path="events/:eventId" element={<EventDetailsPage />} />
+        <Route path="calendar" element={<AcademicCalendar role="STUDENT" />} />
         <Route path="certificates" element={<StudentCertificates />} />
         <Route path="*" element={<Navigate to="dashboard" replace />} />
       </Routes>

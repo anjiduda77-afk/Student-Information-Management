@@ -12,5 +12,6 @@ public interface FacultyService {
     AppDTO.UserResponse addFaculty(AuthDTO.RegisterRequest request);
     AppDTO.UserResponse updateFaculty(Long id, AppDTO.UserResponse request);
     void toggleFacultyStatus(Long id);
+    void deleteFaculty(Long id);
     User getFacultyEntity(Long id);
 }

@@ -26,7 +26,7 @@ export default function CertificatePreview({
   const eventName = sampleData.eventName || template.eventName || 'TECH-QUIZ'
   const position = sampleData.position || template.position || (templateType === 'WINNER' ? 'First Position' : templateType === 'RUNNER_UP' ? 'Second Position' : 'Participation')
   const dateStr = sampleData.date || sampleData.issueDate || template.issueDate || '10 May 2026'
-  const certId = sampleData.certificateId || template.certificateId || 'SIS-EVT-2026-0001'
+  const certId = sampleData.certificateId || template.certificateId || 'AUS543444'
 
   // Format body text
   let citation = bodyTemplate || description || `for securing ${position} in ${eventName}`

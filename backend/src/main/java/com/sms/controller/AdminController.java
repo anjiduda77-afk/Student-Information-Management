@@ -206,6 +206,14 @@ public class AdminController {
         return ResponseEntity.ok(new AppDTO.MessageResponse("Faculty status updated"));
     }
 
+    @DeleteMapping("/faculty/{id}")
+    public ResponseEntity<?> deleteFaculty(@PathVariable Long id, @AuthenticationPrincipal UserDetails ud) {
+        facultyService.deleteFaculty(id);
+        activityLogService.log(ud.getUsername(), ud.getUsername(), "ADMIN", "DELETE", "FACULTY",
+                "Deleted faculty ID: " + id);
+        return ResponseEntity.ok(new AppDTO.MessageResponse("Faculty deleted successfully"));
+    }
+
     // ==================== Departments ====================
 
     @GetMapping("/departments")
@@ -324,6 +332,18 @@ public class AdminController {
         LocalDate from = (fromDate != null && !fromDate.isBlank()) ? LocalDate.parse(fromDate) : null;
         LocalDate to = (toDate != null && !toDate.isBlank()) ? LocalDate.parse(toDate) : null;
         return ResponseEntity.ok(attendanceService.getAdminAttendanceOverview(departmentId, courseId, semester, section, subjectId, from, to));
+    }
+
+    @GetMapping("/attendance/student/{studentId}")
+    public ResponseEntity<List<AppDTO.AttendanceResponse>> getStudentAttendance(
+            @PathVariable Long studentId,
+            @RequestParam(required = false) String fromDate,
+            @RequestParam(required = false) String toDate,
+            @RequestParam(required = false) Long subjectId,
+            @RequestParam(required = false) String status) {
+        LocalDate from = (fromDate != null && !fromDate.isBlank()) ? LocalDate.parse(fromDate) : null;
+        LocalDate to = (toDate != null && !toDate.isBlank()) ? LocalDate.parse(toDate) : null;
+        return ResponseEntity.ok(attendanceService.getStudentDateWiseAttendance(studentId, from, to, subjectId, status));
     }
 
     @GetMapping("/attendance/shortage-report")

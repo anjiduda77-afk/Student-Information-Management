@@ -25,11 +25,14 @@ public class DataInitializer implements CommandLineRunner {
     private final EventRepository eventRepository;
     private final CertificateTemplateRepository certTemplateRepository;
     private final AnnouncementRepository announcementRepository;
+    private final com.sms.repository.AcademicCalendarRepository calendarRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
     public void run(String... args) {
+        seedAcademicCalendarIfEmpty();
+
         if (userRepository.existsByEmail("admin@apex.edu.in")) {
             log.info("Data already initialised. Skipping seed.");
             return;
@@ -322,5 +325,98 @@ public class DataInitializer implements CommandLineRunner {
 
         s.getCourses().add(course);
         return userRepository.save(s);
+    }
+
+    private void seedAcademicCalendarIfEmpty() {
+        if (calendarRepository.count() > 0) return;
+        log.info("=== Seeding Aditya University Official Academic Calendar Milestones ===");
+
+        calendarRepository.save(com.sms.entity.AcademicCalendarEvent.builder()
+                .title("Commencement of Academic Semester & Class Work")
+                .description("Inaugural orientation and formal commencement of instruction for odd semester.")
+                .eventType(com.sms.entity.AcademicCalendarEvent.EventType.ACADEMIC_MILESTONE)
+                .startDate(java.time.LocalDate.of(2026, 7, 15))
+                .endDate(java.time.LocalDate.of(2026, 7, 15))
+                .venue("Respective Department Lecture Halls")
+                .targetAudience("ALL")
+                .isHoliday(false)
+                .build());
+
+        calendarRepository.save(com.sms.entity.AcademicCalendarEvent.builder()
+                .title("First Continuous Internal Evaluation (CIE-I) Exams")
+                .description("First mid-term examinations for all engineering programmes.")
+                .eventType(com.sms.entity.AcademicCalendarEvent.EventType.EXAMINATION)
+                .startDate(java.time.LocalDate.of(2026, 9, 14))
+                .endDate(java.time.LocalDate.of(2026, 9, 19))
+                .venue("Central Examination Halls (LH 101 - 204)")
+                .targetAudience("STUDENTS")
+                .isHoliday(false)
+                .build());
+
+        calendarRepository.save(com.sms.entity.AcademicCalendarEvent.builder()
+                .title("Mahatma Gandhi Jayanti")
+                .description("National holiday commemorating the birth anniversary of Mahatma Gandhi.")
+                .eventType(com.sms.entity.AcademicCalendarEvent.EventType.HOLIDAY)
+                .startDate(java.time.LocalDate.of(2026, 10, 2))
+                .endDate(java.time.LocalDate.of(2026, 10, 2))
+                .venue("Campus Closed")
+                .targetAudience("ALL")
+                .isHoliday(true)
+                .build());
+
+        calendarRepository.save(com.sms.entity.AcademicCalendarEvent.builder()
+                .title("Dussehra & Navratri Vacation")
+                .description("Declared institutional autumn festival holidays.")
+                .eventType(com.sms.entity.AcademicCalendarEvent.EventType.HOLIDAY)
+                .startDate(java.time.LocalDate.of(2026, 10, 19))
+                .endDate(java.time.LocalDate.of(2026, 10, 24))
+                .venue("Campus Closed")
+                .targetAudience("ALL")
+                .isHoliday(true)
+                .build());
+
+        calendarRepository.save(com.sms.entity.AcademicCalendarEvent.builder()
+                .title("Colosseum 2026 – National Technical Symposium")
+                .description("Flagship annual techno-cultural fest with paper presentations, hackathons, and project expo.")
+                .eventType(com.sms.entity.AcademicCalendarEvent.EventType.CAMPUS_EVENT)
+                .startDate(java.time.LocalDate.of(2026, 11, 5))
+                .endDate(java.time.LocalDate.of(2026, 11, 7))
+                .venue("University Main Auditorium & Innovation Hub")
+                .targetAudience("ALL")
+                .isHoliday(false)
+                .build());
+
+        calendarRepository.save(com.sms.entity.AcademicCalendarEvent.builder()
+                .title("Second Continuous Internal Evaluation (CIE-II) Exams")
+                .description("Second mid-term and internal assessment examinations.")
+                .eventType(com.sms.entity.AcademicCalendarEvent.EventType.EXAMINATION)
+                .startDate(java.time.LocalDate.of(2026, 11, 16))
+                .endDate(java.time.LocalDate.of(2026, 11, 21))
+                .venue("Central Examination Halls")
+                .targetAudience("STUDENTS")
+                .isHoliday(false)
+                .build());
+
+        calendarRepository.save(com.sms.entity.AcademicCalendarEvent.builder()
+                .title("Last Day of Instruction & Attendance Shortage Condonation Deadline")
+                .description("Final class instruction day; deadline for attendance regularization and condonation applications.")
+                .eventType(com.sms.entity.AcademicCalendarEvent.EventType.DEADLINE)
+                .startDate(java.time.LocalDate.of(2026, 11, 28))
+                .endDate(java.time.LocalDate.of(2026, 11, 28))
+                .venue("Dean Academic Office")
+                .targetAudience("ALL")
+                .isHoliday(false)
+                .build());
+
+        calendarRepository.save(com.sms.entity.AcademicCalendarEvent.builder()
+                .title("Semester End Theory & Practical Examinations (SEE)")
+                .description("Autonomous university semester end theory and practical evaluations.")
+                .eventType(com.sms.entity.AcademicCalendarEvent.EventType.EXAMINATION)
+                .startDate(java.time.LocalDate.of(2026, 12, 10))
+                .endDate(java.time.LocalDate.of(2026, 12, 24))
+                .venue("University Examination Centre")
+                .targetAudience("STUDENTS")
+                .isHoliday(false)
+                .build());
     }
 }

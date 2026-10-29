@@ -3,11 +3,11 @@ import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import Layout from '../components/common/Layout'
 import {
   courseService, marksService,
-  eventService, certificateService, adminService
+  eventService, certificateService, adminService, academicCalendarService
 } from '../services/api'
 import {
   LayoutDashboard, BookOpen, ClipboardCheck, BarChart2,
-  Calendar, Award, CheckCircle, Clock,
+  Calendar, CalendarDays, Award, CheckCircle, Clock,
   Users, X, Download, Save,
   ExternalLink, Eye, Sparkles,
   Trophy, Medal, AlertTriangle, Ban
@@ -20,6 +20,9 @@ import { formatDate } from '../utils/helpers'
 import FacultyAttendanceSection from '../components/attendance/FacultyAttendanceSection'
 import AcademicTimetable from '../components/timetable/AcademicTimetable'
 import CertificatePreview from '../components/certificates/CertificatePreview'
+import AcademicCalendar from '../components/calendar/AcademicCalendar'
+import EventPosterCard from '../components/events/EventPosterCard'
+import EventDetailsPage from './admin/events/EventDetailsPage'
 
 const BASE = '/faculty'
 
@@ -29,6 +32,7 @@ const NAV_ITEMS = [
   { path: 'marks', label: 'Internal Marks Entry', icon: BarChart2 },
   { path: 'timetable', label: 'Academic Class Time Table', icon: Calendar },
   { path: 'events', label: 'Campus Events & Symposia', icon: Award },
+  { path: 'calendar', label: 'Academic Calendar', icon: CalendarDays },
 ]
 
 // =========================================================================
@@ -699,80 +703,62 @@ function FacultyEvents() {
         </div>
       </div>
 
-      {/* Screen 4 Event Cards */}
+      {/* Screen 4 Event Cards as Poster Cards */}
       {loading ? <TableSkeleton rows={3} cols={3} /> : (
-        <div className="grid-3">
-          {filteredEvents.map(ev => {
-            const isOngoing = ev.status === 'REGISTRATION_OPEN' || ev.status === 'ONGOING'
-            return (
-              <div key={ev.id} className="card card-hover" style={{ display: 'flex', flexDirection: 'column', gap: 12, borderRadius: 14 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span className="badge badge-purple" style={{ fontWeight: 700 }}>
-                    {ev.category || 'Technical Event'}
-                  </span>
-                  <span style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    padding: '2px 8px',
-                    borderRadius: 6,
-                    background: isOngoing ? '#ecfdf5' : '#f1f5f9',
-                    color: isOngoing ? '#059669' : '#64748b'
-                  }}>
-                    {isOngoing ? 'Ongoing' : 'Upcoming'}
-                  </span>
-                </div>
-
-                <h4 style={{ fontSize: 17, fontWeight: 800, margin: 0, color: '#0f172a' }}>
-                  {ev.title}
-                </h4>
-
-                <p style={{ fontSize: 12, color: '#64748b', margin: 0, flex: 1, lineHeight: 1.5 }}>
-                  {ev.description?.slice(0, 90)}{ev.description?.length > 90 ? '…' : ''}
-                </p>
-
-                <div style={{ fontSize: 12, color: '#94a3b8', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <span>📅 {formatDate(ev.eventDate)} &bull; {ev.startTime || '09:30 AM'}</span>
-                  <span>📍 {ev.venue || 'BB Bhavan, Aditya University'}</span>
-                  <span>👥 {ev.participantCount || 0} Participants</span>
-                </div>
-
-                {/* Action Buttons matching Screen 4 */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 4 }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+          gap: 20
+        }}>
+          {filteredEvents.map(ev => (
+            <EventPosterCard
+              key={ev.id}
+              event={ev}
+              role="FACULTY"
+              basePath="/faculty"
+              extraActions={
+                <>
                   <button
-                    onClick={() => openEvent(ev, 'results')}
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); openEvent(ev, 'results'); }}
                     className="btn btn-sm"
                     style={{
                       background: '#d97706',
                       borderColor: '#d97706',
                       color: '#fff',
                       fontWeight: 700,
-                      justifyContent: 'center',
+                      fontSize: 11,
+                      padding: '4px 10px',
                       gap: 4
                     }}
+                    title="Mark participant scores and positions"
                   >
-                    <Trophy size={13} />
-                    <span>Manage Results</span>
+                    <Trophy size={12} />
+                    <span>Results</span>
                   </button>
 
                   <button
-                    onClick={() => openEvent(ev, 'certificates')}
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); openEvent(ev, 'certificates'); }}
                     className="btn btn-sm"
                     style={{
                       background: '#0f766e',
                       borderColor: '#0f766e',
                       color: '#fff',
                       fontWeight: 700,
-                      justifyContent: 'center',
+                      fontSize: 11,
+                      padding: '4px 10px',
                       gap: 4
                     }}
+                    title="Generate and review official certificates"
                   >
-                    <Award size={13} />
+                    <Award size={12} />
                     <span>Certificates</span>
                   </button>
-                </div>
-              </div>
-            )
-          })}
+                </>
+              }
+            />
+          ))}
           {filteredEvents.length === 0 && (
             <div className="card" style={{ gridColumn: '1/-1', textAlign: 'center', padding: 48, borderRadius: 14 }}>
               <Award size={40} style={{ margin: '0 auto 12px', color: '#cbd5e1' }} />
@@ -1352,6 +1338,8 @@ export default function FacultyDashboard() {
         <Route path="marks" element={<MarksPanel courses={courses} />} />
         <Route path="timetable" element={<AcademicTimetable role="FACULTY" user={user} />} />
         <Route path="events" element={<FacultyEvents />} />
+        <Route path="events/:eventId" element={<EventDetailsPage />} />
+        <Route path="calendar" element={<AcademicCalendar role="FACULTY" />} />
         <Route path="*" element={<Navigate to="dashboard" replace />} />
       </Routes>
     </Layout>

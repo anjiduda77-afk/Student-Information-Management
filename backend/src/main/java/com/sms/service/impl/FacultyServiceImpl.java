@@ -98,4 +98,11 @@ public class FacultyServiceImpl implements FacultyService {
         faculty.setStatus("ACTIVE".equalsIgnoreCase(faculty.getStatus()) ? "INACTIVE" : "ACTIVE");
         userRepository.save(faculty);
     }
+
+    @Override
+    @Transactional
+    public void deleteFaculty(Long id) {
+        User faculty = getFacultyEntity(id);
+        userRepository.delete(faculty);
+    }
 }

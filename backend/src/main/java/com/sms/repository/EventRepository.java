@@ -21,4 +21,6 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     @Query("SELECT e FROM Event e WHERE e.status <> 'COMPLETED' AND e.eventDate < :today")
     List<Event> findEventsPastDate(@Param("today") LocalDate today);
+
+    boolean existsByTitleAndEventDate(String title, LocalDate eventDate);
 }

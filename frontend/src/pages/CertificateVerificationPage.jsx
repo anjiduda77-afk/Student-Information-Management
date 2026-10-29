@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { certificateService } from '../services/api'
 import { Spinner } from '../components/Loading'
@@ -20,10 +20,47 @@ import {
   Hash,
   Building,
   ArrowLeft,
-  X
+  X,
+  Camera,
+  CameraOff,
+  QrCode,
+  UploadCloud,
+  FileText,
+  RefreshCw
 } from 'lucide-react'
 
 const AU_LOGO_URL = '/aditya-crest.png'
+
+/**
+ * Extracts a certificate ID from either a full verification URL or raw text.
+ * Handles format like:
+ * - https://domain.edu/verify/certificate/AUS543444 -> AUS543444
+ * - AUS543444 -> AUS543444
+ * - AU-SIS-CERT-2026-X7K9P4M2Q8 -> AU-SIS-CERT-2026-X7K9P4M2Q8
+ */
+function extractCertificateId(text) {
+  if (!text || typeof text !== 'string') return ''
+  const trimmed = text.trim()
+  
+  // URL match
+  const urlMatch = trimmed.match(/\/verify\/certificate\/([a-zA-Z0-9_-]+)/i)
+  if (urlMatch && urlMatch[1]) return urlMatch[1]
+  
+  // AUS format match (AUS followed by digits)
+  const ausMatch = trimmed.match(/\b(AUS\d{5,8})\b/i)
+  if (ausMatch && ausMatch[1]) return ausMatch[1].toUpperCase()
+
+  // AU-SIS legacy format match
+  const legacyMatch = trimmed.match(/\b(AU-SIS-[A-Za-z0-9_-]+)\b/i)
+  if (legacyMatch && legacyMatch[1]) return legacyMatch[1]
+
+  // Plain alphanumeric string without slashes or spaces
+  if (/^[a-zA-Z0-9_-]{5,50}$/.test(trimmed)) {
+    return trimmed
+  }
+
+  return trimmed
+}
 
 export default function CertificateVerificationPage() {
   const { certificateId: routeCertId } = useParams()
@@ -37,13 +74,47 @@ export default function CertificateVerificationPage() {
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState('')
   const [downloading, setDownloading] = useState(false)
 
+  // Scanner states
+  const [scannerOpen, setScannerOpen] = useState(false)
+  const [cameraLoading, setCameraLoading] = useState(false)
+  const [cameraError, setCameraError] = useState(null)
+  const [facingMode, setFacingMode] = useState('environment') // 'environment' (back) or 'user' (front)
+  const [scanStatus, setScanStatus] = useState('Point your camera at the QR code on the certificate')
+  const [isBarcodeDetectorSupported, setIsBarcodeDetectorSupported] = useState(false)
+
+  // Upload scan states
+  const [uploadScanning, setUploadScanning] = useState(false)
+  const [uploadError, setUploadError] = useState(null)
+
+  const videoRef = useRef(null)
+  const streamRef = useRef(null)
+  const animFrameRef = useRef(null)
+  const fileInputRef = useRef(null)
+
+  // Check BarcodeDetector support
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
+      setIsBarcodeDetectorSupported(true)
+    } else {
+      setIsBarcodeDetectorSupported(false)
+    }
+  }, [])
+
   // Auto-verify if certificateId is present in URL
   useEffect(() => {
     if (routeCertId && routeCertId.trim()) {
-      setSearchId(routeCertId.trim())
-      verify(routeCertId.trim())
+      const clean = extractCertificateId(routeCertId)
+      setSearchId(clean)
+      verify(clean)
     }
   }, [routeCertId])
+
+  // Stop camera when unmounting
+  useEffect(() => {
+    return () => {
+      stopCamera()
+    }
+  }, [])
 
   // Generate QR code whenever a valid certificate is loaded
   useEffect(() => {
@@ -52,7 +123,7 @@ export default function CertificateVerificationPage() {
       const publicVerifyUrl = `${frontendBase.replace(/\/+$/, '')}/verify/certificate/${cert.certificateId}`
       QRCode.toDataURL(publicVerifyUrl, {
         margin: 1,
-        width: 160,
+        width: 180,
         color: { dark: '#1e3a8a', light: '#ffffff' }
       })
         .then(url => setQrCodeDataUrl(url))
@@ -62,8 +133,9 @@ export default function CertificateVerificationPage() {
     }
   }, [cert])
 
+  // --- Verification API Call ---
   const verify = async (idToVerify) => {
-    const cleanId = (idToVerify || '').trim()
+    const cleanId = extractCertificateId(idToVerify)
     if (!cleanId) return
 
     setLoading(true)
@@ -94,6 +166,7 @@ export default function CertificateVerificationPage() {
 
   const handleSearch = (e) => {
     e.preventDefault()
+    if (!searchId.trim()) return
     verify(searchId)
   }
 
@@ -127,6 +200,195 @@ export default function CertificateVerificationPage() {
     }
   }
 
+  // --- Camera QR Scanner Handlers ---
+  const startCamera = async (mode = facingMode) => {
+    setCameraLoading(true)
+    setCameraError(null)
+    setScanStatus('Requesting camera permission…')
+
+    // Stop any existing stream
+    stopCameraStream()
+
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera access is not supported by your browser or environment (requires HTTPS/localhost).')
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: mode },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
+      })
+
+      streamRef.current = stream
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+        await videoRef.current.play()
+      }
+
+      setCameraLoading(false)
+      setScanStatus('Point camera at the QR code on the certificate')
+
+      // Start detecting frames
+      startDetectionLoop()
+    } catch (err) {
+      console.error('Camera error:', err)
+      setCameraLoading(false)
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setCameraError('Camera permission was denied. Please allow camera access in your browser settings to scan certificates.')
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        setCameraError('No camera found on this device. Please upload the certificate image or enter the ID manually.')
+      } else {
+        setCameraError(err.message || 'Unable to access camera.')
+      }
+    }
+  }
+
+  const stopCameraStream = () => {
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current)
+      animFrameRef.current = null
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop())
+      streamRef.current = null
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null
+    }
+  }
+
+  const stopCamera = () => {
+    stopCameraStream()
+    setScannerOpen(false)
+    setCameraError(null)
+  }
+
+  const openScanner = () => {
+    setScannerOpen(true)
+    setCameraError(null)
+    setTimeout(() => {
+      startCamera(facingMode)
+    }, 150)
+  }
+
+  const toggleCameraFacing = () => {
+    const nextMode = facingMode === 'environment' ? 'user' : 'environment'
+    setFacingMode(nextMode)
+    startCamera(nextMode)
+  }
+
+  const startDetectionLoop = () => {
+    if (!('BarcodeDetector' in window)) {
+      setScanStatus('BarcodeDetector not natively supported in this browser. You can take a snapshot or upload the certificate below.')
+      return
+    }
+
+    try {
+      const barcodeDetector = new window.BarcodeDetector({ formats: ['qr_code'] })
+
+      const scanLoop = async () => {
+        if (!videoRef.current || videoRef.current.readyState < 2) {
+          animFrameRef.current = requestAnimationFrame(scanLoop)
+          return
+        }
+
+        try {
+          const barcodes = await barcodeDetector.detect(videoRef.current)
+          if (barcodes && barcodes.length > 0) {
+            const rawValue = barcodes[0].rawValue
+            const detectedId = extractCertificateId(rawValue)
+
+            if (detectedId) {
+              setScanStatus(`✓ QR Code Detected: ${detectedId}`)
+              stopCamera()
+              setSearchId(detectedId)
+              verify(detectedId)
+              return
+            } else {
+              setScanStatus('Unrecognized QR content. Please try another angle.')
+            }
+          }
+        } catch (e) {
+          // Detection frame skipped
+        }
+
+        animFrameRef.current = requestAnimationFrame(scanLoop)
+      }
+
+      animFrameRef.current = requestAnimationFrame(scanLoop)
+    } catch (e) {
+      console.warn('BarcodeDetector initialization error:', e)
+    }
+  }
+
+  // --- Upload Certificate Image for QR detection ---
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadScanning(true)
+    setUploadError(null)
+
+    try {
+      // Check if it's an image
+      if (!file.type.startsWith('image/')) {
+        // If PDF or other file type, instruct user to enter ID manually
+        setUploadScanning(false)
+        setUploadError('For PDF documents, please enter the Certificate ID (e.g. AUS543444) printed on the certificate in the field below.')
+        return
+      }
+
+      const img = new Image()
+      const objectUrl = URL.createObjectURL(file)
+
+      img.onload = async () => {
+        try {
+          if ('BarcodeDetector' in window) {
+            const detector = new window.BarcodeDetector({ formats: ['qr_code'] })
+            const barcodes = await detector.detect(img)
+            URL.revokeObjectURL(objectUrl)
+
+            if (barcodes && barcodes.length > 0) {
+              const detectedId = extractCertificateId(barcodes[0].rawValue)
+              if (detectedId) {
+                setUploadScanning(false)
+                setSearchId(detectedId)
+                if (scannerOpen) stopCamera()
+                verify(detectedId)
+                return
+              }
+            }
+          }
+          // If no detector or no QR detected
+          URL.revokeObjectURL(objectUrl)
+          setUploadScanning(false)
+          setUploadError('Could not automatically detect a QR code from this image. Please enter the Certificate ID manually.')
+        } catch (err) {
+          URL.revokeObjectURL(objectUrl)
+          setUploadScanning(false)
+          setUploadError('Could not process this image for QR detection. Please enter the Certificate ID manually.')
+        }
+      }
+
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl)
+        setUploadScanning(false)
+        setUploadError('Failed to read image file. Please enter the Certificate ID manually.')
+      }
+
+      img.src = objectUrl
+    } catch (err) {
+      setUploadScanning(false)
+      setUploadError('File reading failed. Please enter the Certificate ID manually.')
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
   const isValidCert = cert && cert.status === 'VALID'
   const isRevokedCert = cert && (cert.status === 'REVOKED' || cert.isRevoked)
   const isInvalidCert = (searched && !loading && (!cert || cert.status === 'INVALID')) || (!loading && errorMsg && !isValidCert && !isRevokedCert)
@@ -140,9 +402,9 @@ export default function CertificateVerificationPage() {
       display: 'flex',
       flexDirection: 'column'
     }}>
-      {/* ── Public University Header (NO private navigation) ── */}
+      {/* ── Public University Header ── */}
       <header style={{
-        background: 'rgba(15, 23, 42, 0.92)',
+        background: 'rgba(15, 23, 42, 0.94)',
         backdropFilter: 'blur(12px)',
         borderBottom: '1px solid rgba(217, 119, 6, 0.25)',
         padding: '14px 24px',
@@ -240,7 +502,7 @@ export default function CertificateVerificationPage() {
       </header>
 
       {/* ── Main Content Container ── */}
-      <main style={{ flex: 1, maxWidth: 940, width: '100%', margin: '0 auto', padding: '36px 20px 60px' }}>
+      <main style={{ flex: 1, maxWidth: 960, width: '100%', margin: '0 auto', padding: '36px 20px 60px' }}>
 
         {/* Hero Section */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
@@ -271,87 +533,182 @@ export default function CertificateVerificationPage() {
           <p style={{
             fontSize: 14,
             color: '#94a3b8',
-            maxWidth: 580,
+            maxWidth: 620,
             margin: '0 auto 28px',
             lineHeight: 1.6
           }}>
-            Verify the authenticity of academic credentials, event awards, and participation certificates issued by <strong style={{ color: '#fbbf24' }}>Aditya University</strong>. No login required.
+            Verify the authenticity of academic credentials, event awards, and participation certificates issued by <strong style={{ color: '#fbbf24' }}>Aditya University</strong>. Choose camera scan, file upload, or enter the Certificate ID.
           </p>
 
-          {/* Search Box Form */}
-          <form
-            onSubmit={handleSearch}
-            style={{
-              maxWidth: 620,
-              margin: '0 auto',
-              display: 'flex',
-              gap: 10,
-              background: 'rgba(255, 255, 255, 0.05)',
-              padding: 8,
-              borderRadius: 14,
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
-            }}
-          >
-            <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
-              <Hash size={18} style={{ position: 'absolute', left: 14, color: '#94a3b8', pointerEvents: 'none' }} />
-              <input
-                type="text"
-                id="cert-id-input"
-                value={searchId}
-                onChange={(e) => setSearchId(e.target.value)}
-                placeholder="Enter Certificate ID (e.g. AU-SIS-CERT-2026-X7K9P4M2Q8)"
+          {/* Verification Actions Box */}
+          <div style={{
+            maxWidth: 680,
+            margin: '0 auto',
+            background: 'rgba(255, 255, 255, 0.05)',
+            padding: 16,
+            borderRadius: 18,
+            border: '1px solid rgba(255, 255, 255, 0.14)',
+            boxShadow: '0 12px 36px rgba(0, 0, 0, 0.4)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 14
+          }}>
+
+            {/* Top Primary Actions: Scan QR & Upload */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
+              {/* Option A: Scan QR Code Button */}
+              <button
+                type="button"
+                id="scan-qr-btn"
+                onClick={openScanner}
                 style={{
-                  width: '100%',
-                  padding: '12px 14px 12px 42px',
-                  background: 'rgba(15, 23, 42, 0.8)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                  borderRadius: 10,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 10,
+                  padding: '13px 20px',
+                  borderRadius: 12,
+                  background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                  border: '1px solid rgba(52, 211, 153, 0.5)',
                   color: '#ffffff',
                   fontSize: 14,
-                  fontWeight: 600,
-                  outline: 'none',
-                  letterSpacing: '0.04em'
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 16px rgba(16, 185, 129, 0.35)',
+                  transition: 'transform 0.15s ease'
                 }}
-                required
+              >
+                <Camera size={18} />
+                <span>Scan Certificate QR</span>
+              </button>
+
+              {/* Option B: Upload Certificate / QR Image */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,application/pdf"
+                style={{ display: 'none' }}
+                onChange={handleFileUpload}
               />
+              <button
+                type="button"
+                id="upload-cert-btn"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadScanning}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 10,
+                  padding: '13px 20px',
+                  borderRadius: 12,
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  color: '#f8fafc',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: uploadScanning ? 'wait' : 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <UploadCloud size={18} color="#60a5fa" />
+                <span>{uploadScanning ? 'Scanning File…' : 'Upload Certificate'}</span>
+              </button>
             </div>
 
-            <button
-              type="submit"
-              id="verify-submit-btn"
-              disabled={loading || !searchId.trim()}
+            {uploadError && (
+              <div style={{
+                background: 'rgba(239, 68, 68, 0.12)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                color: '#fca5a5',
+                padding: '8px 14px',
+                borderRadius: 8,
+                fontSize: 12,
+                textAlign: 'left'
+              }}>
+                {uploadError}
+              </div>
+            )}
+
+            {/* Divider */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '2px 0' }}>
+              <div style={{ flex: 1, height: 1, background: 'rgba(255, 255, 255, 0.1)' }}></div>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Or Enter Certificate ID
+              </span>
+              <div style={{ flex: 1, height: 1, background: 'rgba(255, 255, 255, 0.1)' }}></div>
+            </div>
+
+            {/* Search Box Form */}
+            <form
+              onSubmit={handleSearch}
               style={{
-                padding: '12px 24px',
-                borderRadius: 10,
-                background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
-                border: '1px solid rgba(96, 165, 250, 0.5)',
-                color: '#ffffff',
-                fontSize: 14,
-                fontWeight: 700,
-                cursor: loading || !searchId.trim() ? 'not-allowed' : 'pointer',
-                display: 'inline-flex',
+                display: 'flex',
+                gap: 10,
                 alignItems: 'center',
-                gap: 8,
-                flexShrink: 0,
-                boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
-                transition: 'all 0.2s ease',
-                opacity: loading || !searchId.trim() ? 0.7 : 1
+                flexWrap: 'wrap'
               }}
             >
-              {loading ? (
-                <>
-                  <Spinner size={16} color="#fff" />
-                  <span>Verifying…</span>
-                </>
-              ) : (
-                <>
-                  <Search size={16} />
-                  <span>Verify Now</span>
-                </>
-              )}
-            </button>
-          </form>
+              <div style={{ position: 'relative', flex: 1, minWidth: 240, display: 'flex', alignItems: 'center' }}>
+                <Hash size={18} style={{ position: 'absolute', left: 14, color: '#94a3b8', pointerEvents: 'none' }} />
+                <input
+                  type="text"
+                  id="cert-id-input"
+                  value={searchId}
+                  onChange={(e) => setSearchId(e.target.value)}
+                  placeholder="Enter Certificate ID (e.g. AUS543444)"
+                  style={{
+                    width: '100%',
+                    padding: '12px 14px 12px 42px',
+                    background: 'rgba(15, 23, 42, 0.85)',
+                    border: '1px solid rgba(255, 255, 255, 0.18)',
+                    borderRadius: 10,
+                    color: '#ffffff',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    outline: 'none',
+                    letterSpacing: '0.04em'
+                  }}
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                id="verify-submit-btn"
+                disabled={loading || !searchId.trim()}
+                style={{
+                  padding: '12px 24px',
+                  borderRadius: 10,
+                  background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
+                  border: '1px solid rgba(96, 165, 250, 0.5)',
+                  color: '#ffffff',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: loading || !searchId.trim() ? 'not-allowed' : 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  flexShrink: 0,
+                  boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
+                  transition: 'all 0.2s ease',
+                  opacity: loading || !searchId.trim() ? 0.7 : 1
+                }}
+              >
+                {loading ? (
+                  <>
+                    <Spinner size={16} color="#fff" />
+                    <span>Verifying…</span>
+                  </>
+                ) : (
+                  <>
+                    <Search size={16} />
+                    <span>Verify Certificate</span>
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
 
           {/* Quick Demo Credentials for Fast Testing */}
           <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -360,7 +717,7 @@ export default function CertificateVerificationPage() {
             </span>
             <button
               type="button"
-              onClick={() => { setSearchId('AU-SIS-CERT-2026-X7K9P4M2Q8'); verify('AU-SIS-CERT-2026-X7K9P4M2Q8') }}
+              onClick={() => { setSearchId('AUS543444'); verify('AUS543444') }}
               style={{
                 background: 'rgba(16, 185, 129, 0.12)',
                 border: '1px solid rgba(16, 185, 129, 0.3)',
@@ -372,7 +729,7 @@ export default function CertificateVerificationPage() {
                 fontWeight: 600
               }}
             >
-              Valid: AU-SIS-CERT-2026-X7K9P4M2Q8
+              Valid: AUS543444
             </button>
             <button
               type="button"
@@ -392,7 +749,7 @@ export default function CertificateVerificationPage() {
             </button>
             <button
               type="button"
-              onClick={() => { setSearchId('AU-SIS-INVALID-DEMO'); verify('AU-SIS-INVALID-DEMO') }}
+              onClick={() => { setSearchId('AUS999999'); verify('AUS999999') }}
               style={{
                 background: 'rgba(239, 68, 68, 0.12)',
                 border: '1px solid rgba(239, 68, 68, 0.3)',
@@ -404,7 +761,7 @@ export default function CertificateVerificationPage() {
                 fontWeight: 600
               }}
             >
-              Invalid ID
+              Invalid: AUS999999
             </button>
           </div>
         </div>
@@ -424,7 +781,7 @@ export default function CertificateVerificationPage() {
               Verifying Certificate with Aditya University Registry…
             </h3>
             <p style={{ fontSize: 13, color: '#94a3b8', margin: 0 }}>
-              Checking cryptographic signature and institutional database records.
+              Checking institutional database records and cryptographic validity.
             </p>
           </div>
         )}
@@ -609,7 +966,7 @@ export default function CertificateVerificationPage() {
                 </div>
               </div>
 
-              {/* Exact Fields Specified in Requirements */}
+              {/* Details Grid */}
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
@@ -631,7 +988,7 @@ export default function CertificateVerificationPage() {
                     <Hash size={14} color="#3b82f6" /> Student ID / Roll Number
                   </div>
                   <div style={{ fontSize: 18, fontWeight: 800, color: '#1e3a8a', marginTop: 4, fontFamily: 'monospace' }}>
-                    {cert.studentId || cert.rollNumber || 'AU1122'}
+                    {cert.studentId || cert.rollNumber || '—'}
                   </div>
                 </div>
 
@@ -659,7 +1016,7 @@ export default function CertificateVerificationPage() {
                     alignItems: 'center',
                     gap: 6
                   }}>
-                    <span>{cert.position || cert.certificateType || 'Winner'}</span>
+                    <span>{cert.position || cert.certificateType || 'Participant'}</span>
                   </div>
                 </div>
 
@@ -669,7 +1026,7 @@ export default function CertificateVerificationPage() {
                     <Building size={14} color="#6366f1" /> Department
                   </div>
                   <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', marginTop: 4 }}>
-                    {cert.department || cert.departmentName || 'AI & ML'}
+                    {cert.department || cert.departmentName || 'Computer Science & Engineering'}
                   </div>
                 </div>
 
@@ -723,10 +1080,10 @@ export default function CertificateVerificationPage() {
                   )}
                   <div>
                     <div style={{ fontSize: 12, fontWeight: 700, color: '#0f172a' }}>
-                      Aditya University Digital Verification Token
+                      Aditya University Digital Verification Registry
                     </div>
                     <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
-                      Scan QR code or open direct link: <code style={{ color: '#1e3a8a', fontWeight: 600 }}>/verify/certificate/{cert.certificateId}</code>
+                      Unique Certificate Verification Token: <code style={{ color: '#1e3a8a', fontWeight: 700 }}>{cert.certificateId}</code>
                     </div>
                   </div>
                 </div>
@@ -876,16 +1233,35 @@ export default function CertificateVerificationPage() {
               }}>
                 <ShieldCheck size={18} color="#64748b" />
                 <span>
-                  Do NOT display private student information. Do NOT display a certificate. Do NOT redirect to login.
+                  No private student information is exposed. Verify the ID printed on your physical or digital certificate and try again.
                 </span>
               </div>
 
-              <div style={{ marginTop: 24 }}>
+              <div style={{ marginTop: 24, display: 'flex', justifyContent: 'center', gap: 12 }}>
+                <button
+                  type="button"
+                  onClick={openScanner}
+                  style={{
+                    padding: '10px 18px',
+                    borderRadius: 8,
+                    background: '#10b981',
+                    color: '#ffffff',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6
+                  }}
+                >
+                  <Camera size={15} /> Scan QR Code
+                </button>
                 <button
                   type="button"
                   onClick={() => { setSearchId(''); setCert(null); setSearched(false); setErrorMsg(null) }}
                   style={{
-                    padding: '10px 20px',
+                    padding: '10px 18px',
                     borderRadius: 8,
                     background: '#1e3a8a',
                     color: '#ffffff',
@@ -895,7 +1271,7 @@ export default function CertificateVerificationPage() {
                     cursor: 'pointer'
                   }}
                 >
-                  Enter Another Certificate ID
+                  Enter Another ID
                 </button>
               </div>
             </div>
@@ -1009,7 +1385,7 @@ export default function CertificateVerificationPage() {
                 lineHeight: 1.5
               }}>
                 <strong>Security Enforcement Notice:</strong><br />
-                Do NOT display it as VALID. Do NOT allow download as a valid certificate. Do NOT redirect to login.
+                This credential has been revoked by the issuing authority and cannot be certified as valid.
               </div>
 
               <div style={{ marginTop: 24 }}>
@@ -1061,15 +1437,15 @@ export default function CertificateVerificationPage() {
                 </p>
               </div>
               <div>
-                <strong style={{ color: '#e2e8f0' }}>2. Direct URL & QR Code</strong>
+                <strong style={{ color: '#e2e8f0' }}>2. Live Camera QR Scanner</strong>
                 <p style={{ margin: '4px 0 0' }}>
-                  Scan the QR code printed on the certificate or navigate to <code>/verify/certificate/:certificateId</code>.
+                  Scan the QR code printed on the certificate using your smartphone or computer camera for instant verification.
                 </p>
               </div>
               <div>
                 <strong style={{ color: '#e2e8f0' }}>3. Cryptographic Authenticity</strong>
                 <p style={{ margin: '4px 0 0' }}>
-                  Each credential is verified against the central institutional database to guarantee integrity.
+                  Each credential has a unique ID (e.g. <code>AUS543444</code>) validated against the institutional database.
                 </p>
               </div>
             </div>
@@ -1110,6 +1486,243 @@ export default function CertificateVerificationPage() {
           </p>
         </div>
       </footer>
+
+      {/* ════════════════════════════════════════════════════════════
+          LIVE CAMERA QR SCANNER MODAL (Option A)
+         ════════════════════════════════════════════════════════════ */}
+      {scannerOpen && (
+        <div
+          onClick={stopCamera}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.88)',
+            backdropFilter: 'blur(10px)',
+            zIndex: 200,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#0f172a',
+              borderRadius: 20,
+              maxWidth: 520,
+              width: '100%',
+              overflow: 'hidden',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.7)',
+              border: '1px solid rgba(255,255,255,0.15)',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            {/* Scanner Header */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '16px 20px',
+              borderBottom: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(255,255,255,0.03)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <QrCode size={20} color="#10b981" />
+                <span style={{ fontSize: 15, fontWeight: 800, color: '#f8fafc' }}>
+                  Scan Certificate QR Code
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={toggleCameraFacing}
+                  title="Switch Camera (Front/Rear)"
+                  style={{
+                    background: 'rgba(255,255,255,0.08)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    borderRadius: 8,
+                    padding: '6px 10px',
+                    color: '#e2e8f0',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6
+                  }}
+                >
+                  <RefreshCw size={13} />
+                  <span>Switch</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={stopCamera}
+                  style={{
+                    background: 'rgba(255,255,255,0.08)',
+                    border: 'none',
+                    borderRadius: 8,
+                    width: 32,
+                    height: 32,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#e2e8f0',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Camera Viewport */}
+            <div style={{
+              position: 'relative',
+              width: '100%',
+              height: 360,
+              background: '#000000',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden'
+            }}>
+              <video
+                ref={videoRef}
+                playsInline
+                muted
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover'
+                }}
+              />
+
+              {/* Viewfinder Target Box Overlay */}
+              {!cameraError && !cameraLoading && (
+                <div style={{
+                  position: 'absolute',
+                  width: 220,
+                  height: 220,
+                  border: '2px solid rgba(16, 185, 129, 0.8)',
+                  borderRadius: 16,
+                  boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.45)',
+                  pointerEvents: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  {/* Corner accents */}
+                  <div style={{ position: 'absolute', top: -2, left: -2, width: 24, height: 24, borderTop: '4px solid #10b981', borderLeft: '4px solid #10b981', borderTopLeftRadius: 14 }}></div>
+                  <div style={{ position: 'absolute', top: -2, right: -2, width: 24, height: 24, borderTop: '4px solid #10b981', borderRight: '4px solid #10b981', borderTopRightRadius: 14 }}></div>
+                  <div style={{ position: 'absolute', bottom: -2, left: -2, width: 24, height: 24, borderBottom: '4px solid #10b981', borderLeft: '4px solid #10b981', borderBottomLeftRadius: 14 }}></div>
+                  <div style={{ position: 'absolute', bottom: -2, right: -2, width: 24, height: 24, borderBottom: '4px solid #10b981', borderRight: '4px solid #10b981', borderBottomRightRadius: 14 }}></div>
+                  
+                  {/* Center hint */}
+                  <div style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: '#ffffff',
+                    background: 'rgba(0,0,0,0.6)',
+                    padding: '4px 10px',
+                    borderRadius: 6,
+                    letterSpacing: '0.04em'
+                  }}>
+                    ALIGN QR CODE
+                  </div>
+                </div>
+              )}
+
+              {/* Loading Spinner */}
+              {cameraLoading && (
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'rgba(15, 23, 42, 0.95)',
+                  gap: 12
+                }}>
+                  <Spinner size={36} color="#10b981" />
+                  <span style={{ fontSize: 13, color: '#94a3b8' }}>Starting camera preview…</span>
+                </div>
+              )}
+
+              {/* Camera Error Display */}
+              {cameraError && (
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 24,
+                  background: 'rgba(15, 23, 42, 0.96)',
+                  textAlign: 'center',
+                  gap: 12
+                }}>
+                  <CameraOff size={40} color="#f87171" />
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#fca5a5' }}>
+                    Camera Access Required
+                  </div>
+                  <p style={{ fontSize: 12, color: '#94a3b8', maxWidth: 360, margin: 0, lineHeight: 1.5 }}>
+                    {cameraError}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    style={{
+                      marginTop: 8,
+                      background: '#1e3a8a',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '8px 16px',
+                      borderRadius: 8,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Upload Certificate Image Instead
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Scanner Footer */}
+            <div style={{
+              padding: '14px 20px',
+              background: 'rgba(255,255,255,0.02)',
+              borderTop: '1px solid rgba(255,255,255,0.08)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontSize: 12,
+              color: '#94a3b8'
+            }}>
+              <span>{scanStatus}</span>
+              <button
+                type="button"
+                onClick={stopCamera}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#60a5fa',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ════════════════════════════════════════════════════════════
           ORIGINAL CERTIFICATE PREVIEW MODAL [ VIEW ORIGINAL CERTIFICATE ]
@@ -1244,7 +1857,7 @@ export default function CertificateVerificationPage() {
                     letterSpacing: '0.05em',
                     marginTop: 4
                   }}>
-                    Approved by AICTE • Accredited by NAAC • Surampalem, Andhra Pradesh, India
+                    Approved by AICTE • Accredited by NAAC with Grade A+ • Surampalem, Andhra Pradesh, India
                   </div>
 
                   {/* Title */}
@@ -1300,7 +1913,7 @@ export default function CertificateVerificationPage() {
                     margin: '0 auto 28px',
                     lineHeight: 1.8
                   }}>
-                    Student ID: <strong style={{ color: '#1e3a8a' }}>{cert.studentId || 'AU1122'}</strong>, Department of <strong style={{ color: '#1e3a8a' }}>{cert.department || 'AI & ML'}</strong>, for outstanding achievement and securing <strong style={{ color: '#d97706', textTransform: 'uppercase' }}>{cert.position || 'Winner'}</strong> in the event <strong style={{ color: '#1e3a8a' }}>"{cert.eventName || 'Annual Technical Fest 2026'}"</strong> conducted by Aditya University.
+                    Roll Number: <strong style={{ color: '#1e3a8a' }}>{cert.studentId || cert.rollNumber || 'AU1122'}</strong>, Department of <strong style={{ color: '#1e3a8a' }}>{cert.department || cert.departmentName || 'Computer Science & Engineering'}</strong>, for outstanding achievement and securing <strong style={{ color: '#d97706', textTransform: 'uppercase' }}>{cert.position || 'Winner'}</strong> in the event <strong style={{ color: '#1e3a8a' }}>"{cert.eventName || 'Annual Technical Fest 2026'}"</strong> conducted by Aditya University.
                   </p>
 
                   {/* Signatures & Verification Stamp Table */}

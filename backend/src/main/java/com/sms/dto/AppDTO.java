@@ -868,5 +868,212 @@ public class AppDTO {
         private String courseName;
         private String grade;
     }
+
+    // ---- Academic Calendar DTO ----
+    @Getter @Setter @Builder @AllArgsConstructor @NoArgsConstructor
+    public static class AcademicCalendarDTO {
+        private Long id;
+        @NotBlank(message = "Title is required")
+        private String title;
+        private String description;
+        private String eventType; // EXAMINATION, HOLIDAY, ACADEMIC_MILESTONE, DEADLINE, CAMPUS_EVENT, GENERAL
+        @NotNull(message = "Start date is required")
+        private LocalDate startDate;
+        private LocalDate endDate;
+        private LocalTime startTime;
+        private LocalTime endTime;
+        private String venue;
+        private String targetAudience;
+        private Integer semester;
+        private Boolean isHoliday;
+        private Long linkedEventId;
+        private String creatorName;
+        private LocalDateTime createdAt;
+    }
+
+    // =====================================================================
+    // ---- Fee Management DTOs ----
+    // =====================================================================
+
+    /** Request/Response DTO for FeeStructure */
+    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class FeeStructureDTO {
+        private Long id;
+
+        @NotBlank(message = "Fee name is required")
+        private String name;
+
+        @NotBlank(message = "Fee category is required")
+        private String category; // TUITION, EXAM, HOSTEL, TRANSPORT, LIBRARY, DEVELOPMENT, MISCELLANEOUS
+
+        @NotBlank(message = "Academic year is required")
+        private String academicYear;
+
+        private String department;  // null = all departments
+        private Integer semester;   // null = all semesters
+
+        @NotNull(message = "Fee amount is required")
+        @DecimalMin(value = "0.01", message = "Fee amount must be greater than 0")
+        private java.math.BigDecimal amount;
+
+        private LocalDate dueDate;
+        private java.math.BigDecimal lateFinePerDay;
+        private String description;
+        private String status; // ACTIVE, INACTIVE
+
+        // Aggregates
+        private Long totalStudents;
+        private Long paidCount;
+        private Long pendingCount;
+        private java.math.BigDecimal totalCollected;
+
+        private LocalDateTime createdAt;
+        private LocalDateTime updatedAt;
+
+        public static FeeStructureDTO from(com.sms.entity.FeeStructure fs) {
+            return FeeStructureDTO.builder()
+                    .id(fs.getId())
+                    .name(fs.getName())
+                    .category(fs.getCategory().name())
+                    .academicYear(fs.getAcademicYear())
+                    .department(fs.getDepartment())
+                    .semester(fs.getSemester())
+                    .amount(fs.getAmount())
+                    .dueDate(fs.getDueDate())
+                    .lateFinePerDay(fs.getLateFinePerDay())
+                    .description(fs.getDescription())
+                    .status(fs.getStatus().name())
+                    .createdAt(fs.getCreatedAt())
+                    .updatedAt(fs.getUpdatedAt())
+                    .build();
+        }
+    }
+
+    /** Fee payment record for a student */
+    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class FeeRecordDTO {
+        private Long id;
+        private String receiptNumber;
+
+        // Student info
+        private Long studentId;
+        private String studentName;
+        private String rollNumber;
+        private String studentId2; // studentId string like STU-2024-001
+        private String department;
+        private Integer semester;
+        private String section;
+
+        // Fee Structure info
+        private Long feeStructureId;
+        private String feeStructureName;
+        private String feeCategory;
+        private String academicYear;
+        private LocalDate dueDate;
+
+        // Payment info
+        private java.math.BigDecimal amountDue;
+        private java.math.BigDecimal amountPaid;
+        private java.math.BigDecimal lateFine;
+        private java.math.BigDecimal concession;
+        private java.math.BigDecimal balance; // amountDue - amountPaid - concession
+        private String status; // PENDING, PARTIAL, PAID, WAIVED, OVERDUE
+        private String paymentMode;
+        private String transactionReference;
+        private LocalDate paymentDate;
+        private String collectedByName;
+        private String remarks;
+
+        private LocalDateTime createdAt;
+        private LocalDateTime updatedAt;
+
+        public static FeeRecordDTO from(com.sms.entity.FeeRecord r) {
+            java.math.BigDecimal balance = r.getAmountDue()
+                    .subtract(r.getAmountPaid())
+                    .subtract(r.getConcession());
+            return FeeRecordDTO.builder()
+                    .id(r.getId())
+                    .receiptNumber(r.getReceiptNumber())
+                    .studentId(r.getStudent().getId())
+                    .studentName(r.getStudent().getName())
+                    .rollNumber(r.getStudent().getRollNumber())
+                    .studentId2(r.getStudent().getStudentId())
+                    .department(r.getStudent().getDepartment() != null ? r.getStudent().getDepartment() : r.getStudent().getBranch())
+                    .semester(r.getStudent().getSemester())
+                    .section(r.getStudent().getSection())
+                    .feeStructureId(r.getFeeStructure().getId())
+                    .feeStructureName(r.getFeeStructure().getName())
+                    .feeCategory(r.getFeeStructure().getCategory().name())
+                    .academicYear(r.getFeeStructure().getAcademicYear())
+                    .dueDate(r.getFeeStructure().getDueDate())
+                    .amountDue(r.getAmountDue())
+                    .amountPaid(r.getAmountPaid())
+                    .lateFine(r.getLateFine())
+                    .concession(r.getConcession())
+                    .balance(balance.compareTo(java.math.BigDecimal.ZERO) < 0 ? java.math.BigDecimal.ZERO : balance)
+                    .status(r.getStatus().name())
+                    .paymentMode(r.getPaymentMode())
+                    .transactionReference(r.getTransactionReference())
+                    .paymentDate(r.getPaymentDate())
+                    .collectedByName(r.getCollectedBy() != null ? r.getCollectedBy().getName() : null)
+                    .remarks(r.getRemarks())
+                    .createdAt(r.getCreatedAt())
+                    .updatedAt(r.getUpdatedAt())
+                    .build();
+        }
+    }
+
+    /** Request to record/update a fee payment */
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor
+    public static class FeePaymentRequest {
+        @NotNull(message = "Student ID is required")
+        private Long studentId;
+
+        @NotNull(message = "Fee structure ID is required")
+        private Long feeStructureId;
+
+        @NotNull(message = "Amount paid is required")
+        @DecimalMin(value = "0.01", message = "Amount paid must be greater than 0")
+        private java.math.BigDecimal amountPaid;
+
+        private java.math.BigDecimal concession;
+        private java.math.BigDecimal lateFine;
+
+        @NotBlank(message = "Payment mode is required")
+        private String paymentMode; // CASH, ONLINE, DD, CHEQUE
+
+        private String transactionReference;
+        private LocalDate paymentDate;
+        private String remarks;
+    }
+
+    /** Admin-only: waive or update concession for a fee record */
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor
+    public static class FeeConcessionRequest {
+        @NotNull(message = "Fee record ID is required")
+        private Long feeRecordId;
+
+        @NotNull(message = "Concession amount is required")
+        @DecimalMin(value = "0.0", message = "Concession cannot be negative")
+        private java.math.BigDecimal concessionAmount;
+
+        private String reason;
+    }
+
+    /** Dashboard / overview response */
+    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class FeeOverviewDTO {
+        private long totalStructures;
+        private long totalRecords;
+        private long paidCount;
+        private long pendingCount;
+        private long overdueCount;
+        private long waivedCount;
+        private java.math.BigDecimal totalCollected;
+        private java.math.BigDecimal totalOutstanding;
+        private java.math.BigDecimal totalDue;
+        private double collectionPercentage;
+        private java.util.List<FeeStructureDTO> recentStructures;
+    }
 }
 

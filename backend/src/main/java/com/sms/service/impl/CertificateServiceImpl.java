@@ -50,7 +50,7 @@ public class CertificateServiceImpl implements CertificateService {
         long count = certificateRepository.count() + 1;
         String id;
         do {
-            id = String.format("SIS-EVT-%d-%05d", year, count);
+            id = String.format("AUS%06d", 543444 + count);
             count++;
         } while (certificateRepository.existsByCertificateId(id));
         return id;

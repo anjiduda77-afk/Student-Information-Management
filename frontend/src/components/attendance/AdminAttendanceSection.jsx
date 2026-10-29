@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import {
   ClipboardCheck, AlertTriangle, CheckCircle, Clock, Search,
   Shield, Edit3, Download, RefreshCw, FileText,
-  Users, AlertCircle
+  Users, AlertCircle, Printer
 } from 'lucide-react'
 import { attendanceService, adminService } from '../../services/api'
 import { toast } from '../Toast'
@@ -198,6 +198,14 @@ export default function AdminAttendanceSection() {
         </div>
 
         <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={() => window.print()}
+            className="btn btn-ghost"
+            style={{ color: '#fff', background: 'rgba(255,255,255,0.1)' }}
+            title="Print official attendance report"
+          >
+            <Printer size={15} /> Print Report
+          </button>
           <button
             onClick={loadData}
             className="btn btn-ghost"
