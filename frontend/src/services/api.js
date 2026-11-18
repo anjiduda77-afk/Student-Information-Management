@@ -71,6 +71,13 @@ export const adminService = {
   updateDepartment: (id, data) => api.put(`/admin/departments/${id}`, data),
   deleteDepartment: (id) => api.delete(`/admin/departments/${id}`),
 
+  // Academic Sections & Batches
+  getSections: (params) => api.get('/admin/sections', { params }),
+  getSection: (id) => api.get(`/admin/sections/${id}`),
+  createSection: (data) => api.post('/admin/sections', data),
+  updateSection: (id, data) => api.put(`/admin/sections/${id}`, data),
+  deleteSection: (id) => api.delete(`/admin/sections/${id}`),
+
   enroll: (studentId, courseId) => api.post('/admin/enroll', { studentId, courseId }),
 
   getAnnouncements: () => api.get('/admin/announcements'),

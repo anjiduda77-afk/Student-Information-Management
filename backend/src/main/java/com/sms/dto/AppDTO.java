@@ -105,6 +105,7 @@ public class AppDTO {
         private String description;
         private Integer credits;
         private Integer semester;
+        private String sections;
         private String duration;
         private String status;
         private String departmentName;
@@ -121,6 +122,7 @@ public class AppDTO {
                     .description(c.getDescription())
                     .credits(c.getCredits())
                     .semester(c.getSemester())
+                    .sections(c.getSections() != null ? c.getSections() : "A, B")
                     .duration(c.getDuration())
                     .status(c.getStatus() != null ? c.getStatus() : "ACTIVE")
                     .departmentName(c.getDepartment() != null ? c.getDepartment().getName() : null)
@@ -152,6 +154,7 @@ public class AppDTO {
         @Max(value = 8, message = "Semester must be between 1 and 8")
         private Integer semester;
 
+        private String sections;
         private String duration;
         private Long departmentId;
         private Long facultyId;
@@ -1247,6 +1250,64 @@ public class AppDTO {
         private long totalElements;
         private int totalPages;
         private boolean last;
+    }
+
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+    public static class AcademicSectionResponse {
+        private Long id;
+        private String code;
+        private String sectionName;
+        private Integer semester;
+        private String academicYear;
+        private Long departmentId;
+        private String departmentName;
+        private String departmentCode;
+        private Long advisorId;
+        private String advisorName;
+        private String roomNumber;
+        private Integer capacity;
+        private Integer enrolledCount;
+        private String status;
+        private String createdAt;
+
+        public static AcademicSectionResponse from(AcademicSection s, int enrolledCount) {
+            return AcademicSectionResponse.builder()
+                    .id(s.getId())
+                    .code(s.getCode())
+                    .sectionName(s.getSectionName())
+                    .semester(s.getSemester())
+                    .academicYear(s.getAcademicYear())
+                    .departmentId(s.getDepartment() != null ? s.getDepartment().getId() : null)
+                    .departmentName(s.getDepartment() != null ? s.getDepartment().getName() : null)
+                    .departmentCode(s.getDepartment() != null ? s.getDepartment().getCode() : null)
+                    .advisorId(s.getAdvisor() != null ? s.getAdvisor().getId() : null)
+                    .advisorName(s.getAdvisor() != null ? s.getAdvisor().getName() : null)
+                    .roomNumber(s.getRoomNumber())
+                    .capacity(s.getCapacity())
+                    .enrolledCount(enrolledCount)
+                    .status(s.getStatus())
+                    .createdAt(s.getCreatedAt() != null ? s.getCreatedAt().toString() : null)
+                    .build();
+        }
+    }
+
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+    public static class AcademicSectionRequest {
+        private String code;
+
+        @NotBlank(message = "Section name is required (e.g. A, B, C)")
+        private String sectionName;
+
+        @NotNull(message = "Semester is required")
+        @Min(1) @Max(8)
+        private Integer semester;
+
+        private String academicYear;
+        private Long departmentId;
+        private Long advisorId;
+        private String roomNumber;
+        private Integer capacity;
+        private String status;
     }
 }
 

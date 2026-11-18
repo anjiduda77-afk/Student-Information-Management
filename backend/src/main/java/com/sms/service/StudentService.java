@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface StudentService {
     List<AppDTO.UserResponse> getAllStudents(String department, Integer semester);
+    List<AppDTO.UserResponse> getAllStudents(String department, Integer semester, String section);
     AppDTO.UserResponse getStudentById(Long id);
     AppDTO.UserResponse addStudent(AuthDTO.RegisterRequest request);
     AppDTO.UserResponse updateStudent(Long id, AppDTO.UserResponse request);

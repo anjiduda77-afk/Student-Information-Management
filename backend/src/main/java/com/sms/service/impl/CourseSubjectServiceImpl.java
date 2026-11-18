@@ -69,6 +69,7 @@ public class CourseSubjectServiceImpl implements CourseSubjectService {
                 .description(request.getDescription())
                 .credits(request.getCredits() != null ? request.getCredits() : 4)
                 .semester(request.getSemester() != null ? request.getSemester() : 1)
+                .sections(request.getSections() != null && !request.getSections().trim().isEmpty() ? request.getSections().trim() : "A, B")
                 .duration(request.getDuration() != null ? request.getDuration() : "4 Years")
                 .status(request.getStatus() != null ? request.getStatus() : "ACTIVE")
                 .department(dept)
@@ -88,6 +89,7 @@ public class CourseSubjectServiceImpl implements CourseSubjectService {
         if (request.getDescription() != null) course.setDescription(request.getDescription());
         if (request.getCredits() != null) course.setCredits(request.getCredits());
         if (request.getSemester() != null) course.setSemester(request.getSemester());
+        if (request.getSections() != null) course.setSections(request.getSections());
         if (request.getDuration() != null) course.setDuration(request.getDuration());
         if (request.getStatus() != null) course.setStatus(request.getStatus());
 

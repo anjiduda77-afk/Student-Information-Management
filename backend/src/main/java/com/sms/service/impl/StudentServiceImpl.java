@@ -24,8 +24,13 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     public List<AppDTO.UserResponse> getAllStudents(String department, Integer semester) {
-        List<User> students = (department != null || semester != null)
-                ? userRepository.findStudentsByFilter(department, semester)
+        return getAllStudents(department, semester, null);
+    }
+
+    @Override
+    public List<AppDTO.UserResponse> getAllStudents(String department, Integer semester, String section) {
+        List<User> students = (department != null || semester != null || section != null)
+                ? userRepository.findStudentsForBulkAssignment(department, semester, section)
                 : userRepository.findByRole(User.Role.STUDENT);
 
         return students.stream()

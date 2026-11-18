@@ -25,6 +25,9 @@ public class Course {
     private Integer semester;
 
     @Builder.Default
+    private String sections = "A, B";
+
+    @Builder.Default
     private String duration = "4 Years (8 Semesters)";
 
     @Builder.Default

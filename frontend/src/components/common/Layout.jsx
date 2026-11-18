@@ -37,20 +37,40 @@ export default function Layout({ children, navItems, role, basePath, pageTitle }
     const handleFsChange = () => {
       setIsFullscreen(!!(document.fullscreenElement || document.webkitFullscreenElement))
     }
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        if (document.fullscreenElement || document.webkitFullscreenElement) {
+          if (document.exitFullscreen) document.exitFullscreen().catch(() => {})
+          else if (document.webkitExitFullscreen) document.webkitExitFullscreen()
+        }
+        setIsFullscreen(false)
+      }
+    }
     document.addEventListener('fullscreenchange', handleFsChange)
     document.addEventListener('webkitfullscreenchange', handleFsChange)
+    window.addEventListener('keydown', handleKeyDown)
     return () => {
       document.removeEventListener('fullscreenchange', handleFsChange)
       document.removeEventListener('webkitfullscreenchange', handleFsChange)
+      window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [])
+  }, [isFullscreen])
 
   const toggleFullscreen = () => {
-    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    const isCurrentlyFs = !!(document.fullscreenElement || document.webkitFullscreenElement || isFullscreen)
+    if (!isCurrentlyFs) {
       if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen().catch(() => {})
+        document.documentElement.requestFullscreen().catch(() => {
+          setIsFullscreen(true)
+        })
       } else if (document.documentElement.webkitRequestFullscreen) {
-        document.documentElement.webkitRequestFullscreen()
+        try {
+          document.documentElement.webkitRequestFullscreen()
+        } catch {
+          setIsFullscreen(true)
+        }
+      } else {
+        setIsFullscreen(true)
       }
     } else {
       if (document.exitFullscreen) {
@@ -58,6 +78,7 @@ export default function Layout({ children, navItems, role, basePath, pageTitle }
       } else if (document.webkitExitFullscreen) {
         document.webkitExitFullscreen()
       }
+      setIsFullscreen(false)
     }
   }
 

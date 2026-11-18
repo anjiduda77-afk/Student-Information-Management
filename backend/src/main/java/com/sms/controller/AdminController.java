@@ -38,6 +38,7 @@ public class AdminController {
     private final EventRepository eventRepository;
     private final CertificateRepository certificateRepository;
     private final com.sms.service.AccountSecurityService accountSecurityService;
+    private final com.sms.service.AcademicSectionService academicSectionService;
 
     // ==================== Dashboard ====================
 
@@ -127,8 +128,9 @@ public class AdminController {
     @GetMapping("/students")
     public ResponseEntity<List<AppDTO.UserResponse>> getAllStudents(
             @RequestParam(required = false) String department,
-            @RequestParam(required = false) Integer semester) {
-        return ResponseEntity.ok(studentService.getAllStudents(department, semester));
+            @RequestParam(required = false) Integer semester,
+            @RequestParam(required = false) String section) {
+        return ResponseEntity.ok(studentService.getAllStudents(department, semester, section));
     }
 
     @GetMapping("/students/{id}")
@@ -390,5 +392,54 @@ public class AdminController {
                 "totalCourses", courses,
                 "institutionAttendance", attendance
         ));
+    }
+
+    // ==================== Academic Sections ====================
+
+    @GetMapping("/sections")
+    public ResponseEntity<List<AppDTO.AcademicSectionResponse>> getSections(
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Integer semester,
+            @RequestParam(required = false) String academicYear) {
+        return ResponseEntity.ok(academicSectionService.getSections(departmentId, semester, academicYear));
+    }
+
+    @GetMapping("/sections/{id}")
+    public ResponseEntity<?> getSection(@PathVariable Long id) {
+        return ResponseEntity.ok(academicSectionService.getSectionById(id));
+    }
+
+    @PostMapping("/sections")
+    public ResponseEntity<?> createSection(@Valid @RequestBody AppDTO.AcademicSectionRequest req,
+                                           @AuthenticationPrincipal UserDetails ud) {
+        AppDTO.AcademicSectionResponse res = academicSectionService.createSection(req);
+        if (ud != null) {
+            activityLogService.log(ud.getUsername(), ud.getUsername(), "ADMIN", "CREATE", "SECTIONS",
+                    "Created section " + res.getCode());
+        }
+        return ResponseEntity.ok(res);
+    }
+
+    @PutMapping("/sections/{id}")
+    public ResponseEntity<?> updateSection(@PathVariable Long id,
+                                           @RequestBody AppDTO.AcademicSectionRequest req,
+                                           @AuthenticationPrincipal UserDetails ud) {
+        AppDTO.AcademicSectionResponse res = academicSectionService.updateSection(id, req);
+        if (ud != null) {
+            activityLogService.log(ud.getUsername(), ud.getUsername(), "ADMIN", "UPDATE", "SECTIONS",
+                    "Updated section " + res.getCode());
+        }
+        return ResponseEntity.ok(res);
+    }
+
+    @DeleteMapping("/sections/{id}")
+    public ResponseEntity<?> deleteSection(@PathVariable Long id,
+                                           @AuthenticationPrincipal UserDetails ud) {
+        academicSectionService.deleteSection(id);
+        if (ud != null) {
+            activityLogService.log(ud.getUsername(), ud.getUsername(), "ADMIN", "DELETE", "SECTIONS",
+                    "Deleted section ID " + id);
+        }
+        return ResponseEntity.ok(new AppDTO.MessageResponse("Academic section deleted"));
     }
 }

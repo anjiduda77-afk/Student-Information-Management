@@ -354,6 +354,8 @@ function StudentsPanel() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [deptFilter, setDeptFilter] = useState('ALL')
+  const [semFilter, setSemFilter] = useState('ALL')
+  const [secFilter, setSecFilter] = useState('ALL')
   const [showAdd, setShowAdd] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
@@ -459,8 +461,10 @@ function StudentsPanel() {
       s.rollNumber?.toLowerCase().includes(search.toLowerCase()) ||
       s.studentId?.toLowerCase().includes(search.toLowerCase()) ||
       s.email.toLowerCase().includes(search.toLowerCase())
-    const matchesDept = deptFilter === 'ALL' || s.department === deptFilter
-    return matchesSearch && matchesDept
+    const matchesDept = deptFilter === 'ALL' || s.department === deptFilter || s.branch === deptFilter
+    const matchesSem = semFilter === 'ALL' || String(s.semester) === String(semFilter)
+    const matchesSec = secFilter === 'ALL' || (s.section || 'A').toUpperCase() === secFilter.toUpperCase()
+    return matchesSearch && matchesDept && matchesSem && matchesSec
   })
 
   return (
@@ -468,9 +472,9 @@ function StudentsPanel() {
       {/* Header & Controls */}
       <div className="section-header">
         <div>
-          <h2 className="section-title">Student Records & Enrollment</h2>
+          <h2 className="section-title">Student Records &amp; Enrollment</h2>
           <p style={{ fontSize: 13, color: '#64748b', margin: '2px 0 0' }}>
-            Total {students.length} registered students
+            Showing {filtered.length} of {students.length} registered students
           </p>
         </div>
         <button onClick={() => setShowAdd(true)} className="btn btn-primary">
@@ -478,9 +482,9 @@ function StudentsPanel() {
         </button>
       </div>
 
-      {/* Filter Bar */}
-      <div className="card card-sm" style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
-        <div style={{ flex: 1, minWidth: 240, position: 'relative' }}>
+      {/* Filter Bar with Department, Semester and Section */}
+      <div className="card card-sm" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ flex: 1, minWidth: 220, position: 'relative' }}>
           <input
             type="text"
             className="form-input"
@@ -491,22 +495,51 @@ function StudentsPanel() {
           />
           <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
         </div>
+
+        {/* Department Filter */}
         <select
           className="form-select"
           value={deptFilter}
           onChange={e => setDeptFilter(e.target.value)}
-          style={{ width: 'auto' }}
+          style={{ width: 'auto', minWidth: 160 }}
         >
           <option value="ALL">All Departments</option>
           <option value="Computer Science & Engineering">Computer Science & Engineering</option>
           <option value="Artificial Intelligence & Machine Learning">AI & Machine Learning</option>
           <option value="Electronics & Communication Engineering">Electronics & Communication</option>
         </select>
+
+        {/* Semester Filter */}
+        <select
+          className="form-select"
+          value={semFilter}
+          onChange={e => setSemFilter(e.target.value)}
+          style={{ width: 'auto', minWidth: 130 }}
+        >
+          <option value="ALL">All Semesters</option>
+          {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => (
+            <option key={sem} value={sem}>Semester {sem}</option>
+          ))}
+        </select>
+
+        {/* Section Filter */}
+        <select
+          className="form-select"
+          value={secFilter}
+          onChange={e => setSecFilter(e.target.value)}
+          style={{ width: 'auto', minWidth: 120 }}
+        >
+          <option value="ALL">All Sections</option>
+          <option value="A">Section A</option>
+          <option value="B">Section B</option>
+          <option value="C">Section C</option>
+          <option value="D">Section D</option>
+        </select>
       </div>
 
       {/* Table */}
       {loading ? (
-        <TableSkeleton rows={6} cols={7} />
+        <TableSkeleton rows={6} cols={8} />
       ) : (
         <div className="table-container">
           <table className="data-table">
@@ -517,6 +550,7 @@ function StudentsPanel() {
                 <th>Roll Number</th>
                 <th>Department</th>
                 <th>Semester</th>
+                <th>Section</th>
                 <th>Status</th>
                 <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>
@@ -534,7 +568,12 @@ function StudentsPanel() {
                   <td>{s.rollNumber || '—'}</td>
                   <td>{s.department || s.branch || '—'}</td>
                   <td>
-                    <span className="badge badge-neutral">Sem {s.semester || 1} ({s.section || 'A'})</span>
+                    <span className="badge badge-neutral">Sem {s.semester || 1}</span>
+                  </td>
+                  <td>
+                    <span className="badge badge-primary" style={{ fontWeight: 800 }}>
+                      Sec {s.section || 'A'}
+                    </span>
                   </td>
                   <td>
                     <button
@@ -605,10 +644,15 @@ function StudentsPanel() {
               </select>
             </div>
             <div className="form-group">
-              <label className="form-label">Semester & Section</label>
+              <label className="form-label">Semester & Section *</label>
               <div style={{ display: 'flex', gap: 8 }}>
-                <input className="form-input" type="number" min="1" max="8" value={form.semester} onChange={e => setForm({...form, semester: e.target.value})} required />
-                <input className="form-input" maxLength="2" value={form.section} onChange={e => setForm({...form, section: e.target.value})} style={{ width: 60 }} />
+                <input className="form-input" type="number" min="1" max="8" value={form.semester} onChange={e => setForm({...form, semester: e.target.value})} placeholder="Sem (1-8)" required />
+                <select className="form-select" value={form.section} onChange={e => setForm({...form, section: e.target.value})} style={{ width: 110 }}>
+                  <option value="A">Sec A</option>
+                  <option value="B">Sec B</option>
+                  <option value="C">Sec C</option>
+                  <option value="D">Sec D</option>
+                </select>
               </div>
             </div>
             <div className="form-group">
@@ -1538,6 +1582,7 @@ export default function AdminDashboard() {
         <Route path="faculty" element={<FacultyPanel />} />
         <Route path="academics" element={<AdminCoursesCurriculaHub />} />
         <Route path="courses" element={<AdminCoursesCurriculaHub />} />
+        <Route path="sections" element={<AdminCoursesCurriculaHub initialViewMode="sections-matrix" />} />
         <Route path="timetable" element={<TimetablePanel />} />
         <Route path="attendance" element={<AdminAttendanceSection />} />
         <Route path="events" element={<AdminEventsList />} />

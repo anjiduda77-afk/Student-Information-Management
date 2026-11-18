@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   courseService, adminService
 } from '../../services/api'
@@ -9,7 +10,7 @@ import {
   BookOpen, Plus, Search, Filter, Maximize2, Minimize2,
   LayoutList, LayoutGrid, Columns, Edit3, Trash2, Eye,
   Users, CheckCircle, AlertTriangle, Layers, GraduationCap,
-  Building, RefreshCw, X, ChevronRight, Award
+  Building, RefreshCw, X, ChevronRight, Award, Clock
 } from 'lucide-react'
 
 // Course Type calculation based on name/code/credits
@@ -28,14 +29,17 @@ const getCourseType = (course) => {
   return { label: 'Core Theory', bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe' }
 }
 
-export default function AdminCoursesCurriculaHub() {
+export default function AdminCoursesCurriculaHub({ initialViewMode }) {
+  const [searchParams] = useSearchParams()
+  const initialView = initialViewMode || (searchParams.get('view') === 'sections' ? 'sections-matrix' : 'horizontal-table')
+
   const [courses, setCourses] = useState([])
   const [departments, setDepartments] = useState([])
   const [faculty, setFaculty] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // Layout View Modes: 'horizontal-table' | 'horizontal-roadmap' | 'grid-cards'
-  const [viewMode, setViewMode] = useState('horizontal-table')
+  // Layout View Modes: 'horizontal-table' | 'horizontal-roadmap' | 'grid-cards' | 'sections-matrix'
+  const [viewMode, setViewMode] = useState(initialView)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   // Filters & Search
@@ -44,6 +48,27 @@ export default function AdminCoursesCurriculaHub() {
   const [semesterFilter, setSemesterFilter] = useState('ALL')
   const [creditsFilter, setCreditsFilter] = useState('ALL')
   const [statusFilter, setStatusFilter] = useState('ALL')
+  const [sectionFilter, setSectionFilter] = useState('ALL')
+
+  // Academic Sections State
+  const [sections, setSections] = useState([])
+  const [sectionsLoading, setSectionsLoading] = useState(false)
+  const [showAddSectionModal, setShowAddSectionModal] = useState(false)
+  const [editingSection, setEditingSection] = useState(null)
+  const [deletingSection, setDeletingSection] = useState(null)
+  const [sectionSubmitting, setSectionSubmitting] = useState(false)
+  const initialSectionForm = {
+    code: '',
+    sectionName: 'A',
+    semester: 1,
+    academicYear: '2025-26',
+    departmentId: '',
+    advisorId: '',
+    roomNumber: 'Newton Block Room 301',
+    capacity: 60,
+    status: 'ACTIVE'
+  }
+  const [sectionForm, setSectionForm] = useState(initialSectionForm)
 
   // Modals state
   const [showAddModal, setShowAddModal] = useState(false)
@@ -59,6 +84,7 @@ export default function AdminCoursesCurriculaHub() {
     description: '',
     credits: 4,
     semester: 1,
+    sections: 'A, B',
     duration: '4 Years (8 Semesters)',
     facultyId: '',
     departmentId: '',
@@ -69,18 +95,32 @@ export default function AdminCoursesCurriculaHub() {
   const loadData = async () => {
     setLoading(true)
     try {
-      const [cRes, dRes, fRes] = await Promise.all([
+      const [cRes, dRes, fRes, sRes] = await Promise.all([
         courseService.getAll().catch(() => ({ data: [] })),
         adminService.getDepartments().catch(() => ({ data: [] })),
-        adminService.getFaculty().catch(() => ({ data: [] }))
+        adminService.getFaculty().catch(() => ({ data: [] })),
+        adminService.getSections().catch(() => ({ data: [] }))
       ])
       setCourses(cRes.data || [])
       setDepartments(dRes.data || [])
       setFaculty(fRes.data || [])
+      setSections(sRes.data || [])
     } catch {
-      toast.error('Failed to load academic courses and curricula')
+      toast.error('Failed to load academic courses, curricula and sections')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadSections = async () => {
+    setSectionsLoading(true)
+    try {
+      const res = await adminService.getSections()
+      setSections(res.data || [])
+    } catch {
+      // silent
+    } finally {
+      setSectionsLoading(false)
     }
   }
 
@@ -131,9 +171,99 @@ export default function AdminCoursesCurriculaHub() {
       const matchesStatus = statusFilter === 'ALL' ||
         (c.status || 'ACTIVE').toUpperCase() === statusFilter.toUpperCase()
 
-      return matchesSearch && matchesDept && matchesSem && matchesCredits && matchesStatus
+      // Section match
+      const matchesSection = sectionFilter === 'ALL' ||
+        (c.sections && c.sections.toLowerCase().includes(sectionFilter.toLowerCase()))
+
+      return matchesSearch && matchesDept && matchesSem && matchesCredits && matchesStatus && matchesSection
     })
-  }, [courses, search, departmentFilter, semesterFilter, creditsFilter, statusFilter])
+  }, [courses, search, departmentFilter, semesterFilter, creditsFilter, statusFilter, sectionFilter])
+
+  // Filtered Sections Calculation
+  const filteredSections = useMemo(() => {
+    return sections.filter(sec => {
+      const q = search.trim().toLowerCase()
+      const matchesSearch = !q ||
+        (sec.code && sec.code.toLowerCase().includes(q)) ||
+        (sec.sectionName && sec.sectionName.toLowerCase().includes(q)) ||
+        (sec.advisorName && sec.advisorName.toLowerCase().includes(q)) ||
+        (sec.roomNumber && sec.roomNumber.toLowerCase().includes(q)) ||
+        (sec.departmentName && sec.departmentName.toLowerCase().includes(q)) ||
+        (sec.departmentCode && sec.departmentCode.toLowerCase().includes(q))
+
+      const matchesDept = departmentFilter === 'ALL' ||
+        String(sec.departmentId) === String(departmentFilter) ||
+        (sec.departmentName && sec.departmentName.toLowerCase() === departmentFilter.toLowerCase()) ||
+        (sec.departmentCode && sec.departmentCode.toLowerCase() === departmentFilter.toLowerCase())
+
+      const matchesSem = semesterFilter === 'ALL' ||
+        String(sec.semester) === String(semesterFilter)
+
+      const matchesSec = sectionFilter === 'ALL' ||
+        (sec.sectionName && sec.sectionName.toUpperCase() === sectionFilter.toUpperCase())
+
+      const matchesStatus = statusFilter === 'ALL' ||
+        (sec.status || 'ACTIVE').toUpperCase() === statusFilter.toUpperCase()
+
+      return matchesSearch && matchesDept && matchesSem && matchesSec && matchesStatus
+    })
+  }, [sections, search, departmentFilter, semesterFilter, sectionFilter, statusFilter])
+
+  // Section CRUD Handlers
+  const handleSaveSection = async (e) => {
+    e.preventDefault()
+    setSectionSubmitting(true)
+    try {
+      const payload = {
+        ...sectionForm,
+        semester: Number(sectionForm.semester),
+        departmentId: sectionForm.departmentId ? Number(sectionForm.departmentId) : null,
+        advisorId: sectionForm.advisorId ? Number(sectionForm.advisorId) : null,
+        capacity: Number(sectionForm.capacity) || 60
+      }
+      if (editingSection) {
+        await adminService.updateSection(editingSection.id, payload)
+        toast.success(`Academic Section ${editingSection.code} updated successfully!`)
+        setEditingSection(null)
+      } else {
+        const res = await adminService.createSection(payload)
+        toast.success(`Academic Section ${res.data.code} registered!`)
+        setShowAddSectionModal(false)
+      }
+      loadSections()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to save academic section.')
+    } finally {
+      setSectionSubmitting(false)
+    }
+  }
+
+  const handleOpenEditSection = (sec) => {
+    setEditingSection(sec)
+    setSectionForm({
+      code: sec.code || '',
+      sectionName: sec.sectionName || 'A',
+      semester: sec.semester || 1,
+      academicYear: sec.academicYear || '2025-26',
+      departmentId: sec.departmentId ? String(sec.departmentId) : '',
+      advisorId: sec.advisorId ? String(sec.advisorId) : '',
+      roomNumber: sec.roomNumber || 'Newton Block Room 301',
+      capacity: sec.capacity || 60,
+      status: sec.status || 'ACTIVE'
+    })
+  }
+
+  const handleDeleteSectionConfirm = async () => {
+    if (!deletingSection) return
+    try {
+      await adminService.deleteSection(deletingSection.id)
+      toast.success(`Section ${deletingSection.code} removed.`)
+      setDeletingSection(null)
+      loadSections()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to remove section.')
+    }
+  }
 
   // Aggregate Metrics (KPIs)
   const metrics = useMemo(() => {
@@ -201,6 +331,7 @@ export default function AdminCoursesCurriculaHub() {
       description: course.description || '',
       credits: course.credits || 4,
       semester: course.semester || 1,
+      sections: course.sections || 'A, B',
       duration: course.duration || '4 Years (8 Semesters)',
       facultyId: course.facultyId ? String(course.facultyId) : '',
       departmentId: course.departmentId ? String(course.departmentId) : '',
@@ -335,26 +466,49 @@ export default function AdminCoursesCurriculaHub() {
             <RefreshCw size={15} />
           </button>
 
-          <button
-            onClick={() => {
-              setCourseForm(initialForm)
-              setShowAddModal(true)
-            }}
-            className="btn btn-primary"
-            style={{
-              background: '#15803d',
-              borderColor: '#16a34a',
-              color: '#fff',
-              fontWeight: 800,
-              gap: 8,
-              padding: '10px 18px',
-              borderRadius: 10,
-              boxShadow: '0 4px 14px rgba(22, 163, 74, 0.4)'
-            }}
-          >
-            <Plus size={16} />
-            <span>Add Academic Course</span>
-          </button>
+          {viewMode === 'sections-matrix' ? (
+            <button
+              onClick={() => {
+                setSectionForm(initialSectionForm)
+                setShowAddSectionModal(true)
+              }}
+              className="btn btn-primary"
+              style={{
+                background: '#15803d',
+                borderColor: '#16a34a',
+                color: '#fff',
+                fontWeight: 800,
+                gap: 8,
+                padding: '10px 18px',
+                borderRadius: 10,
+                boxShadow: '0 4px 14px rgba(22, 163, 74, 0.4)'
+              }}
+            >
+              <Plus size={16} />
+              <span>Register New Section</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                setCourseForm(initialForm)
+                setShowAddModal(true)
+              }}
+              className="btn btn-primary"
+              style={{
+                background: '#15803d',
+                borderColor: '#16a34a',
+                color: '#fff',
+                fontWeight: 800,
+                gap: 8,
+                padding: '10px 18px',
+                borderRadius: 10,
+                boxShadow: '0 4px 14px rgba(22, 163, 74, 0.4)'
+              }}
+            >
+              <Plus size={16} />
+              <span>Add Academic Course</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -509,6 +663,22 @@ export default function AdminCoursesCurriculaHub() {
               <LayoutGrid size={15} />
               <span>Cards</span>
             </button>
+
+            <button
+              onClick={() => setViewMode('sections-matrix')}
+              className="btn btn-sm"
+              style={{
+                background: viewMode === 'sections-matrix' ? '#1e3a8a' : 'transparent',
+                color: viewMode === 'sections-matrix' ? '#fff' : 'var(--text-muted)',
+                fontWeight: 700,
+                borderRadius: 8,
+                gap: 6
+              }}
+              title="Academic Sections & Class Batches Allocation"
+            >
+              <Users size={15} />
+              <span>Sections &amp; Batches</span>
+            </button>
           </div>
         </div>
 
@@ -553,21 +723,40 @@ export default function AdminCoursesCurriculaHub() {
             </select>
           </div>
 
-          {/* Credits Filter */}
+          {/* Section Filter */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)' }}>Credits:</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)' }}>Section:</span>
             <select
               className="form-select"
-              style={{ height: 34, fontSize: 12, borderRadius: 8, padding: '4px 10px' }}
-              value={creditsFilter}
-              onChange={e => setCreditsFilter(e.target.value)}
+              style={{ height: 34, fontSize: 12, borderRadius: 8, padding: '4px 10px', minWidth: 110 }}
+              value={sectionFilter}
+              onChange={e => setSectionFilter(e.target.value)}
             >
-              <option value="ALL">All Credits</option>
-              <option value="1-2">1–2 Credits (Labs / Practicals)</option>
-              <option value="3-4">3–4 Credits (Core Theory)</option>
-              <option value="5+">5+ Credits (Project / Thesis)</option>
+              <option value="ALL">All Sections</option>
+              <option value="A">Section A</option>
+              <option value="B">Section B</option>
+              <option value="C">Section C</option>
+              <option value="D">Section D</option>
             </select>
           </div>
+
+          {/* Credits Filter */}
+          {viewMode !== 'sections-matrix' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)' }}>Credits:</span>
+              <select
+                className="form-select"
+                style={{ height: 34, fontSize: 12, borderRadius: 8, padding: '4px 10px' }}
+                value={creditsFilter}
+                onChange={e => setCreditsFilter(e.target.value)}
+              >
+                <option value="ALL">All Credits</option>
+                <option value="1-2">1–2 Credits (Labs / Practicals)</option>
+                <option value="3-4">3–4 Credits (Core Theory)</option>
+                <option value="5+">5+ Credits (Project / Thesis)</option>
+              </select>
+            </div>
+          )}
 
           {/* Status Filter */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -579,18 +768,19 @@ export default function AdminCoursesCurriculaHub() {
               onChange={e => setStatusFilter(e.target.value)}
             >
               <option value="ALL">All Status</option>
-              <option value="ACTIVE">Active Schemes</option>
-              <option value="INACTIVE">Archived</option>
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
             </select>
           </div>
 
           {/* Reset Filters */}
-          {(search || departmentFilter !== 'ALL' || semesterFilter !== 'ALL' || creditsFilter !== 'ALL' || statusFilter !== 'ALL') && (
+          {(search || departmentFilter !== 'ALL' || semesterFilter !== 'ALL' || sectionFilter !== 'ALL' || creditsFilter !== 'ALL' || statusFilter !== 'ALL') && (
             <button
               onClick={() => {
                 setSearch('')
                 setDepartmentFilter('ALL')
                 setSemesterFilter('ALL')
+                setSectionFilter('ALL')
                 setCreditsFilter('ALL')
                 setStatusFilter('ALL')
               }}
@@ -602,7 +792,10 @@ export default function AdminCoursesCurriculaHub() {
           )}
 
           <div style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>
-            Showing <strong>{filteredCourses.length}</strong> of {courses.length} courses
+            {viewMode === 'sections-matrix'
+              ? <>Showing <strong>{filteredSections.length}</strong> of {sections.length} sections</>
+              : <>Showing <strong>{filteredCourses.length}</strong> of {courses.length} courses</>
+            }
           </div>
         </div>
       </div>
@@ -610,6 +803,224 @@ export default function AdminCoursesCurriculaHub() {
       {/* ── 4. Main Views ─────────────────────────────────────────── */}
       {loading ? (
         <TableSkeleton rows={6} cols={6} />
+      ) : viewMode === 'sections-matrix' ? (
+        /* ── VIEW MODE D: ACADEMIC SECTIONS & CLASS BATCHES MATRIX ── */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Section KPIs */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+            gap: 16
+          }}>
+            <div className="card" style={{ padding: 18, borderRadius: 14, borderLeft: '4px solid #1e3a8a' }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)' }}>TOTAL ACADEMIC SECTIONS</div>
+              <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--text)', margin: '6px 0 2px' }}>
+                {sections.length}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-light)' }}>
+                Active class divisions across all programmes
+              </div>
+            </div>
+
+            <div className="card" style={{ padding: 18, borderRadius: 14, borderLeft: '4px solid #0f766e' }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#0f766e' }}>LECTURE HALLS &amp; LABS</div>
+              <div style={{ fontSize: 24, fontWeight: 900, color: '#0f766e', margin: '6px 0 2px' }}>
+                {new Set(sections.map(s => s.roomNumber).filter(Boolean)).size}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-light)' }}>
+                Assigned rooms &amp; research laboratories
+              </div>
+            </div>
+
+            <div className="card" style={{ padding: 18, borderRadius: 14, borderLeft: '4px solid #d97706' }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#d97706' }}>CLASS ADVISORS DESIGNATED</div>
+              <div style={{ fontSize: 24, fontWeight: 900, color: '#d97706', margin: '6px 0 2px' }}>
+                {sections.filter(s => s.advisorId || s.advisorName).length}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-light)' }}>
+                Faculty coordinators guiding students
+              </div>
+            </div>
+
+            <div className="card" style={{ padding: 18, borderRadius: 14, borderLeft: '4px solid #2563eb' }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#2563eb' }}>TOTAL ENROLLED / CAPACITY</div>
+              <div style={{ fontSize: 24, fontWeight: 900, color: '#2563eb', margin: '6px 0 2px' }}>
+                {sections.reduce((acc, s) => acc + (s.enrolledCount || 0), 0)} / {sections.reduce((acc, s) => acc + (s.capacity || 60), 0)}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-light)' }}>
+                Admitted students across divisions
+              </div>
+            </div>
+          </div>
+
+          {/* Section Table Matrix */}
+          {filteredSections.length === 0 ? (
+            <div className="card" style={{ padding: 48, textAlign: 'center', borderRadius: 16 }}>
+              <Users size={48} style={{ color: '#94a3b8', margin: '0 auto 16px' }} />
+              <h3 style={{ fontSize: 18, fontWeight: 800, margin: '0 0 6px', color: '#0f172a' }}>
+                No Academic Sections Found
+              </h3>
+              <p style={{ fontSize: 13, color: '#64748b', maxWidth: 460, margin: '0 auto 20px' }}>
+                No sections match the current filters. Adjust your department/semester selection or register a new division.
+              </p>
+              <button
+                onClick={() => {
+                  setSectionForm(initialSectionForm)
+                  setShowAddSectionModal(true)
+                }}
+                className="btn btn-primary"
+                style={{ fontWeight: 700, gap: 6 }}
+              >
+                <Plus size={15} /> Register New Section
+              </button>
+            </div>
+          ) : (
+            <div className="card" style={{
+              padding: 0,
+              borderRadius: 16,
+              overflow: 'hidden',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+              border: '1px solid var(--border)'
+            }}>
+              <div className="table-container">
+                <table className="data-table" style={{ width: '100%', minWidth: 980, borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                      <th style={{ padding: '16px 20px', fontSize: 12, fontWeight: 800, color: '#475569', textTransform: 'uppercase', width: 140 }}>Section Code</th>
+                      <th style={{ padding: '16px 20px', fontSize: 12, fontWeight: 800, color: '#475569', textTransform: 'uppercase', width: 220 }}>Department</th>
+                      <th style={{ padding: '16px 20px', fontSize: 12, fontWeight: 800, color: '#475569', textTransform: 'uppercase', width: 120 }}>Semester</th>
+                      <th style={{ padding: '16px 20px', fontSize: 12, fontWeight: 800, color: '#475569', textTransform: 'uppercase', width: 100 }}>Section</th>
+                      <th style={{ padding: '16px 20px', fontSize: 12, fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>Lecture Room / Hall</th>
+                      <th style={{ padding: '16px 20px', fontSize: 12, fontWeight: 800, color: '#475569', textTransform: 'uppercase', width: 220 }}>Class Advisor</th>
+                      <th style={{ padding: '16px 20px', fontSize: 12, fontWeight: 800, color: '#475569', textTransform: 'uppercase', width: 170 }}>Student Strength</th>
+                      <th style={{ padding: '16px 20px', fontSize: 12, fontWeight: 800, color: '#475569', textTransform: 'uppercase', width: 120 }}>Timetable</th>
+                      <th style={{ padding: '16px 20px', fontSize: 12, fontWeight: 800, color: '#475569', textTransform: 'uppercase', textAlign: 'right', width: 140 }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredSections.map(sec => {
+                      const capacity = sec.capacity || 60
+                      const enrolled = sec.enrolledCount || 0
+                      const pct = Math.min(100, Math.round((enrolled / capacity) * 100))
+                      return (
+                        <tr
+                          key={sec.id}
+                          style={{
+                            borderBottom: '1px solid #f1f5f9',
+                            transition: 'background 0.15s ease'
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <td style={{ padding: '16px 20px', whiteSpace: 'nowrap' }}>
+                            <span style={{
+                              display: 'inline-block',
+                              padding: '5px 12px',
+                              borderRadius: 8,
+                              background: '#eff6ff',
+                              color: '#1e40af',
+                              fontWeight: 800,
+                              fontSize: 13,
+                              fontFamily: 'monospace',
+                              border: '1px solid #bfdbfe'
+                            }}>
+                              {sec.code}
+                            </span>
+                          </td>
+                          <td style={{ padding: '16px 20px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#0f172a' }}>
+                              <Building size={14} style={{ color: '#0f766e', flexShrink: 0 }} />
+                              <span>{sec.departmentName || 'General Engineering'}</span>
+                            </div>
+                            <span style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>
+                              Academic Year {sec.academicYear || '2025-26'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '16px 20px', whiteSpace: 'nowrap' }}>
+                            <span className="badge badge-neutral" style={{ fontSize: 12 }}>
+                              Semester {sec.semester || 1}
+                            </span>
+                          </td>
+                          <td style={{ padding: '16px 20px', whiteSpace: 'nowrap' }}>
+                            <span className="badge badge-primary" style={{ fontWeight: 800, fontSize: 12, padding: '4px 10px' }}>
+                              Section {sec.sectionName || 'A'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '16px 20px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{
+                                padding: '4px 10px',
+                                borderRadius: 8,
+                                background: '#f8fafc',
+                                border: '1px solid #e2e8f0',
+                                fontSize: 12,
+                                fontWeight: 700,
+                                color: '#334155'
+                              }}>
+                                🏛 {sec.roomNumber || 'Room TBA'}
+                              </span>
+                            </div>
+                          </td>
+                          <td style={{ padding: '16px 20px' }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>
+                              {sec.advisorName ? `Prof. ${sec.advisorName}` : <span style={{ color: '#d97706' }}>Not Assigned</span>}
+                            </div>
+                            <div style={{ fontSize: 11, color: '#64748b' }}>
+                              Class Advisor
+                            </div>
+                          </td>
+                          <td style={{ padding: '16px 20px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 800, color: '#334155', marginBottom: 4 }}>
+                              <span>{enrolled} / {capacity} Students</span>
+                              <span>{pct}%</span>
+                            </div>
+                            <div style={{ height: 6, background: '#f1f5f9', borderRadius: 999, overflow: 'hidden' }}>
+                              <div style={{
+                                width: `${pct}%`,
+                                height: '100%',
+                                background: pct >= 90 ? '#dc2626' : pct >= 70 ? '#16a34a' : '#2563eb',
+                                borderRadius: 999
+                              }} />
+                            </div>
+                          </td>
+                          <td style={{ padding: '16px 20px', whiteSpace: 'nowrap' }}>
+                            <a
+                              href={`/admin/timetable?courseId=1&semester=${sec.semester || 1}&section=${sec.sectionName || 'A'}`}
+                              className="btn btn-ghost btn-sm"
+                              style={{ color: '#2563eb', gap: 4, padding: '4px 10px', textDecoration: 'none' }}
+                            >
+                              <Clock size={13} /> Schedule
+                            </a>
+                          </td>
+                          <td style={{ padding: '16px 20px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                            <div style={{ display: 'inline-flex', gap: 6 }}>
+                              <button
+                                onClick={() => handleOpenEditSection(sec)}
+                                className="btn btn-ghost btn-sm"
+                                style={{ padding: '6px 10px', color: '#d97706' }}
+                                title="Edit section"
+                              >
+                                <Edit3 size={14} />
+                              </button>
+                              <button
+                                onClick={() => setDeletingSection(sec)}
+                                className="btn btn-ghost btn-sm"
+                                style={{ padding: '6px 10px', color: '#dc2626' }}
+                                title="Delete section"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
       ) : filteredCourses.length === 0 ? (
         <div className="card" style={{ padding: 48, textAlign: 'center', borderRadius: 16 }}>
           <BookOpen size={48} style={{ color: '#94a3b8', margin: '0 auto 16px' }} />
@@ -642,6 +1053,7 @@ export default function AdminCoursesCurriculaHub() {
                       <th style={{ padding: '16px 20px', fontSize: 12, fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>Course Title &amp; Scheme</th>
                       <th style={{ padding: '16px 20px', fontSize: 12, fontWeight: 800, color: '#475569', textTransform: 'uppercase', width: 220 }}>Department</th>
                       <th style={{ padding: '16px 20px', fontSize: 12, fontWeight: 800, color: '#475569', textTransform: 'uppercase', width: 130 }}>Semester</th>
+                      <th style={{ padding: '16px 20px', fontSize: 12, fontWeight: 800, color: '#475569', textTransform: 'uppercase', width: 110 }}>Sections</th>
                       <th style={{ padding: '16px 20px', fontSize: 12, fontWeight: 800, color: '#475569', textTransform: 'uppercase', width: 120 }}>Credits</th>
                       <th style={{ padding: '16px 20px', fontSize: 12, fontWeight: 800, color: '#475569', textTransform: 'uppercase', width: 220 }}>Faculty In-Charge</th>
                       <th style={{ padding: '16px 20px', fontSize: 12, fontWeight: 800, color: '#475569', textTransform: 'uppercase', textAlign: 'center', width: 110 }}>Enrolled</th>
@@ -743,6 +1155,13 @@ export default function AdminCoursesCurriculaHub() {
                             <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600, marginTop: 2 }}>
                               Year {Math.ceil((c.semester || 1) / 2)}
                             </div>
+                          </td>
+
+                          {/* Sections */}
+                          <td style={{ padding: '16px 20px', whiteSpace: 'nowrap' }}>
+                            <span className="badge badge-primary" style={{ fontWeight: 800, fontSize: 11 }}>
+                              Sec {c.sections || 'A, B'}
+                            </span>
                           </td>
 
                           {/* Credits */}
@@ -1287,6 +1706,29 @@ export default function AdminCoursesCurriculaHub() {
             </select>
           </div>
 
+          <div className="grid-2">
+            <div className="form-group">
+              <label className="form-label">Applicable Sections / Batches</label>
+              <input
+                className="form-input"
+                value={courseForm.sections || 'A, B'}
+                onChange={e => setCourseForm({ ...courseForm, sections: e.target.value })}
+                placeholder="e.g. A, B or A, B, C"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Course Status</label>
+              <select
+                className="form-select"
+                value={courseForm.status || 'ACTIVE'}
+                onChange={e => setCourseForm({ ...courseForm, status: e.target.value })}
+              >
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="INACTIVE">INACTIVE</option>
+              </select>
+            </div>
+          </div>
+
           <div className="form-group">
             <label className="form-label">Syllabus Overview &amp; Learning Objectives</label>
             <textarea
@@ -1424,6 +1866,16 @@ export default function AdminCoursesCurriculaHub() {
           </div>
 
           <div className="form-group">
+            <label className="form-label">Applicable Sections / Batches</label>
+            <input
+              className="form-input"
+              value={courseForm.sections || 'A, B'}
+              onChange={e => setCourseForm({ ...courseForm, sections: e.target.value })}
+              placeholder="e.g. A, B or A, B, C"
+            />
+          </div>
+
+          <div className="form-group">
             <label className="form-label">Description / Syllabus</label>
             <textarea
               className="form-textarea"
@@ -1501,7 +1953,7 @@ export default function AdminCoursesCurriculaHub() {
               </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
               <div style={{ background: '#f8fafc', padding: 12, borderRadius: 10, border: '1px solid #edf2f7' }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b' }}>Assigned Faculty</span>
                 <p style={{ margin: '4px 0 0', fontSize: 14, fontWeight: 800, color: '#0f172a' }}>
@@ -1510,9 +1962,16 @@ export default function AdminCoursesCurriculaHub() {
               </div>
 
               <div style={{ background: '#f8fafc', padding: 12, borderRadius: 10, border: '1px solid #edf2f7' }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b' }}>Applicable Sections</span>
+                <p style={{ margin: '4px 0 0', fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+                  Sec {detailCourse.sections || 'A, B'}
+                </p>
+              </div>
+
+              <div style={{ background: '#f8fafc', padding: 12, borderRadius: 10, border: '1px solid #edf2f7' }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b' }}>Course Scheme</span>
                 <p style={{ margin: '4px 0 0', fontSize: 14, fontWeight: 800, color: '#0f172a' }}>
-                  {detailCourse.duration || '4 Years (8 Semesters)'}
+                  {detailCourse.duration || '4 Years (8 Sem)'}
                 </p>
               </div>
             </div>
@@ -1591,6 +2050,324 @@ export default function AdminCoursesCurriculaHub() {
                 style={{ background: '#dc2626', color: '#fff', fontWeight: 800 }}
               >
                 Delete Course
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── MODAL E: REGISTER NEW SECTION ───────────────────────── */}
+      {showAddSectionModal && (
+        <Modal
+          isOpen={showAddSectionModal}
+          onClose={() => setShowAddSectionModal(false)}
+          title="Register New Academic Section & Batch Division"
+          size="md"
+        >
+          <form onSubmit={handleSaveSection} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div className="grid-2">
+              <div className="form-group">
+                <label className="form-label">Department *</label>
+                <select
+                  className="form-select"
+                  value={sectionForm.departmentId}
+                  onChange={e => setSectionForm({ ...sectionForm, departmentId: e.target.value })}
+                  required
+                >
+                  <option value="">Select Department</option>
+                  {departments.map(d => (
+                    <option key={d.id} value={d.id}>{d.name} ({d.code})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Semester (1–8) *</label>
+                <select
+                  className="form-select"
+                  value={sectionForm.semester}
+                  onChange={e => setSectionForm({ ...sectionForm, semester: e.target.value })}
+                  required
+                >
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
+                    <option key={s} value={s}>Semester {s}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid-2">
+              <div className="form-group">
+                <label className="form-label">Section Letter *</label>
+                <select
+                  className="form-select"
+                  value={sectionForm.sectionName}
+                  onChange={e => setSectionForm({ ...sectionForm, sectionName: e.target.value })}
+                  required
+                >
+                  <option value="A">Section A</option>
+                  <option value="B">Section B</option>
+                  <option value="C">Section C</option>
+                  <option value="D">Section D</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Custom Section Code (Optional)</label>
+                <input
+                  className="form-input"
+                  value={sectionForm.code}
+                  onChange={e => setSectionForm({ ...sectionForm, code: e.target.value })}
+                  placeholder="Auto-derived e.g. CSE-4A"
+                />
+              </div>
+            </div>
+
+            <div className="grid-2">
+              <div className="form-group">
+                <label className="form-label">Lecture Hall / Lab Room *</label>
+                <input
+                  className="form-input"
+                  value={sectionForm.roomNumber}
+                  onChange={e => setSectionForm({ ...sectionForm, roomNumber: e.target.value })}
+                  placeholder="e.g. Newton Block Room 301"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Student Capacity (Default 60)</label>
+                <input
+                  className="form-input"
+                  type="number"
+                  min="1"
+                  max="120"
+                  value={sectionForm.capacity}
+                  onChange={e => setSectionForm({ ...sectionForm, capacity: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Class Advisor / Faculty Coordinator</label>
+              <select
+                className="form-select"
+                value={sectionForm.advisorId}
+                onChange={e => setSectionForm({ ...sectionForm, advisorId: e.target.value })}
+              >
+                <option value="">Select Faculty Advisor (Optional)</option>
+                {faculty.map(f => (
+                  <option key={f.id} value={f.id}>Prof. {f.name} ({f.department || 'Faculty'})</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid-2">
+              <div className="form-group">
+                <label className="form-label">Academic Year</label>
+                <input
+                  className="form-input"
+                  value={sectionForm.academicYear}
+                  onChange={e => setSectionForm({ ...sectionForm, academicYear: e.target.value })}
+                  placeholder="2025-26"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Status</label>
+                <select
+                  className="form-select"
+                  value={sectionForm.status}
+                  onChange={e => setSectionForm({ ...sectionForm, status: e.target.value })}
+                >
+                  <option value="ACTIVE">ACTIVE</option>
+                  <option value="INACTIVE">INACTIVE</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', paddingTop: 8 }}>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => setShowAddSectionModal(false)}
+                disabled={sectionSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={sectionSubmitting}
+                style={{ fontWeight: 800, gap: 6 }}
+              >
+                <Plus size={16} />
+                {sectionSubmitting ? 'Registering...' : 'Register Section'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ── MODAL F: EDIT SECTION ─────────────────────────────────── */}
+      {editingSection && (
+        <Modal
+          isOpen={Boolean(editingSection)}
+          onClose={() => setEditingSection(null)}
+          title={`Edit Academic Section (${editingSection.code})`}
+          size="md"
+        >
+          <form onSubmit={handleSaveSection} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div className="grid-2">
+              <div className="form-group">
+                <label className="form-label">Department</label>
+                <select
+                  className="form-select"
+                  value={sectionForm.departmentId}
+                  onChange={e => setSectionForm({ ...sectionForm, departmentId: e.target.value })}
+                >
+                  <option value="">Select Department</option>
+                  {departments.map(d => (
+                    <option key={d.id} value={d.id}>{d.name} ({d.code})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Semester</label>
+                <select
+                  className="form-select"
+                  value={sectionForm.semester}
+                  onChange={e => setSectionForm({ ...sectionForm, semester: e.target.value })}
+                >
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
+                    <option key={s} value={s}>Semester {s}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid-2">
+              <div className="form-group">
+                <label className="form-label">Section Letter</label>
+                <select
+                  className="form-select"
+                  value={sectionForm.sectionName}
+                  onChange={e => setSectionForm({ ...sectionForm, sectionName: e.target.value })}
+                >
+                  <option value="A">Section A</option>
+                  <option value="B">Section B</option>
+                  <option value="C">Section C</option>
+                  <option value="D">Section D</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Lecture Hall / Room</label>
+                <input
+                  className="form-input"
+                  value={sectionForm.roomNumber}
+                  onChange={e => setSectionForm({ ...sectionForm, roomNumber: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid-2">
+              <div className="form-group">
+                <label className="form-label">Student Capacity</label>
+                <input
+                  className="form-input"
+                  type="number"
+                  min="1"
+                  max="120"
+                  value={sectionForm.capacity}
+                  onChange={e => setSectionForm({ ...sectionForm, capacity: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Status</label>
+                <select
+                  className="form-select"
+                  value={sectionForm.status}
+                  onChange={e => setSectionForm({ ...sectionForm, status: e.target.value })}
+                >
+                  <option value="ACTIVE">ACTIVE</option>
+                  <option value="INACTIVE">INACTIVE</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Class Advisor</label>
+              <select
+                className="form-select"
+                value={sectionForm.advisorId}
+                onChange={e => setSectionForm({ ...sectionForm, advisorId: e.target.value })}
+              >
+                <option value="">Select Faculty Member</option>
+                {faculty.map(f => (
+                  <option key={f.id} value={f.id}>Prof. {f.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', paddingTop: 8 }}>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => setEditingSection(null)}
+                disabled={sectionSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={sectionSubmitting}
+                style={{ fontWeight: 800, gap: 6 }}
+              >
+                <Edit3 size={16} />
+                {sectionSubmitting ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ── MODAL G: DELETE SECTION CONFIRMATION ──────────────────── */}
+      {deletingSection && (
+        <Modal
+          isOpen={Boolean(deletingSection)}
+          onClose={() => setDeletingSection(null)}
+          title="Confirm Section Removal"
+          size="sm"
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: '#dc2626' }}>
+              <AlertTriangle size={24} style={{ flexShrink: 0 }} />
+              <div style={{ fontSize: 14, fontWeight: 700 }}>
+                Are you sure you want to remove section {deletingSection.code}?
+              </div>
+            </div>
+
+            <p style={{ fontSize: 13, color: '#64748b', margin: 0, lineHeight: 1.5 }}>
+              Division <strong>{deletingSection.code} ({deletingSection.departmentName || 'Dept'}, Sem {deletingSection.semester})</strong> will be removed. Student enrollment records and historical attendances will be safely preserved.
+            </p>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 8 }}>
+              <button
+                onClick={() => setDeletingSection(null)}
+                className="btn btn-ghost"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteSectionConfirm}
+                className="btn"
+                style={{ background: '#dc2626', color: '#fff', fontWeight: 800 }}
+              >
+                Remove Section
               </button>
             </div>
           </div>
