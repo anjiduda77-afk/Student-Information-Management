@@ -12,6 +12,7 @@ import {
 } from '../services/api'
 import AcademicCalendar from '../components/calendar/AcademicCalendar'
 import AdminFeesHub from '../components/fees/AdminFeesHub'
+import AdminCoursesCurriculaHub from '../components/academics/AdminCoursesCurriculaHub'
 import {
   LayoutDashboard, GraduationCap, Users, BookOpen,
   Calendar, CalendarDays, Award, Bell, Plus,
@@ -1517,7 +1518,7 @@ const ADMIN_NAV = [
   { path: 'dashboard', label: 'Administration Console', icon: LayoutDashboard },
   { path: 'students', label: 'Student Admissions & Rolls', icon: GraduationCap },
   { path: 'faculty', label: 'Faculty & Staff Roster', icon: Users },
-  { path: 'academics', label: 'Programmes & Branches', icon: BookOpen },
+  { path: 'academics', label: 'Academic Courses & Curricula', icon: BookOpen },
   { path: 'timetable', label: 'Academic Class Time Table', icon: Calendar },
   { path: 'attendance', label: 'Attendance Central Oversight', icon: ClipboardCheck },
   { path: 'events', label: 'Campus Events & Symposia', icon: Award },
@@ -1535,7 +1536,8 @@ export default function AdminDashboard() {
         <Route path="dashboard" element={<AdminHome />} />
         <Route path="students" element={<StudentsPanel />} />
         <Route path="faculty" element={<FacultyPanel />} />
-        <Route path="academics" element={<AcademicsPanel />} />
+        <Route path="academics" element={<AdminCoursesCurriculaHub />} />
+        <Route path="courses" element={<AdminCoursesCurriculaHub />} />
         <Route path="timetable" element={<TimetablePanel />} />
         <Route path="attendance" element={<AdminAttendanceSection />} />
         <Route path="events" element={<AdminEventsList />} />

@@ -1567,3 +1567,25 @@ html, body {
   }
 }
 
+/* ============================================================
+   ADMIN COURSES & CURRICULA SUITE (HORIZONTAL & FULLSCREEN)
+   ============================================================ */
+.admin-courses-hub {
+  width: 100%;
+}
+.admin-courses-hub .data-table th,
+.admin-courses-hub .data-table td {
+  vertical-align: middle;
+}
+.admin-courses-hub ::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+.admin-courses-hub ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.admin-courses-hub ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
