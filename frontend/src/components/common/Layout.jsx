@@ -5,7 +5,8 @@ import { notificationService, authService } from '../../services/api'
 import {
   Menu, X, Bell, LogOut,
   Shield, BookOpen, GraduationCap,
-  KeyRound, Eye, EyeOff, ChevronDown
+  KeyRound, Eye, EyeOff, ChevronDown,
+  Maximize2, Minimize2, PanelLeftClose, PanelLeft
 } from 'lucide-react'
 import { formatDate } from '../../utils/helpers'
 import { Modal } from '../Modal'
@@ -16,12 +17,57 @@ import AmbientBackground from './AmbientBackground'
 
 export default function Layout({ children, navItems, role, basePath, pageTitle }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('au_sidebar_collapsed') === 'true'
+    } catch {
+      return false
+    }
+  })
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const [showNotifs, setShowNotifs] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+
+  // Fullscreen state listener
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(!!(document.fullscreenElement || document.webkitFullscreenElement))
+    }
+    document.addEventListener('fullscreenchange', handleFsChange)
+    document.addEventListener('webkitfullscreenchange', handleFsChange)
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFsChange)
+      document.removeEventListener('webkitfullscreenchange', handleFsChange)
+    }
+  }, [])
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {})
+      } else if (document.documentElement.webkitRequestFullscreen) {
+        document.documentElement.webkitRequestFullscreen()
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {})
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen()
+      }
+    }
+  }
+
+  const toggleSidebarCollapse = () => {
+    setSidebarCollapsed(prev => {
+      const next = !prev
+      try { localStorage.setItem('au_sidebar_collapsed', String(next)) } catch {}
+      return next
+    })
+  }
 
   // Update document title
   useEffect(() => {
@@ -121,7 +167,15 @@ export default function Layout({ children, navItems, role, basePath, pageTitle }
   })?.label || (location.pathname === basePath || location.pathname === `${basePath}/` ? navItems?.[0]?.label : 'Portal')
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''} ${isFullscreen ? 'is-fullscreen' : ''}`}>
+      {/* Fullscreen Floating Indicator */}
+      {isFullscreen && (
+        <div className="fullscreen-indicator-pill">
+          <span>⛶ Fullscreen Presentation Mode</span>
+          <button onClick={toggleFullscreen} className="fullscreen-exit-btn" title="Exit full screen">Exit (ESC)</button>
+        </div>
+      )}
+
       {/* Mobile Overlay */}
       {sidebarOpen && (
         <div
@@ -131,7 +185,7 @@ export default function Layout({ children, navItems, role, basePath, pageTitle }
       )}
 
       {/* Sidebar */}
-      <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
+      <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}>
         {/* Brand Header */}
         <div className="sidebar-brand">
           <AuLogo size={36} />
@@ -221,6 +275,15 @@ export default function Layout({ children, navItems, role, basePath, pageTitle }
             >
               <Menu size={22} />
             </button>
+            <button
+              onClick={toggleSidebarCollapse}
+              className="icon-btn desktop-collapse-btn"
+              title={sidebarCollapsed ? "Expand Sidebar (Normal View)" : "Wide Workspace (Collapse Sidebar)"}
+              aria-label="Toggle sidebar width"
+              style={{ cursor: 'pointer' }}
+            >
+              {sidebarCollapsed ? <PanelLeft size={18} /> : <PanelLeftClose size={18} />}
+            </button>
             <div className="header-title-block">
               <h1 className="header-title">{currentLabel}</h1>
               <p className="header-subtitle">
@@ -231,6 +294,21 @@ export default function Layout({ children, navItems, role, basePath, pageTitle }
           </div>
 
           <div className="header-right">
+            {/* Fullscreen Toggle */}
+            <button
+              onClick={toggleFullscreen}
+              className="icon-btn header-fullscreen-btn"
+              title={isFullscreen ? "Exit Full Screen (ESC)" : "Full Screen Presentation Mode (F11)"}
+              aria-label="Toggle Full Screen"
+              style={{
+                cursor: 'pointer',
+                color: isFullscreen ? 'var(--primary)' : 'inherit',
+                background: isFullscreen ? 'rgba(37,99,235,0.1)' : 'transparent'
+              }}
+            >
+              {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+            </button>
+
             {/* Theme Toggle in Header */}
             <ThemeToggle className="header-theme-toggle" />
 

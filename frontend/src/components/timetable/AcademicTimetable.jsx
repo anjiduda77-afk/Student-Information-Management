@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
   Calendar, Clock, BookOpen, Printer,
-  ClipboardCheck, Search
+  ClipboardCheck, Search, Maximize2, Minimize2
 } from 'lucide-react'
 import { timetableService } from '../../services/api'
 import { toast } from '../Toast'
@@ -47,6 +47,7 @@ export default function AcademicTimetable({ role = 'STUDENT', user }) {
   })
   const [searchTerm, setSearchTerm] = useState('')
   const [liveSlot, setLiveSlot] = useState(null)
+  const [isFullscreenMode, setIsFullscreenMode] = useState(false)
 
   const [selectedSemester, setSelectedSemester] = useState('ALL')
   const [selectedSection, setSelectedSection] = useState('ALL')
@@ -179,7 +180,20 @@ export default function AcademicTimetable({ role = 'STUDENT', user }) {
   const academicYearText = sample.academicYear || '2025–2026'
 
   return (
-    <div className="academic-timetable-root" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div
+      className={`academic-timetable-root ${isFullscreenMode ? 'fullscreen-overlay-wrapper' : ''}`}
+      style={isFullscreenMode ? {
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        background: 'var(--bg, #f8fafc)',
+        overflowY: 'auto',
+        padding: '24px 32px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 20
+      } : { display: 'flex', flexDirection: 'column', gap: 20 }}
+    >
       {/* ── Official Institutional Time Table Header ────────────────── */}
       <div style={{
         background: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0f766e 100%)',
@@ -223,6 +237,20 @@ export default function AcademicTimetable({ role = 'STUDENT', user }) {
         </div>
 
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button
+            onClick={() => setIsFullscreenMode(!isFullscreenMode)}
+            className="btn btn-ghost"
+            style={{
+              background: isFullscreenMode ? '#d99b26' : 'rgba(255,255,255,0.12)',
+              color: isFullscreenMode ? '#0f172a' : '#fff',
+              gap: 8,
+              fontWeight: 800
+            }}
+            title={isFullscreenMode ? "Exit Fullscreen" : "Fullscreen Timetable View"}
+          >
+            {isFullscreenMode ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            {isFullscreenMode ? 'Exit Full Screen' : 'Full Screen View'}
+          </button>
           <button
             onClick={handlePrint}
             className="btn btn-ghost"

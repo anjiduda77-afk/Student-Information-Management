@@ -6,13 +6,14 @@ import { formatDate } from '../../utils/helpers'
 import {
   CreditCard, CheckCircle2, Clock, AlertTriangle, FileText,
   Search, Filter, RefreshCw, Users, ShieldCheck, CheckCircle,
-  HelpCircle, ChevronRight, AlertCircle
+  HelpCircle, ChevronRight, AlertCircle, Maximize2, Minimize2
 } from 'lucide-react'
 
 export default function FacultyFeeClearance() {
   const [summary, setSummary] = useState(null)
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(true)
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const [semesterFilter, setSemesterFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('ALL')
   const [search, setSearch] = useState('')
@@ -68,7 +69,20 @@ export default function FacultyFeeClearance() {
   })
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div
+      className={isFullscreen ? 'fullscreen-overlay-wrapper' : ''}
+      style={isFullscreen ? {
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        background: 'var(--bg, #f8fafc)',
+        overflowY: 'auto',
+        padding: '24px 32px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 24
+      } : { display: 'flex', flexDirection: 'column', gap: 24 }}
+    >
       {/* Header Banner */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
         <div>
@@ -80,9 +94,25 @@ export default function FacultyFeeClearance() {
             Verify student fee clearance status for semester-end examination (SEE) hall ticket verification and academic progression.
           </p>
         </div>
-        <button onClick={loadData} className="btn btn-ghost btn-sm" style={{ gap: 6 }}>
-          <RefreshCw size={14} /> Refresh Roster
-        </button>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <button
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            className="btn btn-outline btn-sm"
+            style={{
+              gap: 6,
+              fontWeight: 700,
+              background: isFullscreen ? 'var(--primary, #0f766e)' : 'transparent',
+              color: isFullscreen ? '#fff' : 'inherit'
+            }}
+            title="Toggle full screen examination clearance roster"
+          >
+            {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+            <span>{isFullscreen ? 'Exit Full Screen' : 'Full Screen Table'}</span>
+          </button>
+          <button onClick={loadData} className="btn btn-ghost btn-sm" style={{ gap: 6 }}>
+            <RefreshCw size={14} /> Refresh Roster
+          </button>
+        </div>
       </div>
 
       {/* Summary KPI Strip */}

@@ -143,26 +143,17 @@ public class FeeController {
             @RequestParam(required = false) String number,
             @RequestParam(required = false) String id,
             @RequestParam(required = false) String receipt,
-            @RequestParam(required = false) String url) {
-        String target = receiptNumber;
-        if (target == null || target.isBlank()) {
-            if (number != null && !number.isBlank()) target = number;
-            else if (id != null && !id.isBlank()) target = id;
-            else if (receipt != null && !receipt.isBlank()) target = receipt;
-            else if (url != null && !url.isBlank()) target = url;
+            @RequestParam(required = false) String url,
+            @RequestParam(required = false) Map<String, String> allParams) {
+        String direct = receiptNumber;
+        if (direct == null || direct.isBlank()) {
+            if (number != null && !number.isBlank()) direct = number;
+            else if (id != null && !id.isBlank()) direct = id;
+            else if (receipt != null && !receipt.isBlank()) direct = receipt;
+            else if (url != null && !url.isBlank()) direct = url;
         }
 
-        if (target != null && (target.contains("/") || target.contains("?") || target.contains("="))) {
-            java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?i)\\b(AU-FEE-[A-Za-z0-9_-]+)\\b").matcher(target);
-            if (m.find()) {
-                target = m.group(1).toUpperCase();
-            } else {
-                int lastSlash = target.lastIndexOf('/');
-                if (lastSlash >= 0 && lastSlash < target.length() - 1) {
-                    target = target.substring(lastSlash + 1);
-                }
-            }
-        }
+        String target = com.sms.util.UrlRequestParamResolver.resolveFeeReceiptNumber(direct, allParams);
 
         AppDTO.FeeRecordDTO rec = feeService.getReceiptByNumber(target != null ? target.trim() : "");
         Map<String, Object> resp = new HashMap<>();
@@ -178,6 +169,7 @@ public class FeeController {
         resp.put("transactionReference", rec.getTransactionReference());
         resp.put("paymentDate", rec.getPaymentDate());
         resp.put("institution", "Aditya University – Autonomous Financial Registry");
+        resp.put("resolvedIdentifier", target);
         return ResponseEntity.ok(resp);
     }
 

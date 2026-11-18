@@ -188,7 +188,17 @@ export default function FeeReceiptModal({ isOpen, onClose, record }) {
         </div>
 
         {/* Modal Action Buttons */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => window.open(`/verify/fee-receipt/${record.receiptNumber}`, '_blank')}
+            className="btn btn-outline"
+            style={{ gap: 6, fontWeight: 700 }}
+            title="Open official full-screen verification view"
+          >
+            <ExternalLink size={15} />
+            <span>Public Verification</span>
+          </button>
           <button type="button" onClick={onClose} className="btn btn-ghost">
             Close
           </button>

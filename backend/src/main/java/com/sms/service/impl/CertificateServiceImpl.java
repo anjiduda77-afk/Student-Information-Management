@@ -508,43 +508,8 @@ public class CertificateServiceImpl implements CertificateService {
 
     private String extractCertificateIdFromInput(String raw) {
         if (raw == null) return null;
-        String trimmed = raw.trim();
-        if (trimmed.isEmpty()) return null;
-
-        if (trimmed.contains("/") || trimmed.contains("?") || trimmed.contains("=")) {
-            java.util.regex.Matcher ausMatcher = java.util.regex.Pattern.compile("(?i)\\b(AUS\\d{5,8})\\b").matcher(trimmed);
-            if (ausMatcher.find()) {
-                return ausMatcher.group(1).toUpperCase();
-            }
-
-            java.util.regex.Matcher legacyMatcher = java.util.regex.Pattern.compile("(?i)\\b(AU-SIS-[A-Za-z0-9_-]+)\\b").matcher(trimmed);
-            if (legacyMatcher.find()) {
-                return legacyMatcher.group(1);
-            }
-
-            if (trimmed.contains("?")) {
-                String query = trimmed.substring(trimmed.indexOf('?') + 1);
-                for (String param : query.split("&")) {
-                    String[] kv = param.split("=", 2);
-                    if (kv.length == 2 && ("id".equalsIgnoreCase(kv[0]) || "certificateId".equalsIgnoreCase(kv[0]) || "code".equalsIgnoreCase(kv[0]) || "url".equalsIgnoreCase(kv[0]))) {
-                        try {
-                            String val = java.net.URLDecoder.decode(kv[1], java.nio.charset.StandardCharsets.UTF_8);
-                            String extracted = extractCertificateIdFromInput(val);
-                            if (extracted != null && !extracted.isEmpty()) return extracted;
-                        } catch (Exception ignored) {}
-                    }
-                }
-            }
-
-            String pathOnly = trimmed.contains("?") ? trimmed.substring(0, trimmed.indexOf('?')) : trimmed;
-            if (pathOnly.endsWith("/")) pathOnly = pathOnly.substring(0, pathOnly.length() - 1);
-            int lastSlash = pathOnly.lastIndexOf('/');
-            if (lastSlash >= 0 && lastSlash < pathOnly.length() - 1) {
-                return pathOnly.substring(lastSlash + 1).trim();
-            }
-        }
-
-        return trimmed;
+        String resolved = com.sms.util.UrlRequestParamResolver.extractCertificateId(raw);
+        return (resolved != null && !resolved.isBlank()) ? resolved : raw.trim();
     }
 
     @Override

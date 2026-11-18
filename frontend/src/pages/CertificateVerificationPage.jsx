@@ -3,6 +3,7 @@ import { useParams, Link, useSearchParams } from 'react-router-dom'
 import { certificateService } from '../services/api'
 import { Spinner } from '../components/Loading'
 import { downloadCertificatePDF } from '../utils/certificateGenerator'
+import { resolveCertificateId } from '../utils/urlParamResolver'
 import QRCode from 'qrcode'
 import {
   CheckCircle,
@@ -39,35 +40,15 @@ const AU_LOGO_URL = '/aditya-crest.png'
  * - AU-SIS-CERT-2026-X7K9P4M2Q8 -> AU-SIS-CERT-2026-X7K9P4M2Q8
  */
 function extractCertificateId(text) {
-  if (!text || typeof text !== 'string') return ''
-  const trimmed = text.trim()
-  
-  // URL match
-  const urlMatch = trimmed.match(/\/verify\/certificate\/([a-zA-Z0-9_-]+)/i)
-  if (urlMatch && urlMatch[1]) return urlMatch[1]
-  
-  // AUS format match (AUS followed by digits)
-  const ausMatch = trimmed.match(/\b(AUS\d{5,8})\b/i)
-  if (ausMatch && ausMatch[1]) return ausMatch[1].toUpperCase()
-
-  // AU-SIS legacy format match
-  const legacyMatch = trimmed.match(/\b(AU-SIS-[A-Za-z0-9_-]+)\b/i)
-  if (legacyMatch && legacyMatch[1]) return legacyMatch[1]
-
-  // Plain alphanumeric string without slashes or spaces
-  if (/^[a-zA-Z0-9_-]{5,50}$/.test(trimmed)) {
-    return trimmed
-  }
-
-  return trimmed
+  return resolveCertificateId(text)
 }
 
 export default function CertificateVerificationPage() {
   const { certificateId: routeCertId } = useParams()
   const [searchParams] = useSearchParams()
-  const queryParam = searchParams.get('url') || searchParams.get('certificateId') || searchParams.get('id') || searchParams.get('code') || searchParams.get('certId')
+  const initialTarget = resolveCertificateId(routeCertId || '', searchParams)
 
-  const [searchId, setSearchId] = useState(routeCertId || (queryParam ? extractCertificateId(queryParam) : ''))
+  const [searchId, setSearchId] = useState(initialTarget)
   const [cert, setCert] = useState(null)
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)

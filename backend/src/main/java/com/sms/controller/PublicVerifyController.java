@@ -18,14 +18,16 @@ public class PublicVerifyController {
             @RequestParam(required = false) String code,
             @RequestParam(required = false) String certId,
             @RequestParam(required = false) String id,
-            @RequestParam(required = false) String url) {
-        String target = (certificateId != null && !certificateId.trim().isEmpty())
+            @RequestParam(required = false) String url,
+            @RequestParam(required = false) java.util.Map<String, String> allParams) {
+        String direct = (certificateId != null && !certificateId.trim().isEmpty())
                 ? certificateId
                 : (url != null && !url.trim().isEmpty()
                     ? url
                     : (id != null && !id.trim().isEmpty()
                         ? id
                         : (code != null && !code.trim().isEmpty() ? code : certId)));
-        return ResponseEntity.ok(certificateService.verifyCertificatePublic(target));
+        String resolvedId = com.sms.util.UrlRequestParamResolver.resolveCertificateId(direct, allParams);
+        return ResponseEntity.ok(certificateService.verifyCertificatePublic(resolvedId));
     }
 }

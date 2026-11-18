@@ -3,6 +3,7 @@ import { useParams, Link, useSearchParams } from 'react-router-dom'
 import { feeService } from '../services/api'
 import { Spinner } from '../components/Loading'
 import { formatDate } from '../utils/helpers'
+import { resolveFeeReceiptNumber } from '../utils/urlParamResolver'
 import {
   CheckCircle,
   XCircle,
@@ -19,20 +20,12 @@ import {
 export default function FeeVerificationPage() {
   const { receiptNumber: paramReceiptNumber } = useParams()
   const [searchParams] = useSearchParams()
-  const queryParam = searchParams.get('url') || searchParams.get('receiptNumber') || searchParams.get('number') || searchParams.get('id') || searchParams.get('ref')
 
   const extractReceiptNum = (raw) => {
-    if (!raw) return ''
-    const match = raw.match(/\b(AU-FEE-[A-Za-z0-9_-]+)\b/i)
-    if (match && match[1]) return match[1].toUpperCase()
-    if (raw.includes('/')) {
-      const parts = raw.split('/')
-      return parts[parts.length - 1].trim()
-    }
-    return raw.trim()
+    return resolveFeeReceiptNumber(raw, searchParams)
   }
 
-  const initialTarget = paramReceiptNumber || extractReceiptNum(queryParam)
+  const initialTarget = resolveFeeReceiptNumber(paramReceiptNumber || '', searchParams)
   const [query, setQuery] = useState(initialTarget || '')
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(false)

@@ -4,7 +4,7 @@ import {
   Clock, CheckCircle, XCircle, AlertCircle,
   Users, Check, X, RefreshCw, ChevronRight,
   ShieldCheck, Search, ArrowLeft, Save,
-  FileSpreadsheet
+  FileSpreadsheet, Maximize2, Minimize2
 } from 'lucide-react'
 import { attendanceService } from '../../services/api'
 import { toast } from '../Toast'
@@ -67,6 +67,7 @@ export default function FacultyAttendanceSection({ onCorrectionUpdate, initialTa
   const [studentRemarksMap, setStudentRemarksMap] = useState({})
   const [savingRoster, setSavingRoster] = useState(false)
   const [studentSearchQuery, setStudentSearchQuery] = useState('')
+  const [isRosterFullscreen, setIsRosterFullscreen] = useState(false)
 
   // History & Corrections state
   const [history, setHistory] = useState([])
@@ -635,7 +636,20 @@ export default function FacultyAttendanceSection({ onCorrectionUpdate, initialTa
           {/* SCREEN B: MANUAL ATTENDANCE ENTRY SCREEN (STEP 5)              */}
           {/* ------------------------------------------------------------- */}
           {selectionStep === 'ROSTER' && rosterData && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div
+              className={isRosterFullscreen ? 'fullscreen-overlay-wrapper' : ''}
+              style={isRosterFullscreen ? {
+                position: 'fixed',
+                inset: 0,
+                zIndex: 9999,
+                background: 'var(--bg, #f8fafc)',
+                overflowY: 'auto',
+                padding: '24px 32px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 20
+              } : { display: 'flex', flexDirection: 'column', gap: 20 }}
+            >
 
               {/* Header Information Card */}
               <div className="card" style={{
@@ -675,19 +689,38 @@ export default function FacultyAttendanceSection({ onCorrectionUpdate, initialTa
                     </h3>
                   </div>
 
-                  <button
-                    onClick={() => setSelectionStep('SELECTION')}
-                    className="btn btn-outline btn-sm"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      borderRadius: 8,
-                      fontWeight: 700
-                    }}
-                  >
-                    <ArrowLeft size={14} /> Change Selection
-                  </button>
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={() => setIsRosterFullscreen(!isRosterFullscreen)}
+                      className="btn btn-outline btn-sm"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        borderRadius: 8,
+                        fontWeight: 700,
+                        background: isRosterFullscreen ? '#0f766e' : 'transparent',
+                        color: isRosterFullscreen ? '#fff' : 'inherit'
+                      }}
+                      title="Toggle Fullscreen Classroom Roster View"
+                    >
+                      {isRosterFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                      {isRosterFullscreen ? 'Exit Full Screen' : 'Full Screen Roster'}
+                    </button>
+                    <button
+                      onClick={() => setSelectionStep('SELECTION')}
+                      className="btn btn-outline btn-sm"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        borderRadius: 8,
+                        fontWeight: 700
+                      }}
+                    >
+                      <ArrowLeft size={14} /> Change Selection
+                    </button>
+                  </div>
                 </div>
 
                 {/* Header Information Grid */}

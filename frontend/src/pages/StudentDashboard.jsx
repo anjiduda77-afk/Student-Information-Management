@@ -9,7 +9,7 @@ import {
   LayoutDashboard, ClipboardCheck, BarChart2, Calendar, CalendarDays,
   Award, Download, AlertTriangle,
   BookOpen, Eye, CreditCard, Bus, GraduationCap,
-  Search, X
+  Search, X, Maximize2, Minimize2
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { toast } from '../components/Toast'
@@ -503,6 +503,7 @@ function StudentCertificates() {
   const [search, setSearch] = useState('')
   const [previewCert, setPreviewCert] = useState(null)
   const [downloadingId, setDownloadingId] = useState(null)
+  const [isCertFullscreen, setIsCertFullscreen] = useState(false)
 
   const loadCertificates = () => {
     setLoading(true)
@@ -740,12 +741,21 @@ function StudentCertificates() {
               />
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTop: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTop: '1px solid #e2e8f0', flexWrap: 'wrap', gap: 10 }}>
               <div style={{ fontSize: 12, color: '#64748b' }}>
                 Verified Official Credential &bull; <strong style={{ color: '#0f172a' }}>{previewCert.certificateId}</strong>
               </div>
 
               <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  onClick={() => setIsCertFullscreen(true)}
+                  className="btn btn-outline btn-sm"
+                  style={{ gap: 6, fontWeight: 700 }}
+                  title="View certificate in full screen presentation mode"
+                >
+                  <Maximize2 size={14} />
+                  <span>Full Screen</span>
+                </button>
                 <button
                   onClick={() => setPreviewCert(null)}
                   className="btn btn-ghost btn-sm"
@@ -770,6 +780,75 @@ function StudentCertificates() {
             </div>
           </div>
         </Modal>
+      )}
+
+      {/* Fullscreen Certificate Presentation Overlay */}
+      {previewCert && isCertFullscreen && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 99999,
+          background: 'rgba(15, 23, 42, 0.96)',
+          backdropFilter: 'blur(12px)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 24,
+          overflowY: 'auto'
+        }}>
+          <div style={{
+            position: 'absolute',
+            top: 20,
+            right: 24,
+            display: 'flex',
+            gap: 12,
+            alignItems: 'center',
+            zIndex: 10
+          }}>
+            <button
+              onClick={() => handleDownloadPdf(previewCert)}
+              disabled={downloadingId === previewCert.certificateId}
+              className="btn btn-sm"
+              style={{
+                background: '#15803d',
+                color: '#fff',
+                border: 'none',
+                fontWeight: 800,
+                gap: 6
+              }}
+            >
+              <Download size={14} /> Download Official PDF
+            </button>
+            <button
+              onClick={() => setIsCertFullscreen(false)}
+              className="btn btn-ghost btn-sm"
+              style={{
+                color: '#fff',
+                background: 'rgba(255,255,255,0.15)',
+                fontWeight: 700,
+                gap: 6
+              }}
+            >
+              <Minimize2 size={14} /> Exit Full Screen (ESC)
+            </button>
+          </div>
+
+          <div style={{ maxWidth: '90vw', maxHeight: '85vh', transform: 'scale(1.05)', transition: 'transform 0.3s ease' }}>
+            <CertificatePreview
+              certificate={previewCert}
+              mode="full"
+              sampleData={{
+                studentName: previewCert.studentName,
+                eventName: previewCert.eventName,
+                position: previewCert.position || 'Participation',
+                date: formatDate(previewCert.issueDate),
+                certificateId: previewCert.certificateId,
+                department: previewCert.departmentName
+              }}
+            />
+          </div>
+        </div>
       )}
     </div>
   )
