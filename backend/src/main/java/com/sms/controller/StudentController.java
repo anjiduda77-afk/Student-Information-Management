@@ -29,6 +29,7 @@ public class StudentController {
     private final CertificateService certificateService;
     private final TimetableService timetableService;
     private final AnnouncementNotificationService announcementService;
+    private final StudentService studentService;
     private final UserRepository userRepository;
 
     private User getCurrentUser(UserDetails ud) {
@@ -40,6 +41,13 @@ public class StudentController {
     @GetMapping("/profile")
     public ResponseEntity<?> getProfile(@AuthenticationPrincipal UserDetails ud) {
         return ResponseEntity.ok(AppDTO.UserResponse.from(getCurrentUser(ud)));
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateProfile(@AuthenticationPrincipal UserDetails ud,
+                                           @RequestBody AppDTO.UserResponse req) {
+        User u = getCurrentUser(ud);
+        return ResponseEntity.ok(studentService.updateStudent(u.getId(), req));
     }
 
     // ==================== Courses ====================

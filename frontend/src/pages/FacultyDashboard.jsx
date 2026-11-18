@@ -10,7 +10,7 @@ import {
   Calendar, CalendarDays, Award, CheckCircle, Clock,
   Users, X, Download, Save,
   ExternalLink, Eye, Sparkles,
-  Trophy, Medal, AlertTriangle, Ban
+  Trophy, Medal, AlertTriangle, Ban, CreditCard
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { toast } from '../components/Toast'
@@ -23,6 +23,7 @@ import CertificatePreview from '../components/certificates/CertificatePreview'
 import AcademicCalendar from '../components/calendar/AcademicCalendar'
 import EventPosterCard from '../components/events/EventPosterCard'
 import EventDetailsPage from './admin/events/EventDetailsPage'
+import FacultyFeeClearance from '../components/fees/FacultyFeeClearance'
 
 const BASE = '/faculty'
 
@@ -30,6 +31,7 @@ const NAV_ITEMS = [
   { path: 'dashboard', label: 'Faculty Dashboard', icon: LayoutDashboard },
   { path: 'attendance', label: 'Attendance', icon: ClipboardCheck },
   { path: 'marks', label: 'Internal Marks Entry', icon: BarChart2 },
+  { path: 'fees', label: 'Fee Clearance & Hall Tickets', icon: CreditCard },
   { path: 'timetable', label: 'Academic Class Time Table', icon: Calendar },
   { path: 'events', label: 'Campus Events & Symposia', icon: Award },
   { path: 'calendar', label: 'Academic Calendar', icon: CalendarDays },
@@ -153,13 +155,16 @@ function MarksPanel({ courses }) {
 
   const loadData = () => {
     if (!selectedCourse) return
-    adminService.getStudents().then(res => {
+    courseService.getCourseStudents(selectedCourse).then(res => {
       setStudents(res.data || [])
       const init = {}
-      res.data.forEach(s => { init[s.id] = '' })
+      res.data?.forEach(s => { init[s.id] = '' })
       setScores(init)
+    }).catch(err => {
+      console.error('Failed to load course students:', err)
+      toast.error('Unable to load course students list.')
     })
-    marksService.getCourseMarks(selectedCourse).then(r => setHistory(r.data || []))
+    marksService.getCourseMarks(selectedCourse).then(r => setHistory(r.data || [])).catch(() => {})
   }
 
   useEffect(() => { loadData() }, [selectedCourse])
@@ -1336,6 +1341,7 @@ export default function FacultyDashboard() {
         <Route path="attendance" element={<FacultyAttendanceSection courses={courses} onCorrectionUpdate={setPendingCorrectionsCount} initialTab="manual" />} />
         <Route path="attendance/*" element={<FacultyAttendanceSection courses={courses} onCorrectionUpdate={setPendingCorrectionsCount} />} />
         <Route path="marks" element={<MarksPanel courses={courses} />} />
+        <Route path="fees" element={<FacultyFeeClearance />} />
         <Route path="timetable" element={<AcademicTimetable role="FACULTY" user={user} />} />
         <Route path="events" element={<FacultyEvents />} />
         <Route path="events/:eventId" element={<EventDetailsPage />} />

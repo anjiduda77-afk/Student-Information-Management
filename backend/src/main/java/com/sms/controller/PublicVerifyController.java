@@ -16,10 +16,16 @@ public class PublicVerifyController {
     public ResponseEntity<?> verifyCertificate(
             @PathVariable(required = false) String certificateId,
             @RequestParam(required = false) String code,
-            @RequestParam(required = false) String certId) {
-        String id = (certificateId != null && !certificateId.trim().isEmpty())
+            @RequestParam(required = false) String certId,
+            @RequestParam(required = false) String id,
+            @RequestParam(required = false) String url) {
+        String target = (certificateId != null && !certificateId.trim().isEmpty())
                 ? certificateId
-                : (code != null && !code.trim().isEmpty() ? code : certId);
-        return ResponseEntity.ok(certificateService.verifyCertificatePublic(id));
+                : (url != null && !url.trim().isEmpty()
+                    ? url
+                    : (id != null && !id.trim().isEmpty()
+                        ? id
+                        : (code != null && !code.trim().isEmpty() ? code : certId)));
+        return ResponseEntity.ok(certificateService.verifyCertificatePublic(target));
     }
 }

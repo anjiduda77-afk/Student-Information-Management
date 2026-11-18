@@ -275,11 +275,15 @@ public class AdminController {
         return ResponseEntity.ok(new AppDTO.MessageResponse("Password reset successfully. User will be required to change password on next login if forced."));
     }
 
-    @PatchMapping("/users/{userId}/status")
+    @PatchMapping({"/users/{userId}/status", "/users/{userId}/toggle-status"})
     public ResponseEntity<?> updateUserStatus(@PathVariable Long userId,
-                                              @RequestParam String status,
+                                              @RequestParam(required = false) String status,
                                               @AuthenticationPrincipal UserDetails ud) {
         User admin = userRepository.findByEmail(ud.getUsername()).orElseThrow();
+        if (status == null || status.isBlank()) {
+            User target = userRepository.findById(userId).orElseThrow();
+            status = "ACTIVE".equalsIgnoreCase(target.getStatus()) ? "INACTIVE" : "ACTIVE";
+        }
         accountSecurityService.updateAccountStatus(userId, status, admin.getId());
         return ResponseEntity.ok(new AppDTO.MessageResponse("Account status updated to " + status));
     }

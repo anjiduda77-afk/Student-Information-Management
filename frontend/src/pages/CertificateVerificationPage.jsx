@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useSearchParams } from 'react-router-dom'
 import { certificateService } from '../services/api'
 import { Spinner } from '../components/Loading'
 import { downloadCertificatePDF } from '../utils/certificateGenerator'
@@ -64,7 +64,10 @@ function extractCertificateId(text) {
 
 export default function CertificateVerificationPage() {
   const { certificateId: routeCertId } = useParams()
-  const [searchId, setSearchId] = useState(routeCertId || '')
+  const [searchParams] = useSearchParams()
+  const queryParam = searchParams.get('url') || searchParams.get('certificateId') || searchParams.get('id') || searchParams.get('code') || searchParams.get('certId')
+
+  const [searchId, setSearchId] = useState(routeCertId || (queryParam ? extractCertificateId(queryParam) : ''))
   const [cert, setCert] = useState(null)
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
@@ -100,14 +103,15 @@ export default function CertificateVerificationPage() {
     }
   }, [])
 
-  // Auto-verify if certificateId is present in URL
+  // Auto-verify if certificateId is present in URL path or query params (?url=..., ?id=..., etc.)
   useEffect(() => {
-    if (routeCertId && routeCertId.trim()) {
-      const clean = extractCertificateId(routeCertId)
+    const rawTarget = (routeCertId && routeCertId.trim()) || (queryParam && queryParam.trim())
+    if (rawTarget) {
+      const clean = extractCertificateId(rawTarget)
       setSearchId(clean)
       verify(clean)
     }
-  }, [routeCertId])
+  }, [routeCertId, queryParam])
 
   // Stop camera when unmounting
   useEffect(() => {

@@ -94,6 +94,7 @@ export const courseService = {
   delete: (id) => api.delete(`/courses/${id}`),
   getFacultyCourses: () => api.get('/faculty/courses'),
   getStudentCourses: () => api.get('/student/courses'),
+  getCourseStudents: (courseId) => api.get(`/faculty/courses/${courseId}/students`),
 
   getSubjects: () => api.get('/subjects'),
   getSubjectsByCourse: (courseId) => api.get(`/subjects/by-course/${courseId}`),
@@ -234,8 +235,13 @@ export const certificateService = {
   getMyCertificates: () => api.get('/student/certificates'),
   getCertificate: (certId) => api.get(`/student/certificates/${certId}`),
 
-  // Public verification
-  verify: (certId) => api.get(`/certificates/verify/${certId}`),
+  // Public verification (supports both ID and raw URL parameter)
+  verify: (certId) => {
+    if (certId && (certId.includes('/') || certId.includes('?') || certId.includes('='))) {
+      return api.get('/certificates/verify', { params: { url: certId } })
+    }
+    return api.get(`/certificates/verify/${encodeURIComponent(certId)}`)
+  },
 
   // Admin — Certificate records
   getAll: () => api.get('/certificates'),
@@ -342,13 +348,54 @@ export const academicCalendarService = {
   delete: (id) => api.delete(`/academic-calendar/${id}`),
 }
 
-// ---- Fees & Payments ----
+// ---- Fees & Payments (Enterprise Suite) ----
 export const feeService = {
+  // Categories
+  getCategories: () => api.get('/fees/categories'),
+  createCategory: (data) => api.post('/fees/categories', data),
+  toggleCategory: (id) => api.patch(`/fees/categories/${id}/toggle`),
+
+  // Structures
   getStructures: () => api.get('/fees/structures'),
   createStructure: (data) => api.post('/fees/structures', data),
+  updateStructure: (id, data) => api.put(`/fees/structures/${id}`, data),
+  deleteStructure: (id) => api.delete(`/fees/structures/${id}`),
+  bulkAssign: (data) => api.post('/fees/structures/bulk-assign', data),
+
+  // Student Fee Records
   getMyRecords: () => api.get('/fees/my-records'),
   getStudentRecords: (studentId) => api.get(`/fees/student/${studentId}`),
   payFee: (data) => api.post('/fees/pay', data),
   getReceipt: (receiptNumber) => api.get(`/fees/receipt/${receiptNumber}`),
+  getReceiptPdfUrl: (receiptNumber) => `${api.defaults.baseURL || '/api'}/fees/receipt/${receiptNumber}/pdf`,
+  downloadReceiptPdf: (receiptNumber) => api.get(`/fees/receipt/${receiptNumber}/pdf`, { responseType: 'blob' }),
+  verifyReceipt: (receiptNumber) => {
+    if (receiptNumber && (receiptNumber.includes('/') || receiptNumber.includes('?') || receiptNumber.includes('='))) {
+      return api.get('/fees/verify', { params: { url: receiptNumber } })
+    }
+    return api.get(`/fees/verify/${encodeURIComponent(receiptNumber)}`)
+  },
+
+  // Scholarships & Concessions
+  addConcession: (data) => api.post('/fees/concessions', data),
+  getAllConcessions: () => api.get('/fees/concessions'),
+  getStudentConcessions: (studentId) => api.get(`/fees/concessions/student/${studentId}`),
+
+  // Online Checkout (Razorpay)
+  createPaymentOrder: (data) => api.post('/fees/payments/order', data),
+  verifyPayment: (data) => api.post('/fees/payments/verify', data),
+
+  // Offline Payment Workflows
+  submitOfflinePayment: (data) => api.post('/fees/offline/submit', data),
+  getMyOfflineSubmissions: () => api.get('/fees/offline/my-submissions'),
+  getPendingOfflineSubmissions: () => api.get('/fees/offline/pending'),
+  reviewOfflineSubmission: (id, data) => api.post(`/fees/offline/${id}/review`, data),
+
+  // Admin Oversight & Financial Reports
   getOverview: () => api.get('/fees/overview'),
+  getAdminFeeRecords: (params) => api.get('/fees/admin/records', { params }),
+
+  // Faculty Clearance & Examination Eligibility
+  getFacultyClearanceSummary: (params) => api.get('/fees/faculty/clearance/summary', { params }),
+  getFacultyClearanceRecords: (params) => api.get('/fees/faculty/clearance/records', { params }),
 }

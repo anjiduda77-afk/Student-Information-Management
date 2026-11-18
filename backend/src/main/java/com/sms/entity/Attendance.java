@@ -6,7 +6,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "attendance")
+@Table(name = "attendance", indexes = {
+        @Index(name = "idx_att_student_date", columnList = "student_id, date"),
+        @Index(name = "idx_att_date_sub_sec", columnList = "date, subject_id, section"),
+        @Index(name = "idx_att_student_subject", columnList = "student_id, subject_id"),
+        @Index(name = "idx_att_faculty_date", columnList = "faculty_id, date")
+})
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Attendance {
 

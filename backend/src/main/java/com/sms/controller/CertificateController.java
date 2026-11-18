@@ -35,9 +35,17 @@ public class CertificateController {
     public ResponseEntity<?> verifyCertificate(
             @PathVariable(required = false) String certificateId,
             @RequestParam(required = false) String code,
-            @RequestParam(required = false) String certId) {
-        String id = (certificateId != null && !certificateId.trim().isEmpty()) ? certificateId : (code != null ? code : certId);
-        return ResponseEntity.ok(certificateService.verifyCertificatePublic(id));
+            @RequestParam(required = false) String certId,
+            @RequestParam(required = false) String id,
+            @RequestParam(required = false) String url) {
+        String target = (certificateId != null && !certificateId.trim().isEmpty())
+                ? certificateId
+                : (url != null && !url.trim().isEmpty()
+                    ? url
+                    : (id != null && !id.trim().isEmpty()
+                        ? id
+                        : (code != null ? code : certId)));
+        return ResponseEntity.ok(certificateService.verifyCertificatePublic(target));
     }
 
     // ==================== Templates CRUD (Admin Only) ====================

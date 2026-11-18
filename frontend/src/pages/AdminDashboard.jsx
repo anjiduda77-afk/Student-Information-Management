@@ -11,7 +11,7 @@ import {
   adminService, courseService, timetableService, academicCalendarService
 } from '../services/api'
 import AcademicCalendar from '../components/calendar/AcademicCalendar'
-import StudentFeesHub from '../components/fees/StudentFeesHub'
+import AdminFeesHub from '../components/fees/AdminFeesHub'
 import {
   LayoutDashboard, GraduationCap, Users, BookOpen,
   Calendar, CalendarDays, Award, Bell, Plus,
@@ -1542,7 +1542,7 @@ export default function AdminDashboard() {
         <Route path="events/:eventId" element={<EventDetailsPage />} />
         <Route path="events/:eventId/coordinators" element={<EventCoordinatorsPage />} />
         <Route path="calendar" element={<AcademicCalendar role="ADMIN" />} />
-        <Route path="fees" element={<StudentFeesHub />} />
+        <Route path="fees" element={<AdminFeesHub />} />
         <Route path="certificates" element={<CertificateTemplatesList />} />
         <Route path="certificates/templates/new" element={<CertificateTemplateEditor isNew />} />
         <Route path="certificates/templates/:templateId/edit" element={<CertificateTemplateEditor />} />

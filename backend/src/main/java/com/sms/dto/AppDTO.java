@@ -906,6 +906,8 @@ public class AppDTO {
         @NotBlank(message = "Fee category is required")
         private String category; // TUITION, EXAM, HOSTEL, TRANSPORT, LIBRARY, DEVELOPMENT, MISCELLANEOUS
 
+        private String categoryCode;
+
         @NotBlank(message = "Academic year is required")
         private String academicYear;
 
@@ -935,6 +937,7 @@ public class AppDTO {
                     .id(fs.getId())
                     .name(fs.getName())
                     .category(fs.getCategory().name())
+                    .categoryCode(fs.getCategoryCode())
                     .academicYear(fs.getAcademicYear())
                     .department(fs.getDepartment())
                     .semester(fs.getSemester())
@@ -1074,6 +1077,176 @@ public class AppDTO {
         private java.math.BigDecimal totalDue;
         private double collectionPercentage;
         private java.util.List<FeeStructureDTO> recentStructures;
+    }
+
+    // ==========================================
+    // ENTERPRISE FEE MANAGEMENT DTOs
+    // ==========================================
+
+    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class FeeCategoryDTO {
+        private Long id;
+        @NotBlank(message = "Category code is required")
+        private String code;
+        @NotBlank(message = "Category name is required")
+        private String name;
+        private String description;
+        private Boolean isActive;
+        private LocalDateTime createdAt;
+    }
+
+    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class ScholarshipConcessionDTO {
+        private Long id;
+        private Long studentId;
+        private String studentName;
+        private String rollNumber;
+        private Long feeStructureId;
+        private String feeStructureName;
+        private String concessionType;
+        private java.math.BigDecimal discountPercentage;
+        private java.math.BigDecimal amount;
+        private String reason;
+        private String status;
+        private String approvedByName;
+        private String supportingDocumentUrl;
+        private LocalDateTime createdAt;
+    }
+
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor
+    public static class AddConcessionRequest {
+        @NotNull(message = "Student ID is required")
+        private Long studentId;
+        @NotNull(message = "Fee Structure ID is required")
+        private Long feeStructureId;
+        @NotBlank(message = "Concession type is required")
+        private String concessionType; // MERIT, SPORTS, NEED_BASED, STAFF_WARD, SPECIAL
+        private java.math.BigDecimal discountPercentage;
+        @NotNull(message = "Amount is required")
+        @DecimalMin(value = "0.01", message = "Amount must be greater than zero")
+        private java.math.BigDecimal amount;
+        private String reason;
+        private String supportingDocumentUrl;
+    }
+
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor
+    public static class CreateOrderRequest {
+        @NotNull(message = "Fee record ID is required")
+        private Long feeRecordId;
+        @NotNull(message = "Payment amount is required")
+        @DecimalMin(value = "1.00", message = "Payment amount must be at least ₹1.00")
+        private java.math.BigDecimal amount;
+        private String paymentMethod; // UPI, CARD, NETBANKING
+    }
+
+    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class CreateOrderResponse {
+        private String orderId;
+        private String gatewayOrderId;
+        private java.math.BigDecimal amount;
+        private String currency;
+        private String keyId;
+        private String studentName;
+        private String studentEmail;
+        private String studentContact;
+        private String feeStructureName;
+        private String receiptNumber;
+    }
+
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor
+    public static class VerifyPaymentRequest {
+        @NotBlank(message = "Order ID is required")
+        private String orderId;
+        @NotBlank(message = "Gateway payment ID is required")
+        private String gatewayPaymentId;
+        @NotBlank(message = "Gateway signature is required")
+        private String gatewaySignature;
+    }
+
+    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class OfflinePaymentSubmissionDTO {
+        private Long id;
+        private Long studentId;
+        private String studentName;
+        private String rollNumber;
+        private Long feeStructureId;
+        private String feeStructureName;
+        private java.math.BigDecimal amount;
+        private String paymentMode;
+        private String transactionReference;
+        private String bankName;
+        private LocalDate paymentDate;
+        private String proofDocumentUrl;
+        private String remarks;
+        private String status; // PENDING, VERIFIED, REJECTED
+        private String verifiedByName;
+        private LocalDateTime verifiedAt;
+        private String rejectionReason;
+        private LocalDateTime createdAt;
+    }
+
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor
+    public static class SubmitOfflinePaymentRequest {
+        @NotNull(message = "Fee record ID is required")
+        private Long feeRecordId;
+        @NotNull(message = "Amount is required")
+        @DecimalMin(value = "1.00", message = "Amount must be at least ₹1.00")
+        private java.math.BigDecimal amount;
+        @NotBlank(message = "Payment mode is required")
+        private String paymentMode; // NEFT, RTGS, BANK_CHALLAN, DEMAND_DRAFT, UPI_DIRECT
+        @NotBlank(message = "Transaction reference / UTR is required")
+        private String transactionReference;
+        private String bankName;
+        @NotNull(message = "Payment date is required")
+        private LocalDate paymentDate;
+        private String proofDocumentUrl;
+        private String remarks;
+    }
+
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor
+    public static class ReviewOfflinePaymentRequest {
+        @NotNull(message = "Approval status is required")
+        private Boolean approve;
+        private String remarks;
+    }
+
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor
+    public static class BulkFeeAssignRequest {
+        @NotNull(message = "Fee structure ID is required")
+        private Long feeStructureId;
+        private String department;
+        private Integer semester;
+        private String section;
+        private String batch;
+    }
+
+    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class BulkFeeAssignResult {
+        private int totalMatched;
+        private int newlyAssigned;
+        private int alreadyAssigned;
+        private String feeStructureName;
+    }
+
+    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class FeeClearanceSummaryDTO {
+        private String department;
+        private Integer semester;
+        private long totalStudents;
+        private long clearedCount;
+        private long pendingCount;
+        private long overdueCount;
+        private double clearancePercentage;
+    }
+
+    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class PagedResult<T> {
+        private List<T> content;
+        private int page;
+        private int size;
+        private long totalElements;
+        private int totalPages;
+        private boolean last;
     }
 }
 

@@ -5,7 +5,11 @@ import lombok.*;
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "timetable")
+@Table(name = "timetable", indexes = {
+        @Index(name = "idx_tt_faculty_day", columnList = "faculty_id, day_of_week"),
+        @Index(name = "idx_tt_room_day", columnList = "classroom, day_of_week"),
+        @Index(name = "idx_tt_course_sem_sec", columnList = "course_id, semester, section")
+})
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Timetable {
 

@@ -7,6 +7,7 @@ import AdminDashboard from './pages/AdminDashboard'
 import FacultyDashboard from './pages/FacultyDashboard'
 import StudentDashboard from './pages/StudentDashboard'
 import CertificateVerificationPage from './pages/CertificateVerificationPage'
+import FeeVerificationPage from './pages/FeeVerificationPage'
 import { Spinner } from './components/Loading'
 
 // ✅ Official Aditya University Logo URL
@@ -167,6 +168,11 @@ export default function App() {
               <Route path="/verify/:certificateId" element={<CertificateVerificationPage />} />
               <Route path="/certificates/verify" element={<CertificateVerificationPage />} />
               <Route path="/certificates/verify/:certificateId" element={<CertificateVerificationPage />} />
+
+              {/* Fee Receipt public verification — no login required */}
+              <Route path="/verify/fee-receipt" element={<FeeVerificationPage />} />
+              <Route path="/verify/fee-receipt/:receiptNumber" element={<FeeVerificationPage />} />
+              <Route path="/verify/receipt/:receiptNumber" element={<FeeVerificationPage />} />
 
               {/* Root redirect */}
               <Route path="/" element={<RoleRouter />} />

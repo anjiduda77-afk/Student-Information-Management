@@ -70,11 +70,31 @@ public class FacultyController {
 
     @GetMapping("/courses/{courseId}/students")
     public ResponseEntity<List<AppDTO.UserResponse>> getCourseStudents(@PathVariable Long courseId) {
-        // Get all students enrolled in this course
+        AppDTO.CourseResponse course = null;
+        try {
+            course = courseSubjectService.getCourseById(courseId);
+        } catch (Exception ignored) {}
+
+        final String courseDept = course != null ? course.getDepartmentName() : null;
+        final Integer courseSem = course != null ? course.getSemester() : null;
+
         List<AppDTO.UserResponse> students = userRepository.findByRole(User.Role.STUDENT).stream()
-                .filter(s -> s.getCourses().stream().anyMatch(c -> c.getId().equals(courseId)))
+                .filter(s -> {
+                    boolean explicitlyEnrolled = s.getCourses() != null && s.getCourses().stream().anyMatch(c -> c.getId().equals(courseId));
+                    boolean matchesDept = courseDept != null && (courseDept.equalsIgnoreCase(s.getDepartment()) || courseDept.equalsIgnoreCase(s.getBranch()));
+                    boolean matchesSem = courseSem != null && courseSem.equals(s.getSemester());
+                    return explicitlyEnrolled || (matchesDept && matchesSem);
+                })
                 .map(AppDTO.UserResponse::from)
                 .toList();
+
+        // If no matching students found by department/semester, fall back to all students
+        if (students.isEmpty()) {
+            students = userRepository.findByRole(User.Role.STUDENT).stream()
+                    .map(AppDTO.UserResponse::from)
+                    .toList();
+        }
+
         return ResponseEntity.ok(students);
     }
 

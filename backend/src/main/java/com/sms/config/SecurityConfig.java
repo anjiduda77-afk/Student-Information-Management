@@ -43,6 +43,9 @@ public class SecurityConfig {
                 // Public certificate PDF download (anyone with a certificate ID can download)
                 .requestMatchers("/api/certificates/*/download").permitAll()
 
+                // Public fee receipt verification and PDF download
+                .requestMatchers("/api/fees/verify/**", "/api/fees/receipt/*/pdf").permitAll()
+
                 // Swagger / API docs
                 .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
 

@@ -1,14 +1,42 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { Modal } from '../Modal'
-import { Printer, Download, CheckCircle, ShieldCheck } from 'lucide-react'
+import { Printer, Download, CheckCircle, ShieldCheck, ExternalLink, Loader2 } from 'lucide-react'
 import { formatDate } from '../../utils/helpers'
+import { feeService } from '../../services/api'
+import { toast } from '../Toast'
 
 export default function FeeReceiptModal({ isOpen, onClose, record }) {
   const printRef = useRef(null)
+  const [downloading, setDownloading] = useState(false)
   if (!record) return null
 
   const handlePrint = () => {
     window.print()
+  }
+
+  const handleDownloadPdf = async () => {
+    if (!record.receiptNumber) {
+      toast.error('Receipt number is missing for this record.')
+      return
+    }
+    setDownloading(true)
+    try {
+      const res = await feeService.downloadReceiptPdf(record.receiptNumber)
+      const blob = new Blob([res.data], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `Fee_Receipt_${record.receiptNumber}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      toast.success('Official PDF receipt downloaded!')
+    } catch {
+      toast.error('Failed to download official PDF receipt.')
+    } finally {
+      setDownloading(false)
+    }
   }
 
   const amount = Number(record.amountPaid || record.amountDue || 0).toLocaleString('en-IN', {
@@ -166,12 +194,22 @@ export default function FeeReceiptModal({ isOpen, onClose, record }) {
           </button>
           <button
             type="button"
+            disabled={downloading}
+            onClick={handleDownloadPdf}
+            className="btn btn-primary"
+            style={{ background: '#2563eb', borderColor: '#2563eb', gap: 6, fontWeight: 700 }}
+          >
+            {downloading ? <Loader2 size={15} className="spinner" /> : <Download size={15} />}
+            <span>Download Official PDF</span>
+          </button>
+          <button
+            type="button"
             onClick={handlePrint}
             className="btn btn-primary"
             style={{ background: '#d97706', borderColor: '#d97706', gap: 6, fontWeight: 700 }}
           >
             <Printer size={15} />
-            <span>Print / Save as PDF</span>
+            <span>Print Receipt</span>
           </button>
         </div>
       </div>

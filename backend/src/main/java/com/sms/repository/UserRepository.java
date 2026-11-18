@@ -26,6 +26,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u FROM User u WHERE u.role = 'STUDENT' AND (:department IS NULL OR u.department = :department) AND (:semester IS NULL OR u.semester = :semester)")
     List<User> findStudentsByFilter(@Param("department") String department, @Param("semester") Integer semester);
 
+    @Query("SELECT u FROM User u WHERE u.role = 'STUDENT' " +
+           "AND (:department IS NULL OR u.department = :department OR u.branch = :department) " +
+           "AND (:semester IS NULL OR u.semester = :semester) " +
+           "AND (:section IS NULL OR u.section = :section)")
+    List<User> findStudentsForBulkAssignment(
+            @Param("department") String department,
+            @Param("semester") Integer semester,
+            @Param("section") String section);
+
     @Query("SELECT u FROM User u WHERE u.email = :identifier OR u.rollNumber = :identifier OR u.studentId = :identifier OR u.facultyId = :identifier")
     Optional<User> findByIdentifier(@Param("identifier") String identifier);
 }

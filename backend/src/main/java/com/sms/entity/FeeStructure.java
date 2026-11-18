@@ -29,6 +29,9 @@ public class FeeStructure {
     @Column(nullable = false)
     private FeeCategory category;
 
+    @Column(name = "category_code", length = 50)
+    private String categoryCode;
+
     /** Academic year: "2024-25" */
     @Column(name = "academic_year", nullable = false)
     private String academicYear;

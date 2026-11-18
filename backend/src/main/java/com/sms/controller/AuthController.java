@@ -18,6 +18,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -145,6 +147,38 @@ public class AuthController {
             return ResponseEntity.status(401).body(new AppDTO.MessageResponse("Unauthenticated"));
         }
         User user = userRepository.findByEmail(userDetails.getUsername()).orElseThrow();
+        return ResponseEntity.ok(AppDTO.UserResponse.from(user));
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateProfile(@AuthenticationPrincipal UserDetails ud,
+                                           @RequestBody AppDTO.UserResponse req) {
+        if (ud == null) {
+            return ResponseEntity.status(401).body(new AppDTO.MessageResponse("Unauthenticated"));
+        }
+        User user = userRepository.findByEmail(ud.getUsername()).orElseThrow();
+        if (req.getName() != null && !req.getName().isBlank()) user.setName(req.getName());
+        if (req.getMobileNumber() != null) user.setMobileNumber(req.getMobileNumber());
+        if (req.getDateOfBirth() != null) user.setDateOfBirth(req.getDateOfBirth());
+        if (req.getGender() != null) user.setGender(req.getGender());
+        if (req.getAddress() != null) user.setAddress(req.getAddress());
+        if (req.getDepartment() != null) user.setDepartment(req.getDepartment());
+        if (req.getDesignation() != null) user.setDesignation(req.getDesignation());
+        if (req.getProfilePhoto() != null) user.setProfilePhoto(req.getProfilePhoto());
+        userRepository.save(user);
+        return ResponseEntity.ok(AppDTO.UserResponse.from(user));
+    }
+
+    @PatchMapping("/profile/photo")
+    public ResponseEntity<?> updatePhoto(@AuthenticationPrincipal UserDetails ud,
+                                         @RequestBody Map<String, String> body) {
+        if (ud == null) {
+            return ResponseEntity.status(401).body(new AppDTO.MessageResponse("Unauthenticated"));
+        }
+        User user = userRepository.findByEmail(ud.getUsername()).orElseThrow();
+        String photoUrl = body != null ? body.get("photoUrl") : null;
+        accountSecurityService.updateProfilePhoto(user.getId(), photoUrl, user.getId());
+        user.setProfilePhoto(photoUrl);
         return ResponseEntity.ok(AppDTO.UserResponse.from(user));
     }
 }
